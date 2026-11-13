@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>Fixture SPA</title></head>
+<body>
+  <main id="view"></main>
+  <script>
+    function render() {
+      const view = document.getElementById('view')
+      view.innerHTML = location.pathname.endsWith('/b')
+        ? '<h2 id="titulo-b">Rota B</h2><p class="texto">conteúdo B</p>'
+        : '<h2 id="titulo-a">Rota A</h2><p class="texto">conteúdo A</p>'
+    }
+    window.go = (path) => { history.pushState(null, '', path); render() }
+    window.addEventListener('popstate', render)
+    render()
+  </script>
+</body>
+</html>

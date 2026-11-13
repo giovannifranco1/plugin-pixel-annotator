@@ -2,7 +2,8 @@
 
 **Spec**: `.specs/features/2026-11-13-modo-anotacao/spec.md`
 **Design**: `.specs/features/2026-11-13-modo-anotacao/design.md`
-**Status**: Approved — 2026-11-13 (Sentinel, dev ausente). plan-document-reviewer: 5 issues + 9 recomendações aplicadas (Firefox MV3, `matches` fora do content runtime, pasta do build E2E, `sendResponse` no Chrome, regex do seletor)
+**Status**: Done — 2026-11-13. Gate full: compile ok · 120 unit · builds Chrome/Firefox MV3 · check:manifest ok · 27 E2E. Checklist manual do dev em `manual-check.md`.
+**Aprovação**: 2026-11-13 (Sentinel, dev ausente). plan-document-reviewer: 5 issues + 9 recomendações aplicadas (Firefox MV3, `matches` fora do content runtime, pasta do build E2E, `sendResponse` no Chrome, regex do seletor)
 
 > **Modo de breakdown:** horizontal. Lógica pura em `lib/` primeiro (paralelizável, unit), depois os módulos de runtime, depois o E2E que integra tudo.
 > **Política de commits (Sentinel):** 1 commit por **fase do nano-spec**, não por task. A linha "Commit" das tasks abaixo é só a mensagem sugerida para o histórico do commit de fase.
@@ -137,7 +138,7 @@ export default defineConfig({
 ```
 
 - [ ] `lib/types.ts` com os modelos do design (seção "Modelos de Dados"): `Breakpoint`, `ScreenCategory`, `Orientation`, `ViewportInfo`, `ComponentInfo`, `Rect`, `Annotation`.
-- [ ] `vitest.config.ts`: `environment: 'happy-dom'`, `include: ['tests/unit/**/*.test.ts']`, plugin `WxtVitest()` de `wxt/testing`.
+- [ ] `vitest.config.ts`: `environment: 'happy-dom'`, `include: ['tests/unit/**/*.test.ts']`, plugin `WxtVitest()` de `wxt/testing/vitest-plugin` (no WXT 0.21 o `fakeBrowser` vem de `wxt/testing/fake-browser`).
 - [ ] `playwright.config.ts`: `testDir: 'tests/e2e'`, `workers: 1`, `webServer: { command: 'npx vite tests/e2e/fixtures --port 5174 --strictPort', port: 5174, reuseExistingServer: true }`.
 - [ ] `scripts/check-manifest.mjs`: lê `.output/chrome-mv3/manifest.json` e `.output/firefox-mv3/manifest.json` (build de produção; o de E2E sai em `.output/chrome-mv3-e2e` e não é checado), falha (exit 1) se algum não existir, se `manifest_version` ≠ 3, se `permissions` ≠ `["activeTab","scripting"]` ou se existir `host_permissions` ou `content_scripts`.
 - [ ] `tsconfig.json`: `{ "extends": "./.wxt/tsconfig.json" }` (dá o alias `@/` e os auto-imports `defineBackground`, `browser`, etc.).

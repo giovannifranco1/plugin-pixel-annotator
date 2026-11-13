@@ -190,16 +190,17 @@ Quando o dev front pede ajuste visual ao Claude, gasta tempo descrevendo qual el
 
 | ID Requisito | Story | Fase | Status |
 |---|---|---|---|
-| ANOT-01..08 | P1: Ativar e anotar | Design | Pending |
-| CAPT-01..08 | P1: Capturar contexto | Design | Pending |
-| COMP-01..04 | P1: Capturar contexto (componente) | Design | Pending |
-| PAIN-01..06 | P1: Painel | Design | Pending |
-| EXPO-01..05 | P1: Exportar | Design | Pending |
-| PLAT-01..02 | P1: Chrome e Firefox | Design | Pending |
-| MARC-01..02 | P2: Marcadores por categoria | - | Pending |
-| AVIS-01 | P2: Aviso antes de perder | - | Pending |
+| ANOT-01..08 | P1: Ativar e anotar | Execute | Verified (unit + E2E Chromium) |
+| CAPT-01..08 | P1: Capturar contexto | Execute | Verified (unit + E2E Chromium) |
+| COMP-01..04 | P1: Capturar contexto (componente) | Execute | Verified (unit; E2E React 19 e Vue 3). COMP-03 no React ≤ 18 só em unit |
+| PAIN-01..06 | P1: Painel | Execute | Verified (unit + E2E Chromium) |
+| EXPO-01..05 | P1: Exportar | Execute | Verified (unit + E2E Chromium) |
+| PLAT-01 | P1: Chrome e Firefox | Execute | Implemented — manifests checados por `npm run check:manifest`; carregar no Firefox: verificação manual pendente (`manual-check.md`) |
+| PLAT-02 | P1: Chrome e Firefox | Execute | Verified (E2E Chromium) |
+| MARC-01..02 | P2: Marcadores por categoria | Execute | Verified (unit + E2E Chromium) |
+| AVIS-01 | P2: Aviso antes de perder | Execute | Verified no Chromium (E2E); Firefox: verificação manual pendente |
 
-**Cobertura:** 36 total, 0 mapeados em tasks, 36 sem mapeamento ⚠️ (esperado: fase Specify)
+**Cobertura:** 36 total, 36 mapeados em tasks, 0 sem mapeamento. 34 Verified, 2 com verificação manual no Firefox pendente (PLAT-01, AVIS-01).
 
 ---
 

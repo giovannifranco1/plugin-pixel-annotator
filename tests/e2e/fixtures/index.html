@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fixture estática</title>
+  <style>
+    /* CSS genérico agressivo: não pode afetar a UI do PxA (Shadow DOM). */
+    * { color: rgb(255, 0, 0) !important; font-family: serif !important; }
+    body { margin: 0; padding: 24px; }
+    .card { padding: 12px; border: 1px solid #ccc; width: 240px; }
+    .alto { height: 2000px; background: linear-gradient(#eee, #ccc); }
+    .gigante { height: 1600px; background: #ddd; }
+    .topo { position: fixed; top: 0; left: 0; width: 100px; height: 40px; z-index: 2147483646; background: #000; }
+  </style>
+</head>
+<body>
+  <header><h1 class="page-title">Fixture PxA</h1></header>
+  <button id="save" type="button" style="width: 120px; height: 40px">Salvar</button>
+  <a href="/outra.html" id="link">Ir para outra</a>
+  <ul>
+    <li class="item">Item A</li>
+    <li class="item">Item B</li>
+    <li class="item">Item C</li>
+  </ul>
+  <div class="css-1a2b3c card" id="card">Card com classe gerada</div>
+  <section class="alto"></section>
+  <p id="abaixo">Elemento abaixo da dobra</p>
+  <div id="gigante" class="gigante">Maior que o viewport</div>
+  <div class="topo"></div>
+  <script>
+    window.clicks = 0
+    document.getElementById('save').addEventListener('click', () => { window.clicks++ })
+  </script>
+</body>
+</html>

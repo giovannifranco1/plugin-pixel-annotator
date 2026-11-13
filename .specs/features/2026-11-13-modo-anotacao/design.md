@@ -152,6 +152,7 @@ inactive ──toggle──▶ active ──clique──▶ editing ──confir
 - Lista estilo quest log, fixa na lateral direita, visível sempre que o modo está ativo (PAIN-01).
 - Item: `#N`, ícone da categoria (📱/📟/🖥️), `390px`, `pathname+search+hash`, primeiros 60 caracteres da nota.
 - Ações por item: clicar → `scrollIntoView({ block: 'center' })` + destaque temporário; se `resolveElement` retornar `null` → aviso "elemento não encontrado nesta tela" (PAIN-02). Editar (PAIN-03). Excluir (PAIN-04, numeração não muda).
+- **Recolhível** (decisão do Execute, 2026-11-13): botão ▾/▴ no cabeçalho deixa só a barra "PxA · Anotações (N)" no canto inferior direito. Ao ativar o modo com `innerWidth < 768` o painel já abre recolhido. Motivo: o E2E em 390px mostrou que o painel aberto (320px) cobria quase toda a página e impedia anotar (ANOT-04) justamente no caso mobile. Continua visível, então PAIN-01 se mantém.
 - Rodapé: "Exportar .zip", "Copiar markdown", "Limpar tudo" (com `confirm` interno no painel) — desabilitados com 0 anotações (PAIN-05, EXPO-05).
 - Estado vazio com instrução de uso (PAIN-05).
 
@@ -394,7 +395,7 @@ Regras:
 | Sprites dos marcadores | CSS puro (box-shadow pixelado) com número | — |
 | Firefox: `beforeunload` do content script não mostra o aviso | Mover o listener para o probe (main world), ligado/desligado por CustomEvent `pxa:dirty` | Se nem no main world funcionar → registrar em STATE.md como limitação do Firefox |
 | Firefox: `world: 'MAIN'` indisponível | COMP-04 (sem componente) e registrar em CONCERNS.md | Se o dev quiser componente no Firefox |
-| Posição do painel | Lateral direita, 320px, recolhível só pelo toggle do modo | — |
+| Posição do painel | Lateral direita, 320px. **Atualizado no Execute:** recolhível pelo botão ▾/▴ do cabeçalho; abaixo de 768px abre recolhido (barra com o contador no rodapé direito) | — |
 | Atributos de teste no seletor | `data-testid`, `data-test`, `data-cy`, `data-qa`, `name` | — |
 
 ---
