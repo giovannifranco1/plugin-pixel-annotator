@@ -14,7 +14,7 @@ button {
 button:hover:not(:disabled) { background: #ffe1ec; }
 button:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: none; }
 button:disabled { opacity: .45; cursor: not-allowed; }
-button:focus-visible, textarea:focus-visible, .pxa-item-main:focus-visible { outline: 2px dashed #ff3e7f; outline-offset: 2px; }
+button:focus-visible, .pxa-item-main:focus-visible { outline: 2px dashed #ff3e7f; outline-offset: 2px; }
 
 .pxa-outline {
   position: fixed; border: 2px dashed #ff3e7f; background: rgba(255, 62, 127, .08);
@@ -40,8 +40,9 @@ button:focus-visible, textarea:focus-visible, .pxa-item-main:focus-visible { out
 }
 .pxa-editor textarea {
   grid-column: 1 / -1; resize: vertical; min-height: 56px; padding: 6px;
-  font: inherit; color: #1a1226; background: #fff; border: 2px solid #1a1226;
+  font: inherit; color: #1a1226; background: #fff; border: 2px solid #1a1226; outline: none;
 }
+.pxa-editor textarea:focus { border-color: #ff3e7f; }
 .pxa-editor .pxa-hint { align-self: center; color: #5b5266; }
 .pxa-editor button[type="submit"] { background: #ff3e7f; color: #fff; }
 

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clientes · Painel</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif; color: #1f2430; background: #f4f6fb; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; background: #fff; border-bottom: 1px solid #e3e7f0; }
+    .logo { font-weight: 700; letter-spacing: -.2px; }
+    .logo span { color: #6c5ce7; }
+    .nav { display: flex; gap: 18px; color: #5b6275; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: #6c5ce7; }
+    main { max-width: 1040px; padding: 28px; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    h1 { margin: 0; font-size: 26px; }
+    .btn { padding: 9px 16px; border: 0; border-radius: 8px; background: #6c5ce7; color: #fff; font-weight: 600; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat { padding: 16px; background: #fff; border: 1px solid #e3e7f0; border-radius: 12px; }
+    .stat b { display: block; font-size: 24px; }
+    .stat small { color: #5b6275; }
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(220px, 1fr)); gap: 16px; }
+    .cliente-card { padding: 16px; background: #fff; border: 1px solid #e3e7f0; border-radius: 12px; }
+    .cliente-card h3 { margin: 0 0 4px; font-size: 16px; }
+    .cliente-card p { margin: 0 0 14px; color: #5b6275; font-size: 13px; }
+    .card-footer { display: flex; gap: 8px; width: 240px; }
+    .card-footer button { flex: 1; padding: 7px 10px; border: 1px solid #d5d9e4; border-radius: 6px; background: #fff; }
+    @media (max-width: 767px) {
+      .nav { display: none; }
+      main { padding: 16px; }
+      .stats, .cards { grid-template-columns: 1fr; }
+      h1 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="./demo.js"></script>
+</body>
+</html>

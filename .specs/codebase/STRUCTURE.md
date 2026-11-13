@@ -22,11 +22,13 @@ pixel-annotator/
 │   ├── selector.ts  viewport.ts  css-filter.ts  outer-html.ts  crop.ts  resolve.ts
 │   ├── markdown.ts  export-names.ts  capture-queue.ts  component-detect.ts
 ├── public/icon/                  # ícones pixel 16/32/48/128 (gerados por scripts/gen-icons.mjs)
-├── scripts/                      # check-manifest.mjs (PLAT-01), gen-icons.mjs
+├── media/                        # imagens do README: icon.png (256) e prints (npm run screenshots)
+├── scripts/                      # check-manifest.mjs (PLAT-01), gen-icons.mjs, screenshots/ (prints do README)
 ├── tests/
 │   ├── unit/                     # Vitest (+ fixtures/annotations.ts, __snapshots__)
-│   └── e2e/                      # Playwright: harness.ts, *.spec.ts, fixtures/ (html, react, vue, spa)
+│   └── e2e/                      # Playwright: harness.ts, *.spec.ts, fixtures/ (html, react, vue, spa, demo)
 ├── .specs/
-├── wxt.config.ts  vitest.config.ts  playwright.config.ts  tsconfig.json
+├── README.md
+├── wxt.config.ts  vitest.config.ts  playwright.config.ts  playwright.screenshots.config.ts  tsconfig.json
 └── .output/                      # builds (ignorado): chrome-mv3, firefox-mv3, chrome-mv3-e2e
 ```

@@ -46,4 +46,7 @@ function png(size) {
 
 mkdirSync('public/icon', { recursive: true })
 for (const size of [16, 32, 48, 128]) writeFileSync(`public/icon/${size}.png`, png(size))
-console.log('ícones gerados em public/icon/')
+// Versão grande para o README (escala inteira 16×, continua nítida).
+mkdirSync('media', { recursive: true })
+writeFileSync('media/icon.png', png(256))
+console.log('ícones gerados em public/icon/ e media/icon.png')
