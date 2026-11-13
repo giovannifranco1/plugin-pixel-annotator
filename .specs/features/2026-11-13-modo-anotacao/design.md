@@ -96,10 +96,12 @@ Projeto greenfield: não existe código. O reuso vem de bibliotecas.
 
 - **Propósito**: alternar o modo na aba, injetar sob demanda e fotografar a aba.
 - **Interface (mensagens recebidas)**:
-  - `browser.action.onClicked(tab)` → `toggle(tabId)`:
-    1. tenta `tabs.sendMessage(tabId, { type: 'pxa:toggle' })`;
-    2. se não houver receptor: `scripting.executeScript({ files: ['/content-scripts/annotator.js'] })` + `executeScript({ files: ['/component-probe.js'], world: 'MAIN' })` e reenvia `pxa:toggle`;
-    3. se a injeção lançar erro: `action.setBadgeText({ tabId, text: '!' })` + `action.setTitle({ tabId, title: 'PxA não pode anotar esta página' })` (PLAT-02); em sucesso, limpa badge e título da aba.
+  - `browser.action.onClicked(tab)` → `toggle(tabId)` (**atualizado no /simplify**):
+    1. `scripting.executeScript({ func: () => Boolean(window.__pxaAnnotator) })` pergunta ao isolated world se o annotator já existe;
+    2. se não existe: injeta em paralelo `files: ['/content-scripts/annotator.js']` e `files: ['/component-probe.js'], world: 'MAIN'` (a falha do probe é ignorada, COMP-04);
+    3. envia `tabs.sendMessage(tabId, { type: 'pxa:toggle' })`;
+    4. qualquer erro nos passos 1–3 → `action.setBadgeText({ tabId, text: '!' })` + `action.setTitle({ tabId, title: 'PxA não pode anotar esta página' })` (PLAT-02); em sucesso, limpa badge e título.
+    - Motivo da mudança: a versão anterior decidia reinjetar pelo texto do erro do `sendMessage` ("Receiving end does not exist"), que não é API estável entre navegadores.
   - `{ type: 'pxa:capture' }` → `Promise<{ dataUrl: string }>` via `CaptureQueue`.
 - **Dependências**: `lib/capture-queue.ts`.
 - **Injeção única**: o annotator define `window.__pxaAnnotator` ao carregar; se já existir, não registra nada de novo (caso limite "aba já injetada"). O passo 1 já evita a reinjeção.

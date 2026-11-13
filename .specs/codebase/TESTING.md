@@ -1,6 +1,29 @@
-# Testes (planejado)
+# Testes
 
-- **Unit (Vitest):** toda lógica pura em `lib/` — geração de seletor, classificação de breakpoint, filtro de CSS, montagem do markdown, nomes de arquivos do zip. Nome do teste referencia ID do requisito (ex: `CAPT-03 classifica 390px como mobile`).
-- **E2E (Playwright, Chromium):** página fixture local (HTML + app React e Vue mínimos) → ativar modo → anotar → exportar → validar conteúdo do zip.
-- **Firefox:** verificação manual via `wxt -b firefox` até existir automação viável.
-- Comandos: `npm test` (unit), `npm run test:e2e` — criados no scaffold.
+| Comando | O que roda |
+|---|---|
+| `npm test` | Unit (Vitest + happy-dom): 22 arquivos, 120 testes |
+| `npm run test:e2e` | `wxt build --mode e2e` + Playwright no Chromium: 27 testes |
+| `npm run compile` | `tsc --noEmit` (inclui os testes) |
+| `npm run check:manifest` | Builds de produção: MV3, só `activeTab` + `scripting`, sem host permissions nem content scripts (PLAT-01) |
+
+**Gate full** (antes de commit): `npm run compile && npm test && npm run build && npm run build:firefox && npm run check:manifest && npm run test:e2e`.
+
+## Padrões
+
+- **Nome do teste começa pelo ID do requisito** (ex: `CAPT-03 breakpoint nas fronteiras`, `PAIN-06 SPA: ...`).
+- **Unit:** toda lógica pura em `lib/`. Os módulos de UI são testados no happy-dom com o host real (`createHost()`). O background usa o `fakeBrowser` (`wxt/testing/fake-browser`) e `spy()` com tipo livre, porque as assinaturas do `@wxt-dev/browser` não descrevem os retornos.
+- **Listeners em `window`:** todo controller criado num teste é desativado no teardown. Senão o interceptor de um teste bloqueia os cliques do seguinte.
+- **E2E:** o build `--mode e2e` (`.output/chrome-mv3-e2e`) recebe `host_permissions: <all_urls>` e expõe `__pxaToggle` no service worker, porque o Playwright não clica no ícone da extensão. O build de produção nunca recebe isso. O harness (`tests/e2e/harness.ts`) traz os helpers `toggle`, `annotate`, `exportZip` (expande o painel se estiver recolhido), `pngSize`, `activeTabId` e os locators `pxa/panel/items/markers/editor/toast`, que atravessam o shadow root aberto.
+- **Fixtures E2E** (`tests/e2e/fixtures/`, servidas pelo Vite na porta 5174): HTML estático com CSS hostil e z-index alto, React 19 sem JSX, Vue 3 com `__file`, SPA com `pushState`.
+
+## Parallel-safe
+
+| Tipo | Parallel-safe |
+|---|---|
+| Unit | Sim |
+| E2E | Não (`workers: 1`, um navegador com extensão por teste) |
+
+## Firefox
+
+Verificação manual: `.specs/features/2026-11-13-modo-anotacao/manual-check.md`. O Firefox não está instalado na máquina de desenvolvimento e o Playwright não carrega extensões no Firefox.

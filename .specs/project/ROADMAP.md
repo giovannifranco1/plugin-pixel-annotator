@@ -1,7 +1,7 @@
 # Roadmap
 
 **Milestone atual:** M1 — MVP Modo Anotação
-**Status:** Planejamento
+**Status:** Implementado — aguardando verificação manual do dev (Firefox + fluxo real com o Claude Code)
 
 ---
 
@@ -12,7 +12,7 @@
 
 ### Features
 
-**Modo Anotação** - PLANEJADA (`.specs/features/2026-11-13-modo-anotacao/`)
+**Modo Anotação** - IMPLEMENTADA, verificação manual pendente (`.specs/features/2026-11-13-modo-anotacao/`, checklist em `manual-check.md`)
 
 - Ativar/desativar pelo ícone e marcar elementos com nota
 - Captura de contexto (URL, seletor, componente React/Vue, viewport/breakpoint, print, CSS)
