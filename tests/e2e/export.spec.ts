@@ -18,14 +18,15 @@ test('EXPO-01/EXPO-02 zip com feedback.md e shots/01.png, 02.png', async ({ page
   expect(md).toContain('```html\n<button id="save"')
 })
 
-test('EXPO-03 copiar markdown sem links de imagem', async ({ page, context }) => {
+test('EXPO-03 copiar markdown compacto', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE })
   await pxa(page).getByRole('button', { name: 'Copiar markdown' }).click()
   await expect(toast(page)).toHaveText('Markdown copiado')
   const text = await page.evaluate(() => navigator.clipboard.readText())
-  expect(text).toContain('# Feedback PxA')
-  expect(text).not.toContain('](shots/')
-  expect(text).toContain('(print disponível no .zip)')
+  expect(text).toContain('# PxA · localhost:5174 · 2 ajustes visuais')
+  expect(text).toContain('- **#1** botão\n  🖥️ 1280px `xl` · `/index.html` · `#save`')
+  expect(text).not.toContain('**CSS relevante:**')
+  expect(text.split('\n').length).toBeLessThanOrEqual(8)
 })
 
 test('EXPO-04 após exportar, painel mantém as anotações', async ({ page }) => {

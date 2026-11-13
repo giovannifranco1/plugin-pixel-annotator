@@ -47,13 +47,14 @@ describe('exporter', () => {
     expect(toast()).toBe('Zip exportado')
   })
 
-  test('EXPO-03 copyMarkdown escreve markdown sem links, mostra confirmação e não limpa dirty', async () => {
+  test('EXPO-03 copyMarkdown escreve a versão compacta, mostra confirmação e não limpa dirty', async () => {
     const writeText = vi.fn(async (_text: string) => {})
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
     await copyMarkdown(ui, store)
     const md = writeText.mock.calls[0]![0]
-    expect(md).not.toContain('](shots/')
-    expect(md).toContain('(print disponível no .zip)')
+    expect(md).toContain('# PxA · localhost')
+    expect(md).toContain('- **#1** botões saindo pra fora do card')
+    expect(md).not.toContain('**CSS relevante:**')
     expect(toast()).toBe('Markdown copiado')
     expect(store.isDirty()).toBe(true)
   })

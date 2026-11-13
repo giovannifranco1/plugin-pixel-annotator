@@ -46,14 +46,12 @@ function componentLines(a: Annotation): string[] {
   return lines
 }
 
-function printLine(a: Annotation, imageLinks: boolean): string {
+function printLine(a: Annotation): string {
   if (!a.shot) return '- **Print:** indisponível'
-  const suffix = a.shotPartial ? ' (print parcial)' : ''
-  if (!imageLinks) return `- **Print:** (print disponível no .zip)${suffix}`
-  return `- **Print:** ![#${a.number}](${shotName(a.number)})${suffix}`
+  return `- **Print:** ![#${a.number}](${shotName(a.number)})${a.shotPartial ? ' (print parcial)' : ''}`
 }
 
-function section(a: Annotation, imageLinks: boolean): string {
+function section(a: Annotation): string {
   const v = a.viewport
   const css = compactCss(a.css).map(([p, val]) => `${p}: ${val};`).join('\n')
   const htmlTitle = a.outerHtmlTruncated
@@ -65,7 +63,7 @@ function section(a: Annotation, imageLinks: boolean): string {
     ...componentLines(a),
     `- **Seletor:** ${inlineCode(a.selector)}`,
     `- **Viewport:** ${v.width}×${v.height} · DPR ${v.dpr} · ${v.orientation}`,
-    printLine(a, imageLinks),
+    printLine(a),
     '',
     '**Nota:**',
     '',
@@ -83,8 +81,8 @@ function section(a: Annotation, imageLinks: boolean): string {
   ].join('\n')
 }
 
-/** feedback.md do export (EXPO-02). `imageLinks: false` é a variante do "Copiar markdown" (EXPO-03). */
-export function renderMarkdown(annotations: readonly Annotation[], meta: MarkdownMeta, opts: { imageLinks: boolean }): string {
+/** feedback.md completo do export .zip (EXPO-02). */
+export function renderMarkdown(annotations: readonly Annotation[], meta: MarkdownMeta): string {
   const header = [
     `# Feedback PxA — ${meta.origin}`,
     '',
@@ -96,5 +94,25 @@ export function renderMarkdown(annotations: readonly Annotation[], meta: Markdow
     '',
     '',
   ].join('\n')
-  return header + annotations.map((a) => section(a, opts.imageLinks)).join('\n\n') + '\n'
+  return header + annotations.map(section).join('\n\n') + '\n'
+}
+
+/**
+ * Versão compacta do "Copiar markdown" (EXPO-03): 2 linhas por anotação, só o que localiza o
+ * problema (nota, tela, rota, componente/arquivo e seletor). CSS, HTML e prints ficam no .zip.
+ */
+export function renderCompactMarkdown(annotations: readonly Annotation[], meta: Pick<MarkdownMeta, 'origin'>): string {
+  const n = annotations.length
+  const lines = [`# PxA · ${meta.origin} · ${n} ${n === 1 ? 'ajuste visual' : 'ajustes visuais'}`, '']
+  for (const a of annotations) {
+    const v = a.viewport
+    const where = [`${CATEGORY_ICON[v.category]} ${v.width}px ${inlineCode(v.breakpoint)}`, inlineCode(a.path)]
+    if (a.component) {
+      const file = a.component.file ? ` ${inlineCode(a.component.line ? `${a.component.file}:${a.component.line}` : a.component.file)}` : ''
+      where.push(`${inlineCode(a.component.name)}${file}`)
+    }
+    where.push(inlineCode(a.selector))
+    lines.push(`- **#${a.number}** ${a.note.split('\n').join('\n  ')}`, `  ${where.join(' · ')}`)
+  }
+  return lines.join('\n') + '\n'
 }

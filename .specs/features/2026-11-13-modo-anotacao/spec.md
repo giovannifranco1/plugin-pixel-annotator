@@ -123,7 +123,7 @@ Quando o dev front pede ajuste visual ao Claude, gasta tempo descrevendo qual el
 
 1. QUANDO o dev clica em "Exportar .zip" ENTÃO o sistema DEVE baixar `pxa-feedback-YYYY-MM-DD-HHmm.zip` contendo `feedback.md` e `shots/NN.png` (NN = número da anotação com 2 dígitos). (EXPO-01)
 2. QUANDO o `feedback.md` é gerado ENTÃO DEVE conter um cabeçalho (origem, data/hora, total de anotações, instrução curta para o Claude) e uma seção por anotação com: número, categoria de tela + largura px + breakpoint, caminho, componente/arquivo (se houver), seletor, nota, CSS relevante, HTML em bloco de código e link relativo para o print. (EXPO-02)
-3. QUANDO o dev clica em "Copiar markdown" ENTÃO o sistema DEVE copiar o mesmo `feedback.md` para a área de transferência, trocando cada link de imagem por `(print disponível no .zip)`, e mostrar confirmação. (EXPO-03)
+3. QUANDO o dev clica em "Copiar markdown" ENTÃO o sistema DEVE copiar para a área de transferência uma versão **compacta** (cabeçalho de 1 linha com origem e total; por anotação 2 linhas: número + nota, e categoria + largura + breakpoint + caminho + componente/arquivo, se houver, + seletor; sem CSS, HTML, viewport detalhado nem print) e mostrar confirmação. (EXPO-03) *Revisado a pedido do dev em 2026-11-13: o feedback completo vai só no `.zip`.*
 4. QUANDO o export é gerado ENTÃO as anotações DEVEM permanecer na sessão (exportar não apaga). (EXPO-04)
 5. QUANDO o dev clica em "Limpar tudo" e confirma ENTÃO o sistema DEVE apagar todas as anotações e marcadores da aba. (EXPO-05)
 

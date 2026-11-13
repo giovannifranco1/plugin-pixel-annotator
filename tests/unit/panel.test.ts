@@ -30,7 +30,10 @@ describe('panel', () => {
     const items = $$('li.pxa-item')
     expect(items).toHaveLength(2)
     expect(items[0]!.textContent).toContain('#1')
-    expect(items[0]!.textContent).toContain('📱')
+    const cat = items[0]!.querySelector('.pxa-cat')!
+    expect(cat.getAttribute('title')).toBe('mobile')
+    expect(cat.querySelector('svg[width="12"]')).not.toBeNull()
+    expect(items[0]!.textContent).not.toMatch(/📱|📟|🖥/)
     expect(items[0]!.textContent).toContain('390px')
     expect(items[0]!.textContent).toContain('/dashboard?tab=2')
     expect(items[0]!.textContent).toContain('primeira')
@@ -55,6 +58,33 @@ describe('panel', () => {
     expect(actions.onEdit).toHaveBeenCalledWith(a.id)
     button('Excluir').click()
     expect(actions.onDelete).toHaveBeenCalledWith(a.id)
+  })
+
+  test('PAIN-03/PAIN-04 editar e excluir usam ícones pixel art, não emoji', () => {
+    store.add(draft())
+    for (const name of ['Editar', 'Excluir']) {
+      const b = button(name)
+      expect(b.querySelector('svg[shape-rendering="crispEdges"][width="12"]'), name).not.toBeNull()
+      expect(b.textContent).toBe('')
+      expect(b.title).toContain(name)
+    }
+  })
+
+  test('EXPO-01 exportar .zip fica no cabeçalho como ícone; rodapé só com copiar e limpar', () => {
+    store.add(draft())
+    const exp = $('header')!.querySelector<HTMLButtonElement>('button[aria-label="Exportar .zip"]')!
+    expect(exp.querySelector('svg[shape-rendering="crispEdges"]')).not.toBeNull()
+    expect(exp.title).toBe('Exportar .zip')
+    exp.click()
+    expect(actions.onExportZip).toHaveBeenCalled()
+    expect(Array.from($('footer')!.querySelectorAll('button')).map((b) => b.textContent)).toEqual(['Limpar tudo', 'Copiar markdown'])
+    expect($('footer .pxa-primary')!.textContent).toBe('Copiar markdown')
+  })
+
+  test('EXPO-05 confirmação no singular com 1 anotação', () => {
+    store.add(draft())
+    button('Limpar tudo').click()
+    expect($('.pxa-confirm')!.textContent).toBe('Apagar 1 anotação?')
   })
 
   test('PAIN-05 vazio mostra instrução e desabilita exportar/copiar/limpar', () => {

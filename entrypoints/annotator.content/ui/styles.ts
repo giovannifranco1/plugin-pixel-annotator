@@ -54,7 +54,9 @@ button:focus-visible, textarea:focus-visible, .pxa-item-main:focus-visible { out
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 6px 6px 6px 10px; background: #1a1226; color: #fff; font-weight: 700; letter-spacing: .5px;
 }
-.pxa-panel header .pxa-collapse { padding: 0 6px; background: #fff; box-shadow: none; }
+.pxa-panel .pxa-title { flex: 1; }
+.pxa-panel header .pxa-head-btn { display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 4px; background: #fff; box-shadow: none; }
+.pxa-panel header .pxa-head-btn:hover:not(:disabled) { background: #ffe1ec; }
 .pxa-panel.pxa-collapsed { top: auto; width: auto; max-width: calc(100vw - 24px); }
 .pxa-panel.pxa-collapsed ol, .pxa-panel.pxa-collapsed footer { display: none; }
 .pxa-panel ol { list-style: none; margin: 0; padding: 6px; overflow-y: auto; flex: 1; }
@@ -66,9 +68,18 @@ button:focus-visible, textarea:focus-visible, .pxa-item-main:focus-visible { out
 .pxa-item-meta { display: block; font-weight: 700; }
 .pxa-item-path { display: block; color: #5b5266; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pxa-item-note { display: block; overflow-wrap: anywhere; }
-.pxa-item button.pxa-icon { padding: 2px 4px; box-shadow: none; }
+.pxa-item button.pxa-icon {
+  display: grid; place-items: center; padding: 3px;
+  background: transparent; border: 0; box-shadow: none;
+}
+.pxa-item button.pxa-icon:hover:not(:disabled) { background: #ffe1ec; }
+.pxa-item button.pxa-danger:hover:not(:disabled) { background: #ffd0d8; }
+.pxa-item button.pxa-icon:active:not(:disabled) { transform: none; }
+svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; }
+.pxa-cat { display: inline-block; vertical-align: -1px; }
+.pxa-cat svg { display: inline-block; }
 .pxa-empty { margin: 0; padding: 16px 12px; color: #5b5266; }
-.pxa-panel footer { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border-top: 2px solid #1a1226; }
+.pxa-panel footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; padding: 8px; border-top: 2px solid #1a1226; }
 .pxa-panel footer .pxa-primary { background: #ff3e7f; color: #fff; }
 .pxa-confirm { width: 100%; font-weight: 700; }
 

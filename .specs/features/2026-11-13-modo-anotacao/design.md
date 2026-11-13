@@ -152,10 +152,11 @@ inactive ──toggle──▶ active ──clique──▶ editing ──confir
 ### Panel — `annotator.content/ui/panel.ts`
 
 - Lista estilo quest log, fixa na lateral direita, visível sempre que o modo está ativo (PAIN-01).
-- Item: `#N`, ícone da categoria (📱/📟/🖥️), `390px`, `pathname+search+hash`, primeiros 60 caracteres da nota.
-- Ações por item: clicar → `scrollIntoView({ block: 'center' })` + destaque temporário; se `resolveElement` retornar `null` → aviso "elemento não encontrado nesta tela" (PAIN-02). Editar (PAIN-03). Excluir (PAIN-04, numeração não muda).
+- Item: `#N`, ícone pixel art da categoria (celular/tablet/monitor, tela na cor do marcador; os emojis 📱/📟/🖥️ ficam só no `feedback.md`), `390px`, `pathname+search+hash`, primeiros 60 caracteres da nota.
+- Ações por item (ícones pixel art 12px: lápis e lixeira): clicar → `scrollIntoView({ block: 'center' })` + destaque temporário; se `resolveElement` retornar `null` → aviso "elemento não encontrado nesta tela" (PAIN-02). Editar (PAIN-03). Excluir (PAIN-04, numeração não muda).
 - **Recolhível** (decisão do Execute, 2026-11-13): botão ▾/▴ no cabeçalho deixa só a barra "PxA · Anotações (N)" no canto inferior direito. Ao ativar o modo com `innerWidth < 768` o painel já abre recolhido. Motivo: o E2E em 390px mostrou que o painel aberto (320px) cobria quase toda a página e impedia anotar (ANOT-04) justamente no caso mobile. Continua visível, então PAIN-01 se mantém.
-- Rodapé: "Exportar .zip", "Copiar markdown", "Limpar tudo" (com `confirm` interno no painel) — desabilitados com 0 anotações (PAIN-05, EXPO-05).
+- Cabeçalho: título com contador, botão-ícone **Exportar .zip** (download pixel art; visível também com o painel recolhido) e ▾/▴ para recolher.
+- Rodapé: "Limpar tudo" à esquerda e "Copiar markdown" (principal) à direita (com confirmação interna) — todos os botões de export desabilitados com 0 anotações (PAIN-05, EXPO-05). *Ajuste de UI pedido pelo dev em 2026-11-13.*
 - Estado vazio com instrução de uso (PAIN-05).
 
 ### AnnotationStore — `lib/store.ts`
@@ -356,7 +357,16 @@ padding: 8px;
 Regras:
 - Linha de "Componente/Arquivo" omitida quando `component === null`; "Arquivo" omitido sem `file`.
 - Print parcial → sufixo ` (print parcial)`; sem print → `**Print:** indisponível`.
-- "Copiar markdown" troca o link por `**Print:** (print disponível no .zip)` (EXPO-03).
+- "Copiar markdown" usa `renderCompactMarkdown` (EXPO-03, revisado em 2026-11-13 a pedido do dev):
+
+```markdown
+# PxA · localhost:3000 · 2 ajustes visuais
+
+- **#1** botões saindo pra fora do card
+  📱 390px `base` · `/dashboard?tab=2` · `ClienteCard` `src/components/ClienteCard.tsx:42` · `[data-testid="cliente-card"] > div.card-footer`
+- **#2** padding maior em cima
+  🖥️ 1440px `xl` · `/dashboard` · `h1.page-title`
+```
 - **Escape** (caso limite markdown/crases): nota, CSS e HTML vão em blocos cercados com cerca de crases de tamanho `max(3, maior sequência de crases no conteúdo + 1)`. Seletor/caminho inline usam crases com a mesma regra.
 - "(truncado em 2.000 caracteres)" só aparece quando `outerHtmlTruncated`.
 

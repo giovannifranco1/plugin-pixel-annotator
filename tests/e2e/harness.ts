@@ -68,8 +68,6 @@ export async function annotate(page: Page, selector: string, note: string) {
 export async function exportZip(page: Page) {
   const { readFile } = await import('node:fs/promises')
   const { unzipSync, strFromU8 } = await import('fflate')
-  const expand = pxa(page).getByRole('button', { name: 'Expandir painel' })
-  if (await expand.isVisible()) await expand.click() // painel recolhido (mobile): o dev expande para exportar
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     pxa(page).getByRole('button', { name: 'Exportar .zip' }).click(),
