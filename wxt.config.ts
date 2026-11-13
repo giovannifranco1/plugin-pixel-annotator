@@ -1,0 +1,18 @@
+import { defineConfig } from 'wxt'
+
+export default defineConfig({
+  // WXT 0.21 gera MV2 para Firefox por padrão; a spec exige MV3 nos dois.
+  manifestVersion: 3,
+  manifest: ({ browser, mode }) => ({
+    name: 'PixelAnnotator',
+    short_name: 'PxA',
+    description: 'Anote elementos da página e exporte feedback para o Claude Code.',
+    permissions: ['activeTab', 'scripting'],
+    // Só o build de E2E ganha host permission (Playwright não clica no ícone, então não há activeTab).
+    ...(mode === 'e2e' ? { host_permissions: ['<all_urls>'] } : {}),
+    action: { default_title: 'PixelAnnotator' },
+    ...(browser === 'firefox'
+      ? { browser_specific_settings: { gecko: { id: 'pxa@nanoincub.dev', strict_min_version: '128.0' } } }
+      : { minimum_chrome_version: '95' }),
+  }),
+})
