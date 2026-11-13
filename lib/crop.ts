@@ -1,6 +1,6 @@
 import type { Rect } from './types'
 
-export const SHOT_MARGIN = 16
+const SHOT_MARGIN = 16
 
 export function isFullyVisible(rect: Rect, vw: number, vh: number): boolean {
   return rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= vw && rect.y + rect.height <= vh
@@ -14,8 +14,9 @@ export interface CropPlan {
 }
 
 /** Recorte do print (CAPT-07/08): margem em px CSS, limitado ao viewport, convertido para px da imagem. */
-export function planCrop(el: Rect, vw: number, vh: number, imageWidth: number, imageHeight: number, margin = SHOT_MARGIN): CropPlan {
+export function planCrop(el: Rect, vw: number, vh: number, imageWidth: number, imageHeight: number): CropPlan {
   const scale = imageWidth / vw
+  const margin = SHOT_MARGIN
   const x0 = Math.max(0, el.x - margin)
   const y0 = Math.max(0, el.y - margin)
   const x1 = Math.min(vw, el.x + el.width + margin)

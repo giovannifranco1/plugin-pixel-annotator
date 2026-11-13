@@ -40,7 +40,7 @@ function segment(el: Element, withNth: boolean): string {
   for (const attr of TEST_ATTRS) {
     const v = el.getAttribute(attr)
     if (v) {
-      s += `[${attr}="${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"]`
+      s += `[${attr}="${cssEscape(v)}"]`
       break
     }
   }

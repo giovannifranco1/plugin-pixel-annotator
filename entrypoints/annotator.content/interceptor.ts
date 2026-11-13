@@ -8,8 +8,8 @@ export interface InterceptorHandlers {
   onPick(el: Element): void
 }
 
-export function installInterceptor(ui: UiHost, h: InterceptorHandlers, win: Window = window): () => void {
-  const fromPxa = (ev: Event) => ui.isPxa(ev.target, ev.composedPath())
+export function installInterceptor(ui: UiHost, h: InterceptorHandlers): () => void {
+  const fromPxa = (ev: Event) => ui.isPxa(ev.composedPath())
   const pick = (ev: Event): Element | null => {
     const t = ev.target
     return t instanceof Element && !t.closest('[data-pxa-ignore]') ? t : null
@@ -24,10 +24,10 @@ export function installInterceptor(ui: UiHost, h: InterceptorHandlers, win: Wind
     }
   }
   const hover = (ev: Event) => h.onHover(fromPxa(ev) ? null : pick(ev))
-  for (const type of BLOCKED) win.addEventListener(type, block, { capture: true })
-  win.addEventListener('pointermove', hover, { capture: true, passive: true })
+  for (const type of BLOCKED) window.addEventListener(type, block, { capture: true })
+  window.addEventListener('pointermove', hover, { capture: true, passive: true })
   return () => {
-    for (const type of BLOCKED) win.removeEventListener(type, block, { capture: true })
-    win.removeEventListener('pointermove', hover, { capture: true })
+    for (const type of BLOCKED) window.removeEventListener(type, block, { capture: true })
+    window.removeEventListener('pointermove', hover, { capture: true })
   }
 }

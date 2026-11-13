@@ -3,16 +3,15 @@ import { CATEGORY_ICON } from './viewport'
 import { compactCss } from './css-filter'
 import { shotName } from './export-names'
 import { OUTER_HTML_LIMIT } from './outer-html'
+import { pad } from './format'
 
 export interface MarkdownMeta {
   origin: string
   generatedAt: Date
 }
 
-const pad2 = (n: number) => String(n).padStart(2, '0')
-
-export function formatDateTime(d: Date): string {
-  return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+function formatDateTime(d: Date): string {
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 function longestRun(text: string, ch: string): number {

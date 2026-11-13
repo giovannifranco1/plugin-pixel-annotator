@@ -1,5 +1,5 @@
 // Gera os ícones pixel art (alfinete 16×16) em public/icon/{16,32,48,128}.png sem dependências.
-import { deflateSync } from 'node:zlib'
+import { crc32, deflateSync } from 'node:zlib'
 import { writeFileSync, mkdirSync } from 'node:fs'
 
 const ART = [
@@ -22,8 +22,6 @@ const ART = [
 ]
 const COLORS = { '#': [26, 18, 38, 255], P: [255, 62, 127, 255], W: [255, 255, 255, 255], G: [140, 140, 160, 255], '.': [0, 0, 0, 0] }
 
-const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0 })
-const crc32 = (buf) => { let c = 0xffffffff; for (const b of buf) c = crcTable[(c ^ b) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0 }
 const chunk = (type, data) => {
   const len = Buffer.alloc(4); len.writeUInt32BE(data.length)
   const td = Buffer.concat([Buffer.from(type), data])

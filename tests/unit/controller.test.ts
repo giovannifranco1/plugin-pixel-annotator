@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { createController as create, type Controller, type ControllerDeps } from '@/entrypoints/annotator.content/controller'
+import { createController as create, type ControllerDeps } from '@/entrypoints/annotator.content/controller'
 import { createHost, type UiHost } from '@/entrypoints/annotator.content/ui/host'
 import { draft } from './fixtures/annotations'
 
 let ui: UiHost
-const created: Controller[] = []
+const created: Array<ReturnType<typeof create>> = []
 // Cada controller instala listeners em window: desativar no teardown para não vazar entre testes.
 const createController = (deps: ControllerDeps) => { const c = create(deps); created.push(c); return c }
 const capture = vi.fn(async (_el: Element, note: string) => draft({ note, selector: '#alvo', pathname: location.pathname }))

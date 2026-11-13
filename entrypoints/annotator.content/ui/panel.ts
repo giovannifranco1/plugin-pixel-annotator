@@ -1,4 +1,5 @@
 import type { UiHost } from './host'
+import { el } from './dom'
 import type { AnnotationStore } from '@/lib/store'
 import { CATEGORY_ICON } from '@/lib/viewport'
 
@@ -13,25 +14,27 @@ export interface PanelActions {
 
 const NOTE_PREVIEW = 60
 
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Partial<HTMLElementTagNameMap[K]> = {}, ...children: Array<Node | string>) {
-  const node = Object.assign(document.createElement(tag), props)
-  node.append(...children)
-  return node
-}
-
 /** Painel estilo quest log (PAIN-01..05, EXPO-05). */
 export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelActions) {
   const title = el('span', { className: 'pxa-title' })
-  const collapse = el('button', { type: 'button', className: 'pxa-icon pxa-collapse', onclick: () => setCollapsed(!collapsed) })
-  const header = el('header', {}, title, collapse)
+  const collapse = el('button', {
+    type: 'button',
+    className: 'pxa-icon pxa-collapse',
+    onclick: () => {
+      manual = true
+      setCollapsed(!collapsed)
+    },
+  })
   const list = el('ol')
   const footer = el('footer')
-  const panel = el('aside', { className: 'pxa-panel' }, header, list, footer)
+  const panel = el('aside', { className: 'pxa-panel' }, el('header', {}, title, collapse), list, footer)
   panel.setAttribute('aria-label', 'Anotações do PxA')
   panel.style.display = 'none'
   ui.layer.append(panel)
+  let visible = false
   let confirming = false
   let collapsed = false
+  let manual = false // o dev recolheu/expandiu à mão: a largura da tela deixa de decidir
 
   // Recolhido = só a barra com o contador, no rodapé da tela. Continua visível (PAIN-01) sem cobrir a página.
   function setCollapsed(value: boolean) {
@@ -44,57 +47,69 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
   setCollapsed(false)
 
   function renderFooter(count: number) {
-    footer.replaceChildren()
     if (confirming) {
-      const yes = el('button', { type: 'button', textContent: 'Sim', onclick: () => { confirming = false; actions.onClearAll(); render() } })
-      const no = el('button', { type: 'button', textContent: 'Não', onclick: () => { confirming = false; render() } })
-      footer.append(el('span', { className: 'pxa-confirm', textContent: `Apagar ${count} anotações?` }), yes, no)
+      footer.replaceChildren(
+        el('span', { className: 'pxa-confirm', textContent: `Apagar ${count} anotações?` }),
+        el('button', { type: 'button', textContent: 'Sim', onclick: () => { confirming = false; actions.onClearAll(); render() } }),
+        el('button', { type: 'button', textContent: 'Não', onclick: () => { confirming = false; render() } }),
+      )
       return
     }
     const empty = count === 0
-    footer.append(
+    footer.replaceChildren(
       el('button', { type: 'button', className: 'pxa-primary', textContent: 'Exportar .zip', disabled: empty, onclick: () => actions.onExportZip() }),
       el('button', { type: 'button', textContent: 'Copiar markdown', disabled: empty, onclick: () => actions.onCopyMarkdown() }),
       el('button', { type: 'button', textContent: 'Limpar tudo', disabled: empty, onclick: () => { confirming = true; render() } }),
     )
   }
 
+  function item(a: ReturnType<AnnotationStore['list']>[number]) {
+    const note = a.note.length > NOTE_PREVIEW ? `${a.note.slice(0, NOTE_PREVIEW)}…` : a.note
+    const main = el(
+      'button',
+      { type: 'button', className: 'pxa-item-main', title: 'Ir até o elemento', onclick: () => actions.onFocus(a.id) },
+      el('span', { className: 'pxa-item-meta', textContent: `#${a.number} ${CATEGORY_ICON[a.viewport.category]} ${a.viewport.width}px` }),
+      el('span', { className: 'pxa-item-path', textContent: a.path }),
+      el('span', { className: 'pxa-item-note', textContent: note }),
+    )
+    const edit = el('button', { type: 'button', className: 'pxa-icon', textContent: '✏️', onclick: () => actions.onEdit(a.id) })
+    edit.setAttribute('aria-label', `Editar anotação ${a.number}`)
+    const del = el('button', { type: 'button', className: 'pxa-icon', textContent: '🗑️', onclick: () => actions.onDelete(a.id) })
+    del.setAttribute('aria-label', `Excluir anotação ${a.number}`)
+    const li = el('li', { className: 'pxa-item' }, main, edit, del)
+    li.dataset.id = a.id
+    return li
+  }
+
   function render() {
+    if (!visible) return // oculto: show() renderiza ao voltar
     const items = store.list()
     title.textContent = `PxA · Anotações (${items.length})`
     if (items.length === 0) confirming = false
     list.replaceChildren(
       ...(items.length === 0
         ? [el('p', { className: 'pxa-empty', textContent: 'Clique em um elemento da página para anotar. Clique no ícone do PxA para sair.' })]
-        : items.map((a) => {
-            const note = a.note.length > NOTE_PREVIEW ? `${a.note.slice(0, NOTE_PREVIEW)}…` : a.note
-            const main = el(
-              'button',
-              { type: 'button', className: 'pxa-item-main', title: 'Ir até o elemento', onclick: () => actions.onFocus(a.id) },
-              el('span', { className: 'pxa-item-meta', textContent: `#${a.number} ${CATEGORY_ICON[a.viewport.category]} ${a.viewport.width}px` }),
-              el('span', { className: 'pxa-item-path', textContent: a.path }),
-              el('span', { className: 'pxa-item-note', textContent: note }),
-            )
-            const edit = el('button', { type: 'button', className: 'pxa-icon', textContent: '✏️', onclick: () => actions.onEdit(a.id) })
-            edit.setAttribute('aria-label', `Editar anotação ${a.number}`)
-            const del = el('button', { type: 'button', className: 'pxa-icon', textContent: '🗑️', onclick: () => actions.onDelete(a.id) })
-            del.setAttribute('aria-label', `Excluir anotação ${a.number}`)
-            const li = el('li', { className: 'pxa-item' }, main, edit, del)
-            li.dataset.id = a.id
-            return li
-          })),
+        : items.map(item)),
     )
     renderFooter(items.length)
   }
 
   store.subscribe(render)
-  render()
   return {
-    show() { panel.style.display = 'flex'; render() },
-    setCollapsed,
-    hide() { panel.style.display = 'none'; confirming = false },
-    render,
+    show() {
+      visible = true
+      manual = false
+      panel.style.display = 'flex'
+      render()
+    },
+    hide() {
+      visible = false
+      confirming = false
+      panel.style.display = 'none'
+    },
+    /** Recolhe em tela mobile e expande fora dela, até o dev decidir à mão. */
+    autoCollapse(mobile: boolean) {
+      if (!manual && mobile !== collapsed) setCollapsed(mobile)
+    },
   }
 }
-
-export type Panel = ReturnType<typeof createPanel>

@@ -1,4 +1,4 @@
-import { annotate, BASE, expect, exportZip, items, markers, pxa, test } from './harness'
+import { annotate, BASE, expect, exportZip, items, markers, pxa, test, toast } from './harness'
 
 test.beforeEach(async ({ page, toggle }) => {
   await page.goto(`${BASE}/index.html`)
@@ -21,7 +21,7 @@ test('EXPO-01/EXPO-02 zip com feedback.md e shots/01.png, 02.png', async ({ page
 test('EXPO-03 copiar markdown sem links de imagem', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE })
   await pxa(page).getByRole('button', { name: 'Copiar markdown' }).click()
-  await expect(pxa(page).locator('.pxa-toast')).toHaveText('Markdown copiado')
+  await expect(toast(page)).toHaveText('Markdown copiado')
   const text = await page.evaluate(() => navigator.clipboard.readText())
   expect(text).toContain('# Feedback PxA')
   expect(text).not.toContain('](shots/')
@@ -31,7 +31,7 @@ test('EXPO-03 copiar markdown sem links de imagem', async ({ page, context }) =>
 test('EXPO-04 após exportar, painel mantém as anotações', async ({ page }) => {
   await exportZip(page)
   await expect(items(page)).toHaveCount(2)
-  await expect(pxa(page).locator('.pxa-toast')).toHaveText('Zip exportado')
+  await expect(toast(page)).toHaveText('Zip exportado')
 })
 
 test('EXPO-05 limpar tudo + confirmar → painel vazio e sem marcadores', async ({ page }) => {

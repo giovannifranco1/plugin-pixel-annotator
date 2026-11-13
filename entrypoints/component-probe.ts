@@ -1,4 +1,5 @@
 import { detectComponent } from '@/lib/component-detect'
+import { PROBE_ATTR, PROBE_REQUEST, PROBE_RESPONSE } from '@/lib/messages'
 
 // Main world: enxerga as propriedades expando de React/Vue que o isolated world não vê.
 export default defineUnlistedScript(() => {
@@ -6,15 +7,16 @@ export default defineUnlistedScript(() => {
   if (w.__pxaProbe) return
   w.__pxaProbe = true
 
-  window.addEventListener('pxa:probe-request', (ev) => {
+  window.addEventListener(PROBE_REQUEST, (ev) => {
     let reqId = ''
+    let result = null
     try {
       reqId = String(JSON.parse(String((ev as CustomEvent).detail)).reqId)
-      const el = document.querySelector(`[data-pxa-probe="${CSS.escape(reqId)}"]`)
-      const result = el ? detectComponent(el) : null
-      window.dispatchEvent(new CustomEvent('pxa:probe-response', { detail: JSON.stringify({ reqId, result }) }))
+      const el = document.querySelector(`[${PROBE_ATTR}="${CSS.escape(reqId)}"]`)
+      result = el ? detectComponent(el) : null
     } catch {
-      if (reqId) window.dispatchEvent(new CustomEvent('pxa:probe-response', { detail: JSON.stringify({ reqId, result: null }) }))
+      // COMP-04: responde null; o cliente nunca vê erro
     }
+    if (reqId) window.dispatchEvent(new CustomEvent(PROBE_RESPONSE, { detail: JSON.stringify({ reqId, result }) }))
   })
 })

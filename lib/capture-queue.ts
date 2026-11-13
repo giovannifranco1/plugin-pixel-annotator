@@ -1,18 +1,15 @@
 /** Serializa capturas com intervalo mínimo (Chrome limita captureVisibleTab a 2 chamadas/s) sem perder pedidos. */
-export function createCaptureQueue<T>(
-  capture: () => Promise<T>,
-  minIntervalMs = 550,
-  now: () => number = () => Date.now(),
-  sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
-) {
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+
+export function createCaptureQueue<T>(capture: () => Promise<T>, minIntervalMs = 550) {
   let tail: Promise<unknown> = Promise.resolve()
   let last = -Infinity
   return {
     enqueue(): Promise<T> {
       const run = async () => {
-        const wait = last + minIntervalMs - now()
+        const wait = last + minIntervalMs - Date.now()
         if (wait > 0) await sleep(wait)
-        last = now()
+        last = Date.now()
         return capture()
       }
       const result = tail.then(run, run)

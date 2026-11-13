@@ -1,4 +1,4 @@
-import { annotate, BASE, expect, items, markers, panel, pxa, test } from './harness'
+import { annotate, BASE, editor, expect, items, markers, panel, pxa, test } from './harness'
 
 test.beforeEach(async ({ page, toggle }) => {
   await page.setViewportSize({ width: 1280, height: 720 })
@@ -39,7 +39,7 @@ test('ANOT-04 clique em button#save não incrementa window.clicks; clique no lin
   await page.locator('#save').click()
   expect(await page.evaluate(() => (window as any).clicks)).toBe(0)
   await expect(pxa(page).locator('.pxa-editor')).toBeVisible()
-  await pxa(page).locator('.pxa-editor textarea').press('Escape')
+  await editor(page).press('Escape')
   const url = page.url()
   await page.locator('#link').click()
   await page.waitForTimeout(300)
@@ -49,7 +49,7 @@ test('ANOT-04 clique em button#save não incrementa window.clicks; clique no lin
 
 test('ANOT-06 Esc e nota vazia não criam anotação', async ({ page }) => {
   await page.locator('#save').click()
-  const ta = pxa(page).locator('.pxa-editor textarea')
+  const ta = editor(page)
   await ta.fill('vou desistir')
   await ta.press('Escape')
   await expect(pxa(page).locator('.pxa-editor')).toHaveCount(0)

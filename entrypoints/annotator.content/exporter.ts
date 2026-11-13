@@ -1,4 +1,4 @@
-import { strToU8, zipSync } from 'fflate'
+import { strToU8, zipSync, type Zippable } from 'fflate'
 import type { AnnotationStore } from '@/lib/store'
 import { renderMarkdown } from '@/lib/markdown'
 import { shotName, zipName } from '@/lib/export-names'
@@ -9,10 +9,14 @@ const origin = () => location.host || location.origin
 
 export async function buildZip(store: AnnotationStore, now: Date, originLabel: string): Promise<Uint8Array> {
   const list = store.list()
-  const files: Record<string, Uint8Array> = {
+  const shots = await Promise.all(
+    list.flatMap((a) => (a.shot ? [a.shot.arrayBuffer().then((buf) => [shotName(a.number), new Uint8Array(buf)] as const)] : [])),
+  )
+  const files: Zippable = {
     'feedback.md': strToU8(renderMarkdown(list, { origin: originLabel, generatedAt: now }, { imageLinks: true })),
   }
-  for (const a of list) if (a.shot) files[shotName(a.number)] = new Uint8Array(await a.shot.arrayBuffer())
+  // PNG já é comprimido: guardar sem deflate evita travar a página à toa.
+  for (const [name, bytes] of shots) files[name] = [bytes, { level: 0 }]
   return zipSync(files)
 }
 

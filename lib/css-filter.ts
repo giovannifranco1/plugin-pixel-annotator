@@ -38,12 +38,14 @@ export function readStyle(style: CSSStyleDeclaration): Record<string, string> {
   return out
 }
 
+const sides = (name: (side: string) => string) => SIDES.map(name) as [string, ...string[]]
+
 const GROUPS: Array<[shorthand: string, longhands: [string, ...string[]]]> = [
-  ['margin', ['margin-top', 'margin-right', 'margin-bottom', 'margin-left']],
-  ['padding', ['padding-top', 'padding-right', 'padding-bottom', 'padding-left']],
-  ['border-width', ['border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width']],
-  ['border-style', ['border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style']],
-  ['border-color', ['border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color']],
+  ['margin', sides((s) => `margin-${s}`)],
+  ['padding', sides((s) => `padding-${s}`)],
+  ['border-width', sides((s) => `border-${s}-width`)],
+  ['border-style', sides((s) => `border-${s}-style`)],
+  ['border-color', sides((s) => `border-${s}-color`)],
 ]
 
 /** Junta os 4 lados em shorthand quando todos estão presentes e iguais, na posição do primeiro lado. */

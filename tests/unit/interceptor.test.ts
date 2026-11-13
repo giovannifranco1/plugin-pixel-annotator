@@ -63,10 +63,12 @@ describe('interceptor', () => {
     vi.spyOn(btn, 'getBoundingClientRect').mockReturnValue({ left: 10, top: 50, width: 120, height: 40, x: 10, y: 50, right: 130, bottom: 90, toJSON() {} } as DOMRect)
     const overlay = createOverlay(ui)
     overlay.highlight(btn)
+    overlay.update() // o tick desenha
     expect(ui.root.querySelector('.pxa-label')!.textContent).toBe('button 120×40')
     const box = ui.root.querySelector<HTMLElement>('.pxa-outline')!
     expect(box.style.width).toBe('120px')
     overlay.highlight(null)
+    overlay.update()
     expect(box.style.display).toBe('none')
   })
 

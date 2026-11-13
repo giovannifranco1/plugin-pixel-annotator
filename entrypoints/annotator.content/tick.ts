@@ -1,10 +1,10 @@
 /** Laço por frame enquanto o modo está ativo: reposiciona overlay e marcadores e percebe troca de rota. */
-export function startTick(fn: () => void, raf = requestAnimationFrame, caf = cancelAnimationFrame): () => void {
+export function startTick(fn: () => void): () => void {
   let id = 0
   const loop = () => {
     fn()
-    id = raf(loop)
+    id = requestAnimationFrame(loop)
   }
-  id = raf(loop)
-  return () => caf(id)
+  id = requestAnimationFrame(loop)
+  return () => cancelAnimationFrame(id)
 }

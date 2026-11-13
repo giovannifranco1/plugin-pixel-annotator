@@ -1,11 +1,10 @@
 import type { UiHost } from './host'
+import { el } from './dom'
 
 export function showToast(ui: UiHost, text: string, ms = 2500): void {
   ui.root.querySelector('.pxa-toast')?.remove()
-  const toast = document.createElement('div')
-  toast.className = 'pxa-toast'
+  const toast = el('div', { className: 'pxa-toast', textContent: text })
   toast.setAttribute('role', 'status')
-  toast.textContent = text
   ui.layer.append(toast)
   setTimeout(() => toast.remove(), ms)
 }

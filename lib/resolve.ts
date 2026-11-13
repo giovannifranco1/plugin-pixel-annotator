@@ -1,3 +1,5 @@
+import type { AnnotationStore } from './store'
+
 export interface Resolvable {
   selector: string
   pathname: string
@@ -17,4 +19,14 @@ export function resolveElement(target: Resolvable, ref: WeakRef<Element> | undef
   } catch {
     return null
   }
+}
+
+/** Resolve a anotação `id` na rota atual e memoriza o nó achado pelo seletor. */
+export function resolveAnnotation(store: AnnotationStore, id: string, pathname: string = location.pathname, root: ParentNode = document): Element | null {
+  const a = store.get(id)
+  if (!a) return null
+  const ref = store.refOf(id)
+  const el = resolveElement(a, ref, pathname, root)
+  if (el && el !== ref?.deref()) store.rememberRef(id, el)
+  return el
 }

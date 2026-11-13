@@ -89,6 +89,24 @@ describe('panel', () => {
     expect($('.pxa-panel')!.classList.contains('pxa-collapsed')).toBe(false)
   })
 
+  test('ANOT-04 autoCollapse segue a largura até o dev recolher/expandir à mão', () => {
+    const ui2 = createHost()
+    const p = createPanel(ui2, store, actions)
+    const cls = () => ui2.root.querySelector('.pxa-panel')!.classList
+    p.show()
+    p.autoCollapse(true)
+    expect(cls().contains('pxa-collapsed')).toBe(true)
+    p.autoCollapse(false)
+    expect(cls().contains('pxa-collapsed')).toBe(false)
+    ui2.root.querySelector<HTMLButtonElement>('button[aria-label="Recolher painel"]')!.click()
+    p.autoCollapse(false)
+    expect(cls().contains('pxa-collapsed')).toBe(true) // escolha manual vence
+    p.hide(); p.show()
+    p.autoCollapse(false)
+    expect(cls().contains('pxa-collapsed')).toBe(false) // reativar devolve o controle à largura
+    ui2.host.remove()
+  })
+
   test('PAIN-01 hide oculta o painel', () => {
     const ui2 = createHost()
     const p = createPanel(ui2, store, actions)

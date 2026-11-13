@@ -1,4 +1,4 @@
-import { annotate, BASE, expect, items, markers, pxa, test } from './harness'
+import { annotate, BASE, editor, expect, items, markers, pxa, test, toast } from './harness'
 
 test('PAIN-01..04 cria 3, edita a 2ª, exclui a 1ª → painel com #2 e #3 e nota atualizada', async ({ page, toggle }) => {
   await page.goto(`${BASE}/index.html`)
@@ -9,10 +9,9 @@ test('PAIN-01..04 cria 3, edita a 2ª, exclui a 1ª → painel com #2 e #3 e not
   await expect(items(page).first()).toContainText('#1')
   await expect(items(page).first()).toContainText('/index.html')
   await pxa(page).getByRole('button', { name: 'Editar anotação 2' }).click()
-  const ta = pxa(page).locator('.pxa-editor textarea')
-  await expect(ta).toHaveValue('segunda')
-  await ta.fill('segunda editada')
-  await ta.press('Enter')
+  await expect(editor(page)).toHaveValue('segunda')
+  await editor(page).fill('segunda editada')
+  await editor(page).press('Enter')
   await pxa(page).getByRole('button', { name: 'Excluir anotação 1' }).click()
   await expect(items(page)).toHaveCount(2)
   await expect(items(page).nth(0)).toContainText('#2')
@@ -31,7 +30,7 @@ test('PAIN-02 clicar no item rola até o elemento; removido mostra "elemento nã
   await expect(page.locator('#abaixo')).toBeInViewport()
   await page.evaluate(() => document.getElementById('abaixo')!.remove())
   await items(page).first().locator('.pxa-item-main').click()
-  await expect(pxa(page).locator('.pxa-toast')).toHaveText('elemento não encontrado nesta tela')
+  await expect(toast(page)).toHaveText('elemento não encontrado nesta tela')
 })
 
 test('PAIN-05 vazio desabilita export e mostra instrução', async ({ page, toggle }) => {

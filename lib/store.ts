@@ -45,9 +45,14 @@ export function createStore(now: () => Date = () => new Date(), uuid: () => stri
     list: (): readonly Annotation[] => items,
     get: (id: string): Annotation | undefined => items.find((a) => a.id === id),
     refOf: (id: string): WeakRef<Element> | undefined => refs.get(id),
+    /** Guarda o nó reencontrado pelo seletor para não buscar de novo a cada frame. */
+    rememberRef(id: string, element: Element): void {
+      if (items.some((a) => a.id === id)) refs.set(id, new WeakRef(element))
+    },
     /** Só o export .zip chama isto; copiar markdown não leva os prints. */
     markExported(): void {
       dirty = false
+      emit()
     },
     isDirty: (): boolean => dirty,
     subscribe(l: Listener): () => void {

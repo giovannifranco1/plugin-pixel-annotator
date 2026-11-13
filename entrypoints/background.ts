@@ -1,29 +1,33 @@
 import { createCaptureQueue } from '@/lib/capture-queue'
 import { ANNOTATOR_FILE, BLOCKED_TITLE, DEFAULT_TITLE, PROBE_FILE, type PxaMessage } from '@/lib/messages'
 
-const NO_RECEIVER = /Receiving end does not exist|Could not establish connection/i
+async function setBadge(tabId: number, text: string, title: string): Promise<void> {
+  await Promise.all([browser.action.setBadgeText({ tabId, text }), browser.action.setTitle({ tabId, title })])
+}
 
-/** Alterna o Modo Anotação na aba, injetando os scripts sob demanda na primeira vez (ANOT-01/02, PLAT-02). */
+/**
+ * Alterna o Modo Anotação na aba (ANOT-01/02). Pergunta ao isolated world se o annotator já existe
+ * e injeta annotator + probe só na primeira vez. Qualquer falha marca a aba como não anotável (PLAT-02).
+ */
 export async function toggle(tabId: number): Promise<void> {
-  const message: PxaMessage = { type: 'pxa:toggle' }
+  const target = { tabId }
   try {
-    await browser.tabs.sendMessage(tabId, message)
-  } catch (err) {
-    // Só reinjeta quando não há content script; qualquer outro erro não pode virar um segundo toggle.
-    if (!NO_RECEIVER.test(String((err as Error)?.message ?? err))) return
-    try {
-      await browser.scripting.executeScript({ target: { tabId }, files: [ANNOTATOR_FILE] })
-      // COMP-04: sem o probe a anotação sai sem componente, mas o modo funciona.
-      await browser.scripting.executeScript({ target: { tabId }, files: [PROBE_FILE], world: 'MAIN' }).catch(() => undefined)
-      await browser.tabs.sendMessage(tabId, message)
-    } catch {
-      await browser.action.setBadgeText({ tabId, text: '!' })
-      await browser.action.setTitle({ tabId, title: BLOCKED_TITLE })
-      return
+    const [check] = await browser.scripting.executeScript({
+      target,
+      func: () => Boolean((window as unknown as Record<string, unknown>).__pxaAnnotator),
+    })
+    if (!check?.result) {
+      await Promise.all([
+        browser.scripting.executeScript({ target, files: [ANNOTATOR_FILE] }),
+        // COMP-04: sem o probe a anotação sai sem componente, mas o modo funciona.
+        browser.scripting.executeScript({ target, files: [PROBE_FILE], world: 'MAIN' }).catch(() => undefined),
+      ])
     }
+    await browser.tabs.sendMessage(tabId, { type: 'pxa:toggle' } satisfies PxaMessage)
+  } catch {
+    return setBadge(tabId, '!', BLOCKED_TITLE)
   }
-  await browser.action.setBadgeText({ tabId, text: '' })
-  await browser.action.setTitle({ tabId, title: DEFAULT_TITLE })
+  await setBadge(tabId, '', DEFAULT_TITLE)
 }
 
 export default defineBackground(() => {

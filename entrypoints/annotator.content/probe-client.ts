@@ -1,19 +1,20 @@
 import type { ComponentInfo } from '@/lib/types'
+import { PROBE_ATTR, PROBE_REQUEST, PROBE_RESPONSE } from '@/lib/messages'
 
-export const PROBE_TIMEOUT_MS = 300
+const PROBE_TIMEOUT_MS = 300
 
 /**
  * Pede ao probe (main world) o componente React/Vue do elemento (COMP-01..04).
  * O elemento é apontado por um atributo temporário; os eventos levam JSON em string
  * (DOM e objetos não atravessam mundos com segurança no Firefox).
  */
-export function probeComponent(el: Element, win: Window = window, timeoutMs = PROBE_TIMEOUT_MS): Promise<ComponentInfo | null> {
+export function probeComponent(el: Element): Promise<ComponentInfo | null> {
   const reqId = Math.random().toString(36).slice(2)
   return new Promise((resolve) => {
     const done = (value: ComponentInfo | null) => {
-      win.removeEventListener('pxa:probe-response', onResponse)
+      window.removeEventListener(PROBE_RESPONSE, onResponse)
       clearTimeout(timer)
-      el.removeAttribute('data-pxa-probe')
+      el.removeAttribute(PROBE_ATTR)
       resolve(value)
     }
     const onResponse = (ev: Event) => {
@@ -24,9 +25,9 @@ export function probeComponent(el: Element, win: Window = window, timeoutMs = PR
         // resposta malformada: ignora e espera o timeout
       }
     }
-    const timer = setTimeout(() => done(null), timeoutMs)
-    win.addEventListener('pxa:probe-response', onResponse)
-    el.setAttribute('data-pxa-probe', reqId)
-    win.dispatchEvent(new CustomEvent('pxa:probe-request', { detail: JSON.stringify({ reqId }) }))
+    const timer = setTimeout(() => done(null), PROBE_TIMEOUT_MS)
+    window.addEventListener(PROBE_RESPONSE, onResponse)
+    el.setAttribute(PROBE_ATTR, reqId)
+    window.dispatchEvent(new CustomEvent(PROBE_REQUEST, { detail: JSON.stringify({ reqId }) }))
   })
 }

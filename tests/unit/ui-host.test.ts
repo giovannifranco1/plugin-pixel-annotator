@@ -31,8 +31,8 @@ describe('ui host', () => {
     let path: EventTarget[] = []
     inner.addEventListener('click', (e) => { path = e.composedPath() })
     inner.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }))
-    expect(ui.isPxa(inner, path)).toBe(true)
-    expect(ui.isPxa(document.body, [document.body, document.documentElement, document])).toBe(false)
+    expect(ui.isPxa(path)).toBe(true)
+    expect(ui.isPxa([document.body, document.documentElement, document])).toBe(false)
   })
 
   test('setHidden alterna visibility', () => {

@@ -29,11 +29,8 @@ export const test = base.extend<Fixtures>({
   toggle: async ({ sw }, use) => {
     await use(async (page) => {
       await page.bringToFront()
-      await sw.evaluate(async () => {
-        const chrome = (globalThis as any).chrome
-        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
-        await (globalThis as any).__pxaToggle(tab.id)
-      })
+      const tabId = await activeTabId(sw)
+      await sw.evaluate((id) => (globalThis as any).__pxaToggle(id), tabId)
     })
   },
 })
@@ -45,12 +42,23 @@ export const pxa = (page: Page) => page.locator('pxa-root')
 export const panel = (page: Page) => pxa(page).locator('.pxa-panel')
 export const items = (page: Page) => pxa(page).locator('li.pxa-item')
 export const markers = (page: Page) => pxa(page).locator('.pxa-marker')
+export const editor = (page: Page) => pxa(page).locator('.pxa-editor textarea')
+export const toast = (page: Page) => pxa(page).locator('.pxa-toast')
+
+/** Id da aba ativa, consultado no service worker. */
+export function activeTabId(sw: Worker): Promise<number> {
+  return sw.evaluate(async () => {
+    const chrome = (globalThis as any).chrome
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
+    return tab.id as number
+  })
+}
 
 /** Clica no elemento da página e salva uma nota no editor do PxA. */
 export async function annotate(page: Page, selector: string, note: string) {
   const before = await items(page).count()
   await page.locator(selector).first().click()
-  const ta = pxa(page).locator('.pxa-editor textarea')
+  const ta = editor(page)
   await ta.fill(note)
   await ta.press('Enter')
   await expect(items(page)).toHaveCount(before + 1)

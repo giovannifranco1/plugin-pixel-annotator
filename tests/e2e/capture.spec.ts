@@ -1,12 +1,13 @@
-import { annotate, BASE, expect, exportZip, pngSize, pxa, test } from './harness'
+import { annotate, BASE, editor, expect, exportZip, items, panel, pngSize, test } from './harness'
 
 test('CAPT-01/CAPT-03 categoria, largura e breakpoint em 390px e 1440px', async ({ page, toggle }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto(`${BASE}/index.html?tab=2#topo`)
   await toggle(page)
-  await expect(pxa(page).locator('.pxa-panel')).toHaveClass(/pxa-collapsed/) // não cobre a página no mobile
+  await expect(panel(page)).toHaveClass(/pxa-collapsed/) // não cobre a página no mobile
   await annotate(page, '#save', 'no mobile')
   await page.setViewportSize({ width: 1440, height: 900 })
+  await expect(panel(page)).not.toHaveClass(/pxa-collapsed/) // largura de desktop: painel volta a abrir
   await annotate(page, 'h1.page-title', 'no desktop')
   const { md } = await exportZip(page)
   expect(md).toContain('## #1 · 📱 mobile · 390px (`base`) · `/index.html?tab=2#topo`')
@@ -36,10 +37,9 @@ test('CAPT-08 rola até o elemento antes do print; elemento maior que o viewport
   await toggle(page)
   await page.locator('#abaixo').click()
   await page.evaluate(() => window.scrollTo(0, 0)) // elemento sai da tela antes de confirmar
-  const ta = pxa(page).locator('.pxa-editor textarea')
-  await ta.fill('abaixo da dobra')
-  await ta.press('Enter')
-  await expect(pxa(page).locator('li.pxa-item')).toHaveCount(1)
+  await editor(page).fill('abaixo da dobra')
+  await editor(page).press('Enter')
+  await expect(items(page)).toHaveCount(1)
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(1000)
   await annotate(page, '#gigante', 'gigante')
   const { files, md } = await exportZip(page)

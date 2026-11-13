@@ -1,5 +1,6 @@
 import { createStore, type AnnotationDraft, type AnnotationStore } from '@/lib/store'
-import { resolveElement } from '@/lib/resolve'
+import { resolveAnnotation } from '@/lib/resolve'
+import { categoryOf } from '@/lib/viewport'
 import { captureContext } from './capture'
 import { createDefaultStyle } from './default-style'
 import { copyMarkdown, exportZip } from './exporter'
@@ -22,12 +23,14 @@ export interface ControllerDeps {
 }
 
 const FOCUS_HIGHLIGHT_MS = 1500
-/** Abaixo disto (categoria mobile) o painel aberto cobriria a página: começa recolhido. */
-const COLLAPSE_BELOW = 768
+/** Painel aberto cobriria a página no mobile: recolhe sozinho nessa categoria de tela. */
+const isMobile = () => categoryOf(innerWidth) === 'mobile'
 
 /**
  * Máquina de estados do Modo Anotação (ANOT-01..08). Anotações vivem no store enquanto a aba
  * existir; desativar o modo só esconde a UI (ANOT-02).
+ * Os `if (state === X) state = 'active'` são compare-and-set: um callback tardio (captura ou
+ * editor fechado pelo toggle) não reativa o modo depois de desligado.
  */
 export function createController(deps: ControllerDeps = {}) {
   const ui = deps.ui ?? createHost()
@@ -38,46 +41,39 @@ export function createController(deps: ControllerDeps = {}) {
   const markers = createMarkers(ui, store)
 
   let state: ControllerState = 'inactive'
-  let uninstall: (() => void) | null = null
-  let stopTick: (() => void) | null = null
+  let teardown: Array<() => void> = []
   let editor: { close(): void } | null = null
   let focusTimer: ReturnType<typeof setTimeout> | undefined
 
-  const isOn = () => state !== 'inactive'
-
-  function resolve(id: string): Element | null {
-    const a = store.get(id)
-    return a ? resolveElement(a, store.refOf(id), location.pathname, document) : null
-  }
-
-  function closeEditor() {
+  /** Abre o editor de nota; `onSaved` decide o que fazer com a nota confirmada. */
+  function openEditor(anchor: DOMRect, initial: string | undefined, onSaved: (note: string) => void) {
     editor?.close()
-    editor = null
-  }
-
-  function onPick(el: Element) {
-    if (state !== 'active') return
     state = 'editing'
-    overlay.highlight(el)
     editor = openNoteEditor(ui, {
-      anchor: el.getBoundingClientRect(),
+      anchor,
+      initial,
       onCancel() {
         editor = null
         if (state === 'editing') state = 'active'
       },
       onSave(note) {
         editor = null
-        void save(el, note)
+        onSaved(note)
       },
     })
+  }
+
+  function onPick(el: Element) {
+    if (state !== 'active') return
+    overlay.highlight(el)
+    openEditor(el.getBoundingClientRect(), undefined, (note) => void save(el, note))
   }
 
   async function save(el: Element, note: string) {
     state = 'capturing'
     overlay.hide()
     try {
-      const draft = await capture(el, note)
-      store.add(draft, el)
+      store.add(await capture(el, note), el)
     } catch {
       showToast(ui, 'Falha ao anotar')
     } finally {
@@ -87,7 +83,7 @@ export function createController(deps: ControllerDeps = {}) {
 
   const panel = createPanel(ui, store, {
     onFocus(id) {
-      const el = resolve(id)
+      const el = resolveAnnotation(store, id)
       if (!el) return showToast(ui, 'elemento não encontrado nesta tela')
       el.scrollIntoView({ block: 'center', inline: 'nearest' })
       overlay.highlight(el)
@@ -99,22 +95,10 @@ export function createController(deps: ControllerDeps = {}) {
     onEdit(id) {
       const a = store.get(id)
       if (!a || state !== 'active') return
-      closeEditor()
-      const el = resolve(id)
-      const anchor = el?.getBoundingClientRect() ?? new DOMRect(Math.max(8, innerWidth - 680), 80, 0, 0)
-      state = 'editing'
-      editor = openNoteEditor(ui, {
-        anchor,
-        initial: a.note,
-        onCancel() {
-          editor = null
-          if (state === 'editing') state = 'active'
-        },
-        onSave(note) {
-          editor = null
-          store.updateNote(id, note)
-          if (state === 'editing') state = 'active'
-        },
+      const anchor = resolveAnnotation(store, id)?.getBoundingClientRect() ?? new DOMRect(Math.max(8, innerWidth - 680), 80, 0, 0)
+      openEditor(anchor, a.note, (note) => {
+        store.updateNote(id, note)
+        if (state === 'editing') state = 'active'
       })
     },
     onDelete: (id) => store.remove(id),
@@ -127,26 +111,28 @@ export function createController(deps: ControllerDeps = {}) {
 
   function activate() {
     state = 'active'
-    uninstall = installInterceptor(ui, {
-      onHover: (el) => { if (state === 'active') overlay.highlight(el) },
-      onPick,
-    })
-    panel.setCollapsed(innerWidth < COLLAPSE_BELOW)
     panel.show()
-    stopTick = startTick(() => {
-      overlay.update()
-      markers.update()
-    })
+    panel.autoCollapse(isMobile())
+    teardown = [
+      installInterceptor(ui, {
+        onHover: (el) => { if (state === 'active') overlay.highlight(el) },
+        onPick,
+      }),
+      startTick(() => {
+        panel.autoCollapse(isMobile())
+        // Todas as leituras de layout primeiro, depois todas as escritas: no máximo um layout por frame.
+        const writes = [overlay.measure(), markers.measure()]
+        for (const write of writes) write()
+      }),
+      () => clearTimeout(focusTimer),
+    ]
   }
 
   function deactivate() {
     state = 'inactive'
-    closeEditor()
-    uninstall?.()
-    uninstall = null
-    stopTick?.()
-    stopTick = null
-    clearTimeout(focusTimer)
+    editor?.close()
+    editor = null
+    for (const undo of teardown.splice(0)) undo()
     overlay.hide()
     markers.hideAll()
     panel.hide()
@@ -154,13 +140,11 @@ export function createController(deps: ControllerDeps = {}) {
 
   return {
     toggle() {
-      if (isOn()) deactivate()
-      else activate()
+      if (state === 'inactive') activate()
+      else deactivate()
     },
-    isActive: isOn,
+    isActive: () => state !== 'inactive',
     state: () => state,
     store,
   }
 }
-
-export type Controller = ReturnType<typeof createController>

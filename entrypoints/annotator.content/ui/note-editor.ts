@@ -1,4 +1,5 @@
 import type { UiHost } from './host'
+import { el } from './dom'
 
 export interface EditorOptions {
   anchor: DOMRect
@@ -9,23 +10,17 @@ export interface EditorOptions {
 
 /** Campo de nota junto ao elemento. Enter salva, Shift+Enter quebra linha, Esc cancela (ANOT-05/06, PAIN-03). */
 export function openNoteEditor(ui: UiHost, opts: EditorOptions): { close(): void } {
-  const form = document.createElement('form')
-  form.className = 'pxa-editor'
-  const ta = document.createElement('textarea')
-  ta.value = opts.initial ?? ''
-  ta.rows = 3
-  ta.placeholder = 'O que ajustar aqui?'
+  const ta = el('textarea', { value: opts.initial ?? '', rows: 3, placeholder: 'O que ajustar aqui?' })
   ta.setAttribute('aria-label', 'Nota da anotação')
-  const hint = document.createElement('span')
-  hint.className = 'pxa-hint'
-  hint.textContent = 'Enter salva · Esc cancela'
-  const cancel = document.createElement('button')
-  cancel.type = 'button'
-  cancel.textContent = 'Cancelar'
-  const save = document.createElement('button')
-  save.type = 'submit'
-  save.textContent = 'Salvar'
-  form.append(ta, hint, cancel, save)
+  const cancel = el('button', { type: 'button', textContent: 'Cancelar' })
+  const form = el(
+    'form',
+    { className: 'pxa-editor' },
+    ta,
+    el('span', { className: 'pxa-hint', textContent: 'Enter salva · Esc cancela' }),
+    cancel,
+    el('button', { type: 'submit', textContent: 'Salvar' }),
+  )
 
   const vw = window.innerWidth
   const vh = window.innerHeight
