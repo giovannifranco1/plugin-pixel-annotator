@@ -1,9 +1,11 @@
 import type { Annotation } from './types'
 import { CATEGORY_ICON } from './viewport'
 import { compactCss } from './css-filter'
-import { shotName } from './export-names'
+import { originalShotName, shotName } from './export-names'
 import { OUTER_HTML_LIMIT } from './outer-html'
-import { pad } from './format'
+import { hostOf, pad, plural } from './format'
+import { errorText } from './error-log'
+import type { PageError } from './types'
 
 export interface MarkdownMeta {
   origin: string
@@ -48,8 +50,22 @@ function componentLines(a: Annotation): string[] {
 
 function printLine(a: Annotation): string {
   if (!a.shot) return '- **Print:** indisponível'
-  return `- **Print:** ![#${a.number}](${shotName(a.number)})${a.shotPartial ? ' (print parcial)' : ''}`
+  const drawn = a.drawing ? ` (com desenho; original em ${inlineCode(originalShotName(a.number))})` : ''
+  return `- **Print:** ![#${a.number}](${shotName(a.number)})${a.shotPartial ? ' (print parcial)' : ''}${drawn}`
 }
+
+function errorLine(e: PageError): string {
+  const d = new Date(e.at)
+  const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  return `${time} ${errorText(e)}`
+}
+
+/** Seção de erros de console/rede do momento da Anotação (ERRO-05); some sem erros. */
+function errorLines(a: Annotation): string[] {
+  if (!a.errors?.length) return []
+  return ['**Erros no console:**', '', fenced(a.errors.map(errorLine).join('\n'), 'text'), '']
+}
+
 
 function section(a: Annotation): string {
   const v = a.viewport
@@ -60,6 +76,7 @@ function section(a: Annotation): string {
   return [
     `## #${a.number} · ${CATEGORY_ICON[v.category]} ${v.category} · ${v.width}px (${inlineCode(v.breakpoint)}) · ${inlineCode(a.path)}`,
     '',
+    ...(a.importedFrom ? [`- **Importada de:** ${inlineCode(hostOf(a.importedFrom.origin))} (#${a.importedFrom.number})`] : []),
     ...componentLines(a),
     `- **Seletor:** ${inlineCode(a.selector)}`,
     `- **Viewport:** ${v.width}×${v.height} · DPR ${v.dpr} · ${v.orientation}`,
@@ -69,6 +86,7 @@ function section(a: Annotation): string {
     '',
     fenced(a.note, 'text'),
     '',
+    ...errorLines(a),
     '**CSS relevante:**',
     '',
     fenced(css, 'css'),
@@ -112,6 +130,7 @@ export function renderCompactMarkdown(annotations: readonly Annotation[], meta: 
       where.push(`${inlineCode(a.component.name)}${file}`)
     }
     where.push(inlineCode(a.selector))
+    if (a.errors?.length) where.push(`⚠ ${plural(a.errors.length, 'erro', 'erros')}`)
     lines.push(`- **#${a.number}** ${a.note.split('\n').join('\n  ')}`, `  ${where.join(' · ')}`)
   }
   return lines.join('\n') + '\n'

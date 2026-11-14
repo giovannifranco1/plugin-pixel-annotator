@@ -11,3 +11,9 @@ export const BLOCKED_TITLE = 'PxA não pode anotar esta página'
 export const PROBE_REQUEST = 'pxa:probe-request'
 export const PROBE_RESPONSE = 'pxa:probe-response'
 export const PROBE_ATTR = 'data-pxa-probe'
+
+// Registro de erros do probe (ERRO-01..03). Mesma ponte de CustomEvent com JSON em string.
+export const ERRORS_REQUEST = 'pxa:errors-request'
+export const ERRORS_RESPONSE = 'pxa:errors-response'
+/** Janela dos erros anexados a uma Anotação, contada a partir do clique de anotar. */
+export const ERROR_WINDOW_MS = 60_000

@@ -1,7 +1,8 @@
 import type { UiHost } from './host'
 import { el } from './dom'
-import { CATEGORY_PIXEL_ICON, DOWNLOAD, PENCIL, pixelIcon, TRASH } from './icons'
+import { BRUSH, CATEGORY_PIXEL_ICON, DOWNLOAD, PENCIL, pixelIcon, TRASH } from './icons'
 import type { AnnotationStore } from '@/lib/store'
+import { hostOf, plural } from '@/lib/format'
 
 export interface PanelActions {
   onFocus(id: string): void
@@ -10,6 +11,11 @@ export interface PanelActions {
   onExportZip(): void
   onCopyMarkdown(): void
   onClearAll(): void
+  onPresent(): void // APRE-01
+  onImport(file: File): void // IMPO-02
+  onDraw(id: string): void // DESE-01
+  /** Importada cujo elemento não está nesta página (IMPO-05). */
+  isMissing?(id: string): boolean
 }
 
 const NOTE_PREVIEW = 60
@@ -38,6 +44,16 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
   let confirming = false
   let collapsed = false
   let manual = false // o dev recolheu/expandiu à mão: a largura da tela deixa de decidir
+  let thumbUrls: string[] = [] // miniaturas do Desenho, liberadas a cada render
+
+  // Importar .zip (IMPO-02): o input fica escondido; o botão do rodapé abre o seletor.
+  const fileInput = el('input', { type: 'file', accept: '.zip,application/zip', hidden: true })
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files?.[0]
+    fileInput.value = ''
+    if (file) actions.onImport(file)
+  })
+  panel.append(fileInput)
 
   // Recolhido = só a barra com o contador, no rodapé da tela. Continua visível (PAIN-01) sem cobrir a página.
   function setCollapsed(value: boolean) {
@@ -60,12 +76,16 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
     }
     const empty = count === 0
     footer.replaceChildren(
+      el('button', { type: 'button', textContent: 'Apresentar', disabled: empty, onclick: () => actions.onPresent() }),
+      el('button', { type: 'button', textContent: 'Importar .zip', onclick: () => fileInput.click() }),
       el('button', { type: 'button', textContent: 'Limpar tudo', disabled: empty, onclick: () => { confirming = true; render() } }),
       el('button', { type: 'button', className: 'pxa-primary', textContent: 'Copiar markdown', disabled: empty, onclick: () => actions.onCopyMarkdown() }),
     )
   }
 
-  function item(a: ReturnType<AnnotationStore['list']>[number]) {
+  type Item = ReturnType<AnnotationStore['list']>[number]
+
+  function item(a: Item) {
     const note = a.note.length > NOTE_PREVIEW ? `${a.note.slice(0, NOTE_PREVIEW)}…` : a.note
     const main = el(
       'button',
@@ -76,21 +96,47 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
         `#${a.number} `,
         el('span', { className: 'pxa-cat', title: a.viewport.category }, pixelIcon(CATEGORY_PIXEL_ICON[a.viewport.category])),
         ` ${a.viewport.width}px`,
+        ...extras(a),
       ),
       el('span', { className: 'pxa-item-path', textContent: a.path }),
       el('span', { className: 'pxa-item-note', textContent: note }),
+      ...thumb(a),
     )
     const edit = el('button', { type: 'button', className: 'pxa-icon', title: 'Editar nota', onclick: () => actions.onEdit(a.id) }, pixelIcon(PENCIL))
     edit.setAttribute('aria-label', `Editar anotação ${a.number}`)
     const del = el('button', { type: 'button', className: 'pxa-icon pxa-danger', title: 'Excluir anotação', onclick: () => actions.onDelete(a.id) }, pixelIcon(TRASH))
     del.setAttribute('aria-label', `Excluir anotação ${a.number}`)
-    const li = el('li', { className: 'pxa-item' }, main, edit, del)
+    const draw: HTMLButtonElement[] = []
+    if (a.shot) {
+      const b = el('button', { type: 'button', className: 'pxa-icon', title: 'Desenhar', onclick: () => actions.onDraw(a.id) }, pixelIcon(BRUSH))
+      b.setAttribute('aria-label', `Desenhar no print da anotação ${a.number}`)
+      draw.push(b)
+    }
+    const li = el('li', { className: 'pxa-item' }, main, ...draw, edit, del)
     li.dataset.id = a.id
     return li
   }
 
+  /** Selo de erros (ERRO-04), origem importada (IMPO-03) e elemento ausente (IMPO-05). */
+  function extras(a: Item): Array<Node | string> {
+    const out: Array<Node | string> = []
+    if (a.errors?.length) out.push(' ', el('span', { className: 'pxa-err', textContent: `⚠ ${a.errors.length}`, title: `${plural(a.errors.length, 'erro', 'erros')} no console` }))
+    if (a.importedFrom) out.push(' ', el('span', { className: 'pxa-imported', textContent: `#${a.importedFrom.number} de ${hostOf(a.importedFrom.origin)}` }))
+    if (actions.isMissing?.(a.id)) out.push(' ', el('span', { className: 'pxa-missing', textContent: 'elemento não encontrado' }))
+    return out
+  }
+
+  /** Miniatura do print composto quando há Desenho (DESE-04). */
+  function thumb(a: Item): Node[] {
+    if (!a.drawing) return []
+    const url = URL.createObjectURL(a.drawing.composite)
+    thumbUrls.push(url)
+    return [el('img', { className: 'pxa-thumb', src: url, alt: `Print com desenho da anotação ${a.number}` })]
+  }
+
   function render() {
     if (!visible) return // oculto: show() renderiza ao voltar
+    for (const url of thumbUrls.splice(0)) URL.revokeObjectURL(url)
     const items = store.list()
     title.textContent = `PxA · Anotações (${items.length})`
     exportZip.disabled = items.length === 0

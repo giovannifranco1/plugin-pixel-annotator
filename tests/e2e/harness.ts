@@ -65,7 +65,7 @@ export async function annotate(page: Page, selector: string, note: string) {
   await expect(items(page)).toHaveCount(before + 1)
 }
 
-/** Clica em "Exportar .zip" e devolve nome + arquivos do zip baixado. */
+/** Clica em "Exportar .zip" e devolve nome, caminho e arquivos do zip baixado. */
 export async function exportZip(page: Page) {
   const { readFile } = await import('node:fs/promises')
   const { unzipSync, strFromU8 } = await import('fflate')
@@ -73,8 +73,9 @@ export async function exportZip(page: Page) {
     page.waitForEvent('download'),
     pxa(page).getByRole('button', { name: 'Exportar .zip' }).click(),
   ])
-  const files = unzipSync(new Uint8Array(await readFile((await download.path())!)))
-  return { name: download.suggestedFilename(), files, md: strFromU8(files['feedback.md']!) }
+  const zipPath = (await download.path())!
+  const files = unzipSync(new Uint8Array(await readFile(zipPath)))
+  return { name: download.suggestedFilename(), path: zipPath, files, md: strFromU8(files['feedback.md']!) }
 }
 
 /** Largura e altura de um PNG lidas do cabeçalho IHDR. */

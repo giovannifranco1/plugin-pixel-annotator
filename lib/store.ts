@@ -1,6 +1,7 @@
 import type { Annotation } from './types'
 
 export type AnnotationDraft = Omit<Annotation, 'id' | 'number' | 'createdAt' | 'updatedAt'>
+export type AnnotationPatch = Partial<Pick<Annotation, 'note' | 'errors' | 'drawing'>>
 type Listener = () => void
 
 /**
@@ -15,6 +16,13 @@ export function createStore(now: () => Date = () => new Date(), uuid: () => stri
   const listeners = new Set<Listener>()
   const emit = () => listeners.forEach((l) => l())
 
+  /** Troca campos editáveis (nota, erros, Desenho); `undefined` remove o campo opcional. */
+  function update(id: string, patch: AnnotationPatch): void {
+    items = items.map((a) => (a.id === id ? { ...a, ...patch, updatedAt: now().toISOString() } : a))
+    dirty = true
+    emit()
+  }
+
   return {
     add(draft: AnnotationDraft, element?: Element): Annotation {
       const ts = now().toISOString()
@@ -25,10 +33,22 @@ export function createStore(now: () => Date = () => new Date(), uuid: () => stri
       emit()
       return a
     },
-    updateNote(id: string, note: string): void {
-      items = items.map((a) => (a.id === id ? { ...a, note, updatedAt: now().toISOString() } : a))
+    update,
+    updateNote: (id: string, note: string): void => update(id, { note }),
+    /**
+     * Anotações de um .zip de outro PxA (IMPO-03/06/07): `id` já presente é ignorado, o número é
+     * novo na sequência da aba e `importedFrom` guarda o original. Devolve quantas entraram.
+     */
+    importAnnotations(list: readonly Annotation[], origin: string): number {
+      const known = new Set(items.map((a) => a.id))
+      const fresh = list
+        .filter((a) => !known.has(a.id) && known.add(a.id))
+        .map((a): Annotation => ({ ...a, number: nextNumber++, importedFrom: a.importedFrom ?? { origin, number: a.number } }))
+      if (fresh.length === 0) return 0
+      items = [...items, ...fresh]
       dirty = true
       emit()
+      return fresh.length
     },
     /** Não marca dirty: apagar não cria trabalho a perder. */
     remove(id: string): void {

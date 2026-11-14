@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { probeComponent } from '@/entrypoints/annotator.content/probe-client'
+import { probeComponent, probeErrors } from '@/entrypoints/annotator.content/probe-client'
 
 let off: (() => void) | undefined
 function fakeProbe(respond: (reqId: string, el: Element | null) => unknown) {
@@ -50,5 +50,42 @@ describe('probe-client', () => {
     await vi.advanceTimersByTimeAsync(300)
     await p
     expect(btn().hasAttribute('data-pxa-probe')).toBe(false)
+  })
+})
+
+describe('probe-client · erros', () => {
+  function fakeErrorsProbe(respond: (req: { reqId: string; windowMs: number }) => unknown) {
+    const handler = (ev: Event) => {
+      const detail = respond(JSON.parse(String((ev as CustomEvent).detail)))
+      if (detail !== undefined) window.dispatchEvent(new CustomEvent('pxa:errors-response', { detail: typeof detail === 'string' ? detail : JSON.stringify(detail) }))
+    }
+    window.addEventListener('pxa:errors-request', handler)
+    off = () => window.removeEventListener('pxa:errors-request', handler)
+  }
+  const err = { kind: 'console', message: 'boom', at: '2026-11-14T12:00:00.000Z', count: 2 }
+
+  test('ERRO-03 probeErrors pede a janela e devolve a lista do probe', async () => {
+    let asked = 0
+    fakeErrorsProbe(({ reqId, windowMs }) => { asked = windowMs; return { reqId, result: [err] } })
+    expect(await probeErrors(60_000)).toEqual([err])
+    expect(asked).toBe(60_000)
+  })
+
+  test('ERRO-06 sem probe (CSP, página especial) → [] em 300ms, sem erro', async () => {
+    vi.useFakeTimers()
+    const p = probeErrors(60_000)
+    await vi.advanceTimersByTimeAsync(300)
+    expect(await p).toEqual([])
+  })
+
+  test('ERRO-06 resposta inválida ou fora do formato → []', async () => {
+    vi.useFakeTimers()
+    fakeErrorsProbe(() => '{não é json')
+    const p = probeErrors(60_000)
+    await vi.advanceTimersByTimeAsync(300)
+    expect(await p).toEqual([])
+    off?.()
+    fakeErrorsProbe(({ reqId }) => ({ reqId, result: 'texto' }))
+    expect(await probeErrors(60_000)).toEqual([])
   })
 })

@@ -6,7 +6,7 @@ import { draft } from './fixtures/annotations'
 
 let ui: UiHost
 let store: AnnotationStore
-let actions: { [K in keyof PanelActions]: ReturnType<typeof vi.fn<PanelActions[K]>> }
+let actions: { [K in keyof PanelActions]-?: ReturnType<typeof vi.fn<NonNullable<PanelActions[K]>>> }
 
 beforeEach(() => {
   ui = createHost()
@@ -14,6 +14,8 @@ beforeEach(() => {
   actions = {
     onFocus: vi.fn<PanelActions['onFocus']>(), onEdit: vi.fn<PanelActions['onEdit']>(), onDelete: vi.fn<PanelActions['onDelete']>(),
     onExportZip: vi.fn<PanelActions['onExportZip']>(), onCopyMarkdown: vi.fn<PanelActions['onCopyMarkdown']>(), onClearAll: vi.fn<PanelActions['onClearAll']>(),
+    onPresent: vi.fn<PanelActions['onPresent']>(), onImport: vi.fn<PanelActions['onImport']>(), onDraw: vi.fn<PanelActions['onDraw']>(),
+    isMissing: vi.fn<NonNullable<PanelActions['isMissing']>>(() => false),
   }
   createPanel(ui, store, actions).show()
 })
@@ -77,7 +79,7 @@ describe('panel', () => {
     expect(exp.title).toBe('Exportar .zip')
     exp.click()
     expect(actions.onExportZip).toHaveBeenCalled()
-    expect(Array.from($('footer')!.querySelectorAll('button')).map((b) => b.textContent)).toEqual(['Limpar tudo', 'Copiar markdown'])
+    expect(Array.from($('footer')!.querySelectorAll('button')).map((b) => b.textContent)).toEqual(['Apresentar', 'Importar .zip', 'Limpar tudo', 'Copiar markdown'])
     expect($('footer .pxa-primary')!.textContent).toBe('Copiar markdown')
   })
 
@@ -145,4 +147,72 @@ describe('panel', () => {
     expect(ui2.root.querySelector<HTMLElement>('.pxa-panel')!.style.display).toBe('none')
     ui2.host.remove()
   })
+
+  test('APRE-01 "Apresentar" no rodapé, habilitado só com anotações', () => {
+    expect(button('Apresentar').disabled).toBe(true)
+    store.add(draft())
+    button('Apresentar').click()
+    expect(actions.onPresent).toHaveBeenCalled()
+  })
+
+  test('IMPO-02 "Importar .zip" abre o seletor de arquivo e entrega o arquivo escolhido', () => {
+    expect(button('Importar .zip').disabled).toBe(false) // funciona com o painel vazio
+    const input = $<HTMLInputElement>('input[type="file"]')!
+    expect(input.accept).toContain('.zip')
+    const picked = vi.spyOn(input, 'click').mockImplementation(() => {})
+    button('Importar .zip').click()
+    expect(picked).toHaveBeenCalled()
+    const file = new File([new Uint8Array([1])], 'pxa.zip', { type: 'application/zip' })
+    Object.defineProperty(input, 'files', { configurable: true, value: [file] })
+    input.dispatchEvent(new Event('change'))
+    expect(actions.onImport).toHaveBeenCalledWith(file)
+    expect(input.value).toBe('') // escolher o mesmo arquivo de novo dispara change outra vez
+  })
+
+  test('ERRO-04 selo ⚠ N no item com erros', () => {
+    const err = { kind: 'console' as const, message: 'x', at: '2026-11-14T12:00:00.000Z', count: 1 }
+    store.add(draft({ errors: [err, { ...err, message: 'y' }] }))
+    store.add(draft())
+    const badges = $$('.pxa-err')
+    expect(badges).toHaveLength(1)
+    expect(badges[0]!.textContent).toBe('⚠ 2')
+    expect(badges[0]!.title).toBe('2 erros no console')
+  })
+
+  test('DESE-01/DESE-05 ícone pixel "Desenhar" só em itens com print', () => {
+    const withShot = store.add(draft())
+    store.add(draft({ shot: null }))
+    const draws = $$('button[title="Desenhar"]')
+    expect(draws).toHaveLength(1)
+    expect(draws[0]!.querySelector('svg[shape-rendering="crispEdges"]')).not.toBeNull()
+    expect(draws[0]!.getAttribute('aria-label')).toBe('Desenhar no print da anotação 1')
+    draws[0]!.click()
+    expect(actions.onDraw).toHaveBeenCalledWith(withShot.id)
+  })
+
+  test('DESE-04 item com Desenho mostra a miniatura do print composto', () => {
+    const urls = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:composto')
+    const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+    const composite = new Blob(['c'])
+    const a = store.add(draft({ drawing: { strokes: [], block: 2, composite } }))
+    store.add(draft())
+    expect($$('img.pxa-thumb').map((i) => i.getAttribute('src'))).toEqual(['blob:composto'])
+    expect(urls).toHaveBeenCalledWith(composite)
+    store.update(a.id, { note: 'outra' }) // re-render libera a URL anterior
+    expect(revoke).toHaveBeenCalledWith('blob:composto')
+    vi.restoreAllMocks()
+  })
+
+  test('IMPO-03 item importado mostra o número e a origem originais', () => {
+    store.importAnnotations([{ ...draft(), id: 'x', number: 3, createdAt: '', updatedAt: '' }], 'https://staging.app.com')
+    expect($('.pxa-imported')!.textContent).toBe('#3 de staging.app.com')
+  })
+
+  test('IMPO-05 elemento não encontrado é avisado no item', () => {
+    actions.isMissing.mockImplementation((id) => id === 'x')
+    store.importAnnotations([{ ...draft(), id: 'x', number: 3, createdAt: '', updatedAt: '' }], 'https://a.com')
+    store.add(draft())
+    expect($$('.pxa-missing').map((m) => m.textContent)).toEqual(['elemento não encontrado'])
+  })
 })
+

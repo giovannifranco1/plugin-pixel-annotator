@@ -25,8 +25,24 @@ const toast = () => ui.root.querySelector('.pxa-toast')?.textContent
 describe('exporter', () => {
   test('EXPO-01 zip contém feedback.md e shots/NN.png só para anotações com print', async () => {
     const files = unzipSync(await buildZip(store, new Date(2026, 10, 13, 14, 32), 'localhost:3000'))
-    expect(Object.keys(files).sort()).toEqual(['feedback.md', 'shots/01.png', 'shots/03.png'])
+    expect(Object.keys(files).sort()).toEqual(['feedback.md', 'pxa.json', 'shots/01.png', 'shots/03.png'])
     expect(Array.from(files['shots/01.png']!)).toEqual([137, 80, 78, 71])
+  })
+
+  test('IMPO-01 zip tem pxa.json com schemaVersion, origem, data e as anotações', async () => {
+    const files = unzipSync(await buildZip(store, new Date('2026-11-14T15:00:00Z'), 'localhost:3000', 'http://localhost:3000'))
+    const m = JSON.parse(strFromU8(files['pxa.json']!))
+    expect(m).toMatchObject({ schemaVersion: 1, origin: 'http://localhost:3000', exportedAt: '2026-11-14T15:00:00.000Z' })
+    expect(m.annotations.map((a: { number: number; shot: string | null }) => [a.number, a.shot])).toEqual([[1, 'shots/01.png'], [2, null], [3, 'shots/03.png']])
+  })
+
+  test('DESE-03 com Desenho: composto em shots/NN.png e original em shots/NN-original.png', async () => {
+    const id = store.list()[0]!.id
+    store.update(id, { drawing: { strokes: [], block: 2, composite: new Blob([new Uint8Array([1, 2, 3])]) } })
+    const files = unzipSync(await buildZip(store, new Date(), 'localhost:3000'))
+    expect(Array.from(files['shots/01.png']!)).toEqual([1, 2, 3])
+    expect(Array.from(files['shots/01-original.png']!)).toEqual([137, 80, 78, 71])
+    expect(files['shots/03-original.png']).toBeUndefined()
   })
 
   test('EXPO-02 feedback.md do zip tem links shots/NN.png', async () => {

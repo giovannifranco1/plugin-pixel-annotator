@@ -1,6 +1,13 @@
 import { createStore, type AnnotationDraft, type AnnotationStore } from '@/lib/store'
 import { resolveAnnotation } from '@/lib/resolve'
 import { categoryOf } from '@/lib/viewport'
+import { ERROR_WINDOW_MS } from '@/lib/messages'
+import { hostOf, plural } from '@/lib/format'
+import { IMPORT_LIMITS, readImportZip } from '@/lib/import'
+import type { PageError } from '@/lib/types'
+import { probeErrors } from './probe-client'
+import { openDrawEditor } from './ui/draw-editor'
+import { openPresentation } from './ui/presentation'
 import { captureContext } from './capture'
 import { createDefaultStyle } from './default-style'
 import { copyMarkdown, exportZip } from './exporter'
@@ -14,12 +21,14 @@ import { createOverlay } from './ui/overlay'
 import { createPanel } from './ui/panel'
 import { showToast } from './ui/toast'
 
-export type ControllerState = 'inactive' | 'active' | 'editing' | 'capturing'
+export type ControllerState = 'inactive' | 'active' | 'editing' | 'capturing' | 'presenting'
 
 export interface ControllerDeps {
   ui?: UiHost
   store?: AnnotationStore
   capture?: (el: Element, note: string) => Promise<AnnotationDraft>
+  /** Erros de console/rede do momento (ERRO-03); padrão: pedido ao probe. */
+  errors?: () => Promise<PageError[]>
 }
 
 const FOCUS_HIGHLIGHT_MS = 1500
@@ -39,26 +48,34 @@ export function createController(deps: ControllerDeps = {}) {
   const capture = deps.capture ?? ((el: Element, note: string) => captureContext(el, note, { ui, defaultStyle }))
   const overlay = createOverlay(ui)
   const markers = createMarkers(ui, store)
+  const recentErrors = deps.errors ?? (() => probeErrors(ERROR_WINDOW_MS))
 
   let state: ControllerState = 'inactive'
   let teardown: Array<() => void> = []
-  let editor: { close(): void } | null = null
+  let editor: { close(): void } | null = null // editor de nota ou de Desenho
+  let presentation: { close(): void } | null = null
   let focusTimer: ReturnType<typeof setTimeout> | undefined
 
-  /** Abre o editor de nota; `onSaved` decide o que fazer com a nota confirmada. */
-  function openEditor(anchor: DOMRect, initial: string | undefined, onSaved: (note: string) => void) {
+  /** Abre o editor de nota; `onSaved` decide o que fazer com a nota (e os erros que sobraram) confirmada. */
+  function openEditor(
+    anchor: DOMRect,
+    initial: string | undefined,
+    errors: PageError[] | Promise<PageError[]>,
+    onSaved: (note: string, errors: PageError[]) => void,
+  ) {
     editor?.close()
     state = 'editing'
     editor = openNoteEditor(ui, {
       anchor,
       initial,
+      errors,
       onCancel() {
         editor = null
         if (state === 'editing') state = 'active'
       },
-      onSave(note) {
+      onSave(note, kept = []) {
         editor = null
-        onSaved(note)
+        onSaved(note, kept)
       },
     })
   }
@@ -66,14 +83,16 @@ export function createController(deps: ControllerDeps = {}) {
   function onPick(el: Element) {
     if (state !== 'active') return
     overlay.highlight(el)
-    openEditor(el.getBoundingClientRect(), undefined, (note) => void save(el, note))
+    // Pedido no clique (não no Enter): o editor mostra os erros para o dev remover (ERRO-04).
+    openEditor(el.getBoundingClientRect(), undefined, recentErrors().catch(() => []), (note, errors) => void save(el, note, errors))
   }
 
-  async function save(el: Element, note: string) {
+  async function save(el: Element, note: string, errors: PageError[]) {
     state = 'capturing'
     overlay.hide()
     try {
-      store.add(await capture(el, note), el)
+      const draft = await capture(el, note)
+      store.add(errors.length ? { ...draft, errors } : draft, el)
     } catch {
       showToast(ui, 'Falha ao anotar')
     } finally {
@@ -96,10 +115,18 @@ export function createController(deps: ControllerDeps = {}) {
       const a = store.get(id)
       if (!a || state !== 'active') return
       const anchor = resolveAnnotation(store, id)?.getBoundingClientRect() ?? new DOMRect(Math.max(8, innerWidth - 680), 80, 0, 0)
-      openEditor(anchor, a.note, (note) => {
-        store.updateNote(id, note)
+      openEditor(anchor, a.note, a.errors ?? [], (note, errors) => {
+        store.update(id, { note, errors: errors.length ? errors : undefined })
         if (state === 'editing') state = 'active'
       })
+    },
+    onPresent,
+    onDraw,
+    onImport: (file) => void importZip(file),
+    // IMPO-05: importada da rota atual cujo elemento o seletor não acha.
+    isMissing(id) {
+      const a = store.get(id)
+      return Boolean(a?.importedFrom) && a!.pathname === location.pathname && !resolveAnnotation(store, id)
     },
     onDelete: (id) => store.remove(id),
     onExportZip: () => void exportZip(ui, store),
@@ -108,6 +135,56 @@ export function createController(deps: ControllerDeps = {}) {
   })
 
   installUnloadGuard(store)
+
+  /** Modo Apresentação (APRE-01..06): hover/clique de anotar ignoram estados fora de `active`. */
+  function onPresent() {
+    if (state !== 'active' || store.list().length === 0) return
+    state = 'presenting'
+    overlay.hide()
+    presentation = openPresentation(ui, store, {
+      onClose() {
+        presentation = null
+        if (state === 'presenting') state = 'active'
+      },
+    })
+  }
+
+  /** Editor de Desenho sobre o print (DESE-01..05). */
+  function onDraw(id: string) {
+    const a = store.get(id)
+    if (!a?.shot || state !== 'active') return
+    const back = () => {
+      editor = null
+      if (state === 'editing') state = 'active'
+    }
+    state = 'editing'
+    editor = openDrawEditor(ui, {
+      shot: a.shot,
+      drawing: a.drawing,
+      dpr: a.viewport.dpr,
+      onCancel: back,
+      onSave(drawing) {
+        back()
+        store.update(id, { drawing })
+      },
+    })
+  }
+
+  /** Importar .zip de outro PxA (IMPO-02..07). */
+  async function importZip(file: File) {
+    try {
+      const result = file.size > IMPORT_LIMITS.maxInputBytes
+        ? ({ ok: false, error: '.zip grande demais para importar.' } as const)
+        : readImportZip(new Uint8Array(await file.arrayBuffer()))
+      if (!result.ok) return showToast(ui, result.error, 5000)
+      const added = store.importAnnotations(result.annotations, result.origin)
+      if (added === 0) return showToast(ui, 'Nada novo: essas anotações já estão aqui.')
+      const foreign = result.origin !== location.origin ? ` · anotações de ${hostOf(result.origin)}` : '' // IMPO-04
+      showToast(ui, `${plural(added, 'anotação importada', 'anotações importadas')}${foreign}`, foreign ? 5000 : 2500)
+    } catch {
+      showToast(ui, 'Não consegui ler este .zip.')
+    }
+  }
 
   function activate() {
     state = 'active'
@@ -132,6 +209,8 @@ export function createController(deps: ControllerDeps = {}) {
     state = 'inactive'
     editor?.close()
     editor = null
+    presentation?.close()
+    presentation = null
     for (const undo of teardown.splice(0)) undo()
     overlay.hide()
     markers.hideAll()

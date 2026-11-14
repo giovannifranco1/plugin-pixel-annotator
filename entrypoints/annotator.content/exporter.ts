@@ -1,19 +1,28 @@
 import { strToU8, zipSync, type Zippable } from 'fflate'
 import type { AnnotationStore } from '@/lib/store'
 import { renderCompactMarkdown, renderMarkdown } from '@/lib/markdown'
-import { shotName, zipName } from '@/lib/export-names'
+import { originalShotName, shotName, zipName } from '@/lib/export-names'
+import { buildManifest, MANIFEST_FILE } from '@/lib/manifest'
 import type { UiHost } from './ui/host'
 import { showToast } from './ui/toast'
 
 const origin = () => location.host || location.origin
 
-export async function buildZip(store: AnnotationStore, now: Date, originLabel: string): Promise<Uint8Array> {
+const bytesOf = async (name: string, blob: Blob) => [name, new Uint8Array(await blob.arrayBuffer())] as const
+
+export async function buildZip(store: AnnotationStore, now: Date, originLabel: string, pageOrigin = location.origin): Promise<Uint8Array> {
   const list = store.list()
+  // Com Desenho, NN.png é o print composto e o original vai para NN-original.png (DESE-03).
   const shots = await Promise.all(
-    list.flatMap((a) => (a.shot ? [a.shot.arrayBuffer().then((buf) => [shotName(a.number), new Uint8Array(buf)] as const)] : [])),
+    list.flatMap((a) => {
+      if (!a.shot) return []
+      if (!a.drawing) return [bytesOf(shotName(a.number), a.shot)]
+      return [bytesOf(shotName(a.number), a.drawing.composite), bytesOf(originalShotName(a.number), a.shot)]
+    }),
   )
   const files: Zippable = {
     'feedback.md': strToU8(renderMarkdown(list, { origin: originLabel, generatedAt: now })),
+    [MANIFEST_FILE]: strToU8(JSON.stringify(buildManifest(list, { origin: pageOrigin, exportedAt: now }), null, 2)),
   }
   // PNG já é comprimido: guardar sem deflate evita travar a página à toa.
   for (const [name, bytes] of shots) files[name] = [bytes, { level: 0 }]
