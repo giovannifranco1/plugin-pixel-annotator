@@ -30,7 +30,7 @@ describe('error-log', () => {
 
   test('ERRO-02 erros em loop não passam de 50 entradas', () => {
     const log = createErrorLog()
-    for (let i = 0; i < 1000; i++) log.push({ kind: 'exception', message: 'loop', source: 'app.js:1' })
+    for (let i = 0; i < 1000; i++) log.push({ kind: 'exception', message: 'loop', file: 'http://a/app.js', line: 1 })
     expect(log.list()).toEqual([expect.objectContaining({ message: 'loop', count: 1000 })])
   })
 
@@ -55,6 +55,15 @@ describe('error-log', () => {
     const [notFound, failed] = log.list()
     expect(notFound).toMatchObject({ url: 'https://api.app.com/v1/users', message: 'GET https://api.app.com/v1/users → 404' })
     expect(failed!.message).toBe('POST https://api.app.com/v1/x → falha de rede')
+  })
+
+  test('ERRO-02 o log é quem limpa: URL relativa resolvida pela página e arquivo:linha sem query', () => {
+    const log = createErrorLog({ base: () => 'http://app.test/pagina?x=1' })
+    log.push({ kind: 'network', method: 'GET', url: '/api/x?token=1', status: 500 })
+    log.push({ kind: 'exception', message: 'e', file: 'http://app.test/main.js?v=9#h', line: 42 })
+    const [net, exc] = log.list()
+    expect(net!.url).toBe('http://app.test/api/x')
+    expect(exc!.source).toBe('http://app.test/main.js:42')
   })
 
   test('ERRO-02 sanitizeUrl resolve relativa e tolera URL inválida', () => {

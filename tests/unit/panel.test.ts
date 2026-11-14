@@ -6,7 +6,7 @@ import { draft } from './fixtures/annotations'
 
 let ui: UiHost
 let store: AnnotationStore
-let actions: { [K in keyof PanelActions]-?: ReturnType<typeof vi.fn<NonNullable<PanelActions[K]>>> }
+let actions: { [K in keyof PanelActions]: ReturnType<typeof vi.fn<PanelActions[K]>> }
 
 beforeEach(() => {
   ui = createHost()
@@ -15,7 +15,6 @@ beforeEach(() => {
     onFocus: vi.fn<PanelActions['onFocus']>(), onEdit: vi.fn<PanelActions['onEdit']>(), onDelete: vi.fn<PanelActions['onDelete']>(),
     onExportZip: vi.fn<PanelActions['onExportZip']>(), onCopyMarkdown: vi.fn<PanelActions['onCopyMarkdown']>(), onClearAll: vi.fn<PanelActions['onClearAll']>(),
     onPresent: vi.fn<PanelActions['onPresent']>(), onImport: vi.fn<PanelActions['onImport']>(), onDraw: vi.fn<PanelActions['onDraw']>(),
-    isMissing: vi.fn<NonNullable<PanelActions['isMissing']>>(() => false),
   }
   createPanel(ui, store, actions).show()
 })
@@ -190,16 +189,21 @@ describe('panel', () => {
     expect(actions.onDraw).toHaveBeenCalledWith(withShot.id)
   })
 
-  test('DESE-04 item com Desenho mostra a miniatura do print composto', () => {
-    const urls = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:composto')
+  test('DESE-04 item com Desenho mostra a miniatura do print composto; URL reaproveitada e liberada quando o Desenho muda', () => {
+    let n = 0
+    const urls = vi.spyOn(URL, 'createObjectURL').mockImplementation(() => `blob:${++n}`)
     const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
     const composite = new Blob(['c'])
     const a = store.add(draft({ drawing: { strokes: [], block: 2, composite } }))
     store.add(draft())
-    expect($$('img.pxa-thumb').map((i) => i.getAttribute('src'))).toEqual(['blob:composto'])
+    expect($$('img.pxa-thumb').map((i) => i.getAttribute('src'))).toEqual(['blob:1'])
     expect(urls).toHaveBeenCalledWith(composite)
-    store.update(a.id, { note: 'outra' }) // re-render libera a URL anterior
-    expect(revoke).toHaveBeenCalledWith('blob:composto')
+    store.update(a.id, { note: 'outra' }) // mesmo composto: sem decodificar de novo
+    expect(urls).toHaveBeenCalledTimes(1)
+    expect(revoke).not.toHaveBeenCalled()
+    store.update(a.id, { drawing: { strokes: [], block: 2, composite: new Blob(['d']) } })
+    expect(revoke).toHaveBeenCalledWith('blob:1')
+    expect($('img.pxa-thumb')!.getAttribute('src')).toBe('blob:2')
     vi.restoreAllMocks()
   })
 
@@ -208,10 +212,13 @@ describe('panel', () => {
     expect($('.pxa-imported')!.textContent).toBe('#3 de staging.app.com')
   })
 
-  test('IMPO-05 elemento não encontrado é avisado no item', () => {
-    actions.isMissing.mockImplementation((id) => id === 'x')
-    store.importAnnotations([{ ...draft(), id: 'x', number: 3, createdAt: '', updatedAt: '' }], 'https://a.com')
-    store.add(draft())
+  test('IMPO-05 importada cujo elemento não está na página avisa no item (outra rota e próprias não)', () => {
+    document.body.innerHTML = '<p id="existe">x</p>'
+    const here = location.pathname
+    const imported = (id: string, selector: string, pathname = here) => ({ ...draft({ selector, pathname }), id, number: 3, createdAt: '', updatedAt: '' })
+    store.importAnnotations([imported('x', '#sumiu'), imported('y', '#existe'), imported('z', '#sumiu', '/outra-rota')], 'https://a.com')
+    store.add(draft({ selector: '#sumiu', pathname: here }))
+    expect($$('li.pxa-item').filter((li) => li.querySelector('.pxa-missing')).map((li) => li.dataset.id)).toEqual(['x'])
     expect($$('.pxa-missing').map((m) => m.textContent)).toEqual(['elemento não encontrado'])
   })
 })

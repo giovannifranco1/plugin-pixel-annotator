@@ -16,16 +16,21 @@ export function createStore(now: () => Date = () => new Date(), uuid: () => stri
   const listeners = new Set<Listener>()
   const emit = () => listeners.forEach((l) => l())
 
-  /** Troca campos editáveis (nota, erros, Desenho); `undefined` remove o campo opcional. */
+  /**
+   * Troca campos editáveis (nota, erros, Desenho); `undefined` remove o campo opcional.
+   * `errors` vazio vira ausente: o campo só existe com ≥1 erro (ERRO-03).
+   */
   function update(id: string, patch: AnnotationPatch): void {
+    if (patch.errors?.length === 0) patch = { ...patch, errors: undefined }
     items = items.map((a) => (a.id === id ? { ...a, ...patch, updatedAt: now().toISOString() } : a))
     dirty = true
     emit()
   }
 
   return {
-    add(draft: AnnotationDraft, element?: Element): Annotation {
+    add({ errors, ...rest }: AnnotationDraft, element?: Element): Annotation {
       const ts = now().toISOString()
+      const draft = errors?.length ? { ...rest, errors } : rest
       const a: Annotation = { ...draft, id: uuid(), number: nextNumber++, createdAt: ts, updatedAt: ts }
       items = [...items, a]
       if (element) refs.set(a.id, new WeakRef(element))
@@ -41,9 +46,12 @@ export function createStore(now: () => Date = () => new Date(), uuid: () => stri
      */
     importAnnotations(list: readonly Annotation[], origin: string): number {
       const known = new Set(items.map((a) => a.id))
-      const fresh = list
-        .filter((a) => !known.has(a.id) && known.add(a.id))
-        .map((a): Annotation => ({ ...a, number: nextNumber++, importedFrom: a.importedFrom ?? { origin, number: a.number } }))
+      const fresh: Annotation[] = []
+      for (const a of list) {
+        if (known.has(a.id)) continue
+        known.add(a.id)
+        fresh.push({ ...a, number: nextNumber++, importedFrom: a.importedFrom ?? { origin, number: a.number } })
+      }
       if (fresh.length === 0) return 0
       items = [...items, ...fresh]
       dirty = true

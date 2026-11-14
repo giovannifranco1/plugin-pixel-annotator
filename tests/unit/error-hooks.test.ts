@@ -22,9 +22,8 @@ function setup(fetchImpl: (...args: unknown[]) => Promise<unknown> = async () =>
     fetch: vi.fn(fetchImpl),
     XMLHttpRequest: class extends FakeXhr {},
     addEventListener: events.addEventListener.bind(events),
-    location: { href: 'http://app.test/pagina?x=1' },
   }
-  const log = createErrorLog()
+  const log = createErrorLog({ base: () => 'http://app.test/pagina?x=1' })
   installErrorHooks(win as unknown as HookWindow, log)
   return { win, log, previousError, events }
 }
@@ -44,7 +43,7 @@ describe('error-hooks', () => {
     const original = vi.fn()
     const sentry = vi.fn(function (this: unknown, ...args: unknown[]) { original(...args) })
     const events = new EventTarget()
-    const win = { console: { error: sentry }, fetch: vi.fn(), XMLHttpRequest: FakeXhr, addEventListener: events.addEventListener.bind(events), location: { href: 'http://a/' } }
+    const win = { console: { error: sentry }, fetch: vi.fn(), XMLHttpRequest: FakeXhr, addEventListener: events.addEventListener.bind(events) }
     const log = createErrorLog()
     installErrorHooks(win as unknown as HookWindow, log)
     win.console.error('oi')

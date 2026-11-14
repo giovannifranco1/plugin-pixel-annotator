@@ -1,11 +1,10 @@
-import { sanitizeUrl, type ErrorInput, type ErrorLog } from './error-log'
+import type { ErrorInput, ErrorLog } from './error-log'
 
 export interface HookWindow {
   console: Console
   fetch: typeof fetch
   XMLHttpRequest: typeof XMLHttpRequest
   addEventListener: Window['addEventListener']
-  location: { href: string }
 }
 
 /** Argumento do console em texto legível: Error vira "Nome: mensagem", objeto vira JSON. */
@@ -32,7 +31,6 @@ export function installErrorHooks(win: HookWindow, log: ErrorLog): void {
       // registro é melhor esforço
     }
   }
-  const absolute = (url: string | URL) => sanitizeUrl(String(url), win.location.href)
 
   const previousError = win.console.error
   win.console.error = function (this: unknown, ...args: unknown[]) {
@@ -46,7 +44,8 @@ export function installErrorHooks(win: HookWindow, log: ErrorLog): void {
     record(() => ({
       kind: 'exception',
       message: ev.message,
-      ...(ev.filename ? { source: `${absolute(ev.filename)}:${ev.lineno}` } : {}),
+      file: ev.filename,
+      line: ev.lineno,
     }))
   })
   win.addEventListener('unhandledrejection', (ev) => {
@@ -61,8 +60,8 @@ export function installErrorHooks(win: HookWindow, log: ErrorLog): void {
     const url = isRequest ? input.url : String(input)
     // Observa sem trocar a promise: a página recebe exatamente o que o fetch anterior devolveu.
     promise.then(
-      (res) => { if (res.status >= 400) record(() => ({ kind: 'network', method, url: absolute(url), status: res.status })) },
-      () => record(() => ({ kind: 'network', method, url: absolute(url), status: 0 })),
+      (res) => { if (res.status >= 400) record(() => ({ kind: 'network', method, url, status: res.status })) },
+      () => record(() => ({ kind: 'network', method, url, status: 0 })),
     )
     return promise
   } as typeof fetch
@@ -82,7 +81,7 @@ export function installErrorHooks(win: HookWindow, log: ErrorLog): void {
       this.addEventListener('abort', () => { aborted = true }, { once: true })
       this.addEventListener('loadend', () => {
         if (aborted || (this.status > 0 && this.status < 400)) return
-        record(() => ({ kind: 'network', method: req.method, url: absolute(req.url), status: this.status }))
+        record(() => ({ kind: 'network', method: req.method, url: req.url, status: this.status }))
       }, { once: true })
     }
     return previousSend.apply(this, arguments as unknown as Parameters<typeof previousSend>)

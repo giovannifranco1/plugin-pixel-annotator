@@ -1,5 +1,5 @@
 import type { Annotation, Stroke } from './types'
-import { originalShotName, shotName } from './export-names'
+import { shotFiles } from './export-names'
 
 export const SCHEMA_VERSION = 1
 export const MANIFEST_FILE = 'pxa.json'
@@ -27,11 +27,16 @@ export function buildManifest(list: readonly Annotation[], meta: { origin: strin
     generator: 'PixelAnnotator',
     origin: meta.origin,
     exportedAt: meta.exportedAt.toISOString(),
-    annotations: list.map(({ shot, drawing, ...rest }) => ({
-      ...rest,
-      shot: shot ? (drawing ? originalShotName(rest.number) : shotName(rest.number)) : null,
-      ...(drawing ? { drawing: { strokes: drawing.strokes, block: drawing.block, file: shotName(rest.number) } } : {}),
-    })),
+    annotations: list.map(({ shot, drawing, ...rest }) => {
+      const files = shotFiles({ number: rest.number, shot, drawing })
+      const name = (role: 'shot' | 'composite') => files.find((f) => f.role === role)?.name
+      const composite = name('composite')
+      return {
+        ...rest,
+        shot: name('shot') ?? null,
+        ...(drawing && composite ? { drawing: { strokes: drawing.strokes, block: drawing.block, file: composite } } : {}),
+      }
+    }),
   }
 }
 

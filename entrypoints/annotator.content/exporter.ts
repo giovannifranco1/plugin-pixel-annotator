@@ -1,24 +1,17 @@
 import { strToU8, zipSync, type Zippable } from 'fflate'
 import type { AnnotationStore } from '@/lib/store'
 import { renderCompactMarkdown, renderMarkdown } from '@/lib/markdown'
-import { originalShotName, shotName, zipName } from '@/lib/export-names'
+import { shotFiles, zipName } from '@/lib/export-names'
 import { buildManifest, MANIFEST_FILE } from '@/lib/manifest'
 import type { UiHost } from './ui/host'
 import { showToast } from './ui/toast'
 
 const origin = () => location.host || location.origin
 
-const bytesOf = async (name: string, blob: Blob) => [name, new Uint8Array(await blob.arrayBuffer())] as const
-
 export async function buildZip(store: AnnotationStore, now: Date, originLabel: string, pageOrigin = location.origin): Promise<Uint8Array> {
   const list = store.list()
-  // Com Desenho, NN.png é o print composto e o original vai para NN-original.png (DESE-03).
   const shots = await Promise.all(
-    list.flatMap((a) => {
-      if (!a.shot) return []
-      if (!a.drawing) return [bytesOf(shotName(a.number), a.shot)]
-      return [bytesOf(shotName(a.number), a.drawing.composite), bytesOf(originalShotName(a.number), a.shot)]
-    }),
+    list.flatMap(shotFiles).map(async ({ name, blob }) => [name, new Uint8Array(await blob.arrayBuffer())] as const),
   )
   const files: Zippable = {
     'feedback.md': strToU8(renderMarkdown(list, { origin: originLabel, generatedAt: now })),

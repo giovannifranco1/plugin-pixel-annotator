@@ -115,4 +115,13 @@ describe('store', () => {
     s.importAnnotations([annotation(1, { id: 'x' })], 'https://a.com')
     expect(s.isDirty()).toBe(true)
   })
+
+  test('ERRO-03 errors vazio nunca fica na anotação (add e update)', () => {
+    const s = mk()
+    const a = s.add(draft({ errors: [] }))
+    expect(a).not.toHaveProperty('errors')
+    s.update(a.id, { errors: [{ kind: 'console', message: 'x', at: '2026-11-13T12:00:00.000Z', count: 1 }] })
+    s.update(a.id, { errors: [] })
+    expect(s.get(a.id)!.errors).toBeUndefined()
+  })
 })

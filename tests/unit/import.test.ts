@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { strToU8, zipSync, type Zippable } from 'fflate'
-import { readImportZip, IMPORT_LIMITS } from '@/lib/import'
+import { readImportFile, readImportZip, IMPORT_LIMITS } from '@/lib/import'
 import { buildManifest } from '@/lib/manifest'
 import { annotation } from './fixtures/annotations'
 
@@ -74,5 +74,12 @@ describe('import', () => {
     const manifest = buildManifest([], meta)
     const r = readImportZip(zip({ 'pxa.json': strToU8(JSON.stringify(manifest)), 'lixo.bin': new Uint8Array(5000) }), { ...IMPORT_LIMITS, maxTotalBytes: 1000 })
     expect(r).toMatchObject({ ok: true, annotations: [] })
+  })
+
+  test('caso limite: readImportFile recusa arquivo grande sem carregar e lê o zip normal', async () => {
+    const big = { size: IMPORT_LIMITS.maxInputBytes + 1, arrayBuffer: () => { throw new Error('não deveria ler') } } as unknown as Blob
+    expect(await readImportFile(big)).toEqual({ ok: false, error: '.zip grande demais para importar.' })
+    const ok = new Blob([zip({ 'pxa.json': strToU8(JSON.stringify(buildManifest([], meta))) }) as BlobPart])
+    expect(await readImportFile(ok)).toMatchObject({ ok: true, origin: 'https://staging.app.com' })
   })
 })

@@ -1,5 +1,5 @@
 import type { UiHost } from './host'
-import { el } from './dom'
+import { captureKeys, el } from './dom'
 import type { Drawing, DrawTool, Stroke } from '@/lib/types'
 import { blockFor, DRAW_COLORS, rasterStroke } from '@/lib/drawing'
 
@@ -25,31 +25,34 @@ function paintStrokes(ctx: CanvasRenderingContext2D, strokes: readonly Stroke[],
   }
 }
 
-/** Print + traços num PNG (o composto do export e da miniatura, DESE-03/04). */
-export const composeDrawing: Compose = async (shot, strokes, block) => {
-  const img = await createImageBitmap(shot)
-  try {
-    const canvas = document.createElement('canvas')
-    canvas.width = img.width
-    canvas.height = img.height
-    const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('canvas 2d indisponível')
-    ctx.drawImage(img, 0, 0)
-    paintStrokes(ctx, strokes, block)
-    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'))
-    if (!blob) throw new Error('falha ao gerar o PNG')
-    return blob
-  } finally {
-    img.close()
+const toPng = (canvas: HTMLCanvasElement) =>
+  new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('falha ao gerar o PNG'))), 'image/png'))
+
+/** Botão alternável de um grupo (ferramenta ou cor): só um fica com aria-pressed. */
+function toggleGroup(buttons: Array<[HTMLButtonElement, () => void]>): HTMLElement {
+  for (const [b, pick] of buttons) {
+    b.type = 'button'
+    b.onclick = () => {
+      pick()
+      for (const [other] of buttons) other.setAttribute('aria-pressed', String(other === b))
+    }
   }
+  return el('div', { className: 'pxa-draw-group' }, ...buttons.map(([b]) => b))
+}
+
+function labeled(b: HTMLButtonElement, label: string, pressed: boolean): HTMLButtonElement {
+  b.setAttribute('aria-label', label)
+  b.setAttribute('aria-pressed', String(pressed))
+  return b
 }
 
 /**
  * Editor de Desenho sobre a página (DESE-01..05): o print no tamanho real, exibido escalado e
  * pixelado; traços em coordenadas do print. Ctrl/Cmd+Z desfaz, Esc cancela.
+ * Os traços salvos ficam numa camada base (print + traços), refeita só ao fechar um traço, desfazer
+ * ou limpar; durante o arrasto cada frame pinta a base e só o traço em andamento.
  */
 export function openDrawEditor(ui: UiHost, opts: DrawEditorOptions): { close(): void } {
-  const compose = opts.compose ?? composeDrawing
   const block = blockFor(opts.dpr)
   const strokes: Stroke[] = [...(opts.drawing?.strokes ?? [])]
   let tool: DrawTool = 'brush'
@@ -57,55 +60,53 @@ export function openDrawEditor(ui: UiHost, opts: DrawEditorOptions): { close(): 
   let current: Stroke | null = null
   let image: ImageBitmap | null = null
   let closed = false
+  let frame = 0
 
   const canvas = el('canvas', { width: 1, height: 1 })
   canvas.setAttribute('aria-label', 'Print para desenhar')
   const ctx = canvas.getContext('2d')
+  const base = document.createElement('canvas')
+  const baseCtx = base.getContext('2d')
+  // Padrão: o próprio canvas do editor já é print + traços; sem decodificar o print de novo.
+  const compose: Compose = opts.compose ?? (() => toPng(canvas))
 
-  function redraw() {
+  function paint() {
+    frame = 0
     if (!ctx || !image) return
     ctx.imageSmoothingEnabled = false
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.drawImage(image, 0, 0)
-    paintStrokes(ctx, current ? [...strokes, current] : strokes, block)
+    ctx.drawImage(base, 0, 0)
+    if (current) paintStrokes(ctx, [current], block)
   }
-
-  /** Grupo de botões alternáveis (ferramenta ou cor), com aria-pressed. */
-  function toggles<T>(items: Array<[T, string, Partial<HTMLButtonElement>?]>, initial: T, pick: (v: T) => void): HTMLElement {
-    const buttons = items.map(([value, label, extra]) => {
-      const b = el('button', { type: 'button', ...extra })
-      if (!extra?.className?.includes('pxa-swatch')) b.textContent = label
-      b.setAttribute('aria-label', label)
-      b.setAttribute('aria-pressed', String(value === initial))
-      b.onclick = () => {
-        pick(value)
-        for (const other of buttons) other.setAttribute('aria-pressed', String(other === b))
-      }
-      return b
-    })
-    return el('div', { className: 'pxa-draw-group' }, ...buttons)
+  /** Refaz a camada base (print + traços salvos) e pinta já. */
+  function rebuild() {
+    if (baseCtx && image) {
+      baseCtx.clearRect(0, 0, base.width, base.height)
+      baseCtx.drawImage(image, 0, 0)
+      paintStrokes(baseCtx, strokes, block)
+    }
+    cancelAnimationFrame(frame)
+    paint()
   }
+  /** Arrasto: no máximo uma pintura por frame. */
+  const schedule = () => { frame ||= requestAnimationFrame(paint) }
 
   const undo = () => {
     strokes.pop()
-    redraw()
+    rebuild()
   }
   const toolbar = el(
     'div',
     { className: 'pxa-draw-bar' },
-    toggles(TOOLS.map(([t, label]) => [t, label] as [DrawTool, string]), tool, (t) => { tool = t }),
-    toggles(
-      Object.entries(DRAW_COLORS).map(([name, hex]) => {
-        const swatch: Partial<HTMLButtonElement> = { className: 'pxa-swatch', title: name }
-        return [hex, `Cor ${name}`, swatch] as [string, string, Partial<HTMLButtonElement>]
-      }),
-      color,
-      (c) => { color = c },
-    ),
+    toggleGroup(TOOLS.map(([t, label]) => [labeled(el('button', { textContent: label }), label, t === tool), () => { tool = t }])),
+    toggleGroup(Object.entries(DRAW_COLORS).map(([name, hex]) => {
+      const swatch = labeled(el('button', { className: 'pxa-swatch', title: name }), `Cor ${name}`, hex === color)
+      swatch.style.background = hex
+      return [swatch, () => { color = hex }]
+    })),
     el('button', { type: 'button', textContent: 'Desfazer', title: 'Ctrl/Cmd+Z', onclick: undo }),
-    el('button', { type: 'button', textContent: 'Limpar', onclick: () => { strokes.length = 0; redraw() } }),
+    el('button', { type: 'button', textContent: 'Limpar', onclick: () => { strokes.length = 0; rebuild() } }),
   )
-  for (const sw of toolbar.querySelectorAll<HTMLButtonElement>('.pxa-swatch')) sw.style.background = DRAW_COLORS[sw.title as keyof typeof DRAW_COLORS]
 
   const cancelBtn = el('button', { type: 'button', textContent: 'Cancelar' })
   const saveBtn = el('button', { type: 'button', className: 'pxa-primary', textContent: 'Salvar' })
@@ -117,7 +118,7 @@ export function openDrawEditor(ui: UiHost, opts: DrawEditorOptions): { close(): 
 
   /** Exibe o print o maior possível na tela; ampliação em escala inteira para os pixels ficarem nítidos. */
   function fitCanvas() {
-    const fit = Math.min((Math.min(innerWidth * 0.9, 960)) / canvas.width, (innerHeight * 0.65) / canvas.height)
+    const fit = Math.min(Math.min(innerWidth * 0.9, 960) / canvas.width, (innerHeight * 0.65) / canvas.height)
     const scale = fit >= 1 ? Math.floor(Math.min(fit, 4)) : fit
     Object.assign(canvas.style, { width: `${Math.round(canvas.width * scale)}px`, height: `${Math.round(canvas.height * scale)}px` })
   }
@@ -133,41 +134,35 @@ export function openDrawEditor(ui: UiHost, opts: DrawEditorOptions): { close(): 
     if (!image) return
     canvas.setPointerCapture?.(ev.pointerId)
     current = { tool, color, points: [toShot(ev)] }
-    redraw()
+    schedule()
   })
   canvas.addEventListener('pointermove', (ev) => {
     if (!current) return
     const p = toShot(ev)
     if (current.tool === 'brush') current.points.push(p)
     else current.points = [current.points[0]!, p] // formas: início + ponto atual
-    redraw()
+    schedule()
   })
   const finishStroke = () => {
     if (!current) return
     strokes.push(current)
     current = null
-    redraw()
+    rebuild()
   }
   canvas.addEventListener('pointerup', finishStroke)
   canvas.addEventListener('pointercancel', finishStroke)
 
-  const onKey = (ev: KeyboardEvent) => {
-    if (ev.key === 'Escape') {
-      ev.preventDefault()
-      ev.stopImmediatePropagation()
-      cancel()
-    } else if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z') {
-      ev.preventDefault()
-      ev.stopImmediatePropagation()
-      undo()
-    }
-  }
-  window.addEventListener('keydown', onKey, { capture: true })
+  const releaseKeys = captureKeys((ev) => {
+    if (ev.key === 'Escape') return cancel
+    if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z') return undo
+    return undefined
+  })
 
   function close() {
     if (closed) return
     closed = true
-    window.removeEventListener('keydown', onKey, { capture: true })
+    releaseKeys()
+    cancelAnimationFrame(frame)
     image?.close()
     modal.remove()
   }
@@ -196,10 +191,10 @@ export function openDrawEditor(ui: UiHost, opts: DrawEditorOptions): { close(): 
     (img) => {
       if (closed) return img.close()
       image = img
-      canvas.width = img.width
-      canvas.height = img.height
+      canvas.width = base.width = img.width
+      canvas.height = base.height = img.height
       fitCanvas()
-      redraw()
+      rebuild()
     },
     () => { if (!closed) cancel() },
   )

@@ -3,8 +3,8 @@ import { CATEGORY_ICON } from './viewport'
 import { compactCss } from './css-filter'
 import { originalShotName, shotName } from './export-names'
 import { OUTER_HTML_LIMIT } from './outer-html'
-import { hostOf, pad, plural } from './format'
-import { errorText } from './error-log'
+import { hostOf, pad } from './format'
+import { errorCountLabel, errorText } from './error-log'
 import type { PageError } from './types'
 
 export interface MarkdownMeta {
@@ -130,7 +130,7 @@ export function renderCompactMarkdown(annotations: readonly Annotation[], meta: 
       where.push(`${inlineCode(a.component.name)}${file}`)
     }
     where.push(inlineCode(a.selector))
-    if (a.errors?.length) where.push(`⚠ ${plural(a.errors.length, 'erro', 'erros')}`)
+    if (a.errors?.length) where.push(errorCountLabel(a.errors.length))
     lines.push(`- **#${a.number}** ${a.note.split('\n').join('\n  ')}`, `  ${where.join(' · ')}`)
   }
   return lines.join('\n') + '\n'

@@ -10,7 +10,7 @@ export default defineUnlistedScript(() => {
   if (w.__pxaProbe) return
   w.__pxaProbe = true
 
-  const errorLog = createErrorLog()
+  const errorLog = createErrorLog({ base: () => location.href })
   installErrorHooks(window, errorLog)
 
   window.addEventListener(PROBE_REQUEST, (ev) => {

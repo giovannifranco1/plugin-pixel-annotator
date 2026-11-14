@@ -3,7 +3,7 @@ import { resolveAnnotation } from '@/lib/resolve'
 import { categoryOf } from '@/lib/viewport'
 import { ERROR_WINDOW_MS } from '@/lib/messages'
 import { hostOf, plural } from '@/lib/format'
-import { IMPORT_LIMITS, readImportZip } from '@/lib/import'
+import { readImportFile } from '@/lib/import'
 import type { PageError } from '@/lib/types'
 import { probeErrors } from './probe-client'
 import { openDrawEditor } from './ui/draw-editor'
@@ -52,8 +52,7 @@ export function createController(deps: ControllerDeps = {}) {
 
   let state: ControllerState = 'inactive'
   let teardown: Array<() => void> = []
-  let editor: { close(): void } | null = null // editor de nota ou de Desenho
-  let presentation: { close(): void } | null = null
+  let editor: { close(): void } | null = null // editor de nota, de Desenho ou a Apresentação
   let focusTimer: ReturnType<typeof setTimeout> | undefined
 
   /** Abre o editor de nota; `onSaved` decide o que fazer com a nota (e os erros que sobraram) confirmada. */
@@ -73,9 +72,9 @@ export function createController(deps: ControllerDeps = {}) {
         editor = null
         if (state === 'editing') state = 'active'
       },
-      onSave(note, kept = []) {
+      onSave(note, kept) {
         editor = null
-        onSaved(note, kept)
+        onSaved(note, kept ?? [])
       },
     })
   }
@@ -91,8 +90,7 @@ export function createController(deps: ControllerDeps = {}) {
     state = 'capturing'
     overlay.hide()
     try {
-      const draft = await capture(el, note)
-      store.add(errors.length ? { ...draft, errors } : draft, el)
+      store.add({ ...(await capture(el, note)), errors }, el)
     } catch {
       showToast(ui, 'Falha ao anotar')
     } finally {
@@ -116,18 +114,13 @@ export function createController(deps: ControllerDeps = {}) {
       if (!a || state !== 'active') return
       const anchor = resolveAnnotation(store, id)?.getBoundingClientRect() ?? new DOMRect(Math.max(8, innerWidth - 680), 80, 0, 0)
       openEditor(anchor, a.note, a.errors ?? [], (note, errors) => {
-        store.update(id, { note, errors: errors.length ? errors : undefined })
+        store.update(id, { note, errors })
         if (state === 'editing') state = 'active'
       })
     },
     onPresent,
     onDraw,
     onImport: (file) => void importZip(file),
-    // IMPO-05: importada da rota atual cujo elemento o seletor não acha.
-    isMissing(id) {
-      const a = store.get(id)
-      return Boolean(a?.importedFrom) && a!.pathname === location.pathname && !resolveAnnotation(store, id)
-    },
     onDelete: (id) => store.remove(id),
     onExportZip: () => void exportZip(ui, store),
     onCopyMarkdown: () => void copyMarkdown(ui, store),
@@ -141,9 +134,9 @@ export function createController(deps: ControllerDeps = {}) {
     if (state !== 'active' || store.list().length === 0) return
     state = 'presenting'
     overlay.hide()
-    presentation = openPresentation(ui, store, {
+    editor = openPresentation(ui, store, {
       onClose() {
-        presentation = null
+        editor = null
         if (state === 'presenting') state = 'active'
       },
     })
@@ -172,18 +165,12 @@ export function createController(deps: ControllerDeps = {}) {
 
   /** Importar .zip de outro PxA (IMPO-02..07). */
   async function importZip(file: File) {
-    try {
-      const result = file.size > IMPORT_LIMITS.maxInputBytes
-        ? ({ ok: false, error: '.zip grande demais para importar.' } as const)
-        : readImportZip(new Uint8Array(await file.arrayBuffer()))
-      if (!result.ok) return showToast(ui, result.error, 5000)
-      const added = store.importAnnotations(result.annotations, result.origin)
-      if (added === 0) return showToast(ui, 'Nada novo: essas anotações já estão aqui.')
-      const foreign = result.origin !== location.origin ? ` · anotações de ${hostOf(result.origin)}` : '' // IMPO-04
-      showToast(ui, `${plural(added, 'anotação importada', 'anotações importadas')}${foreign}`, foreign ? 5000 : 2500)
-    } catch {
-      showToast(ui, 'Não consegui ler este .zip.')
-    }
+    const result = await readImportFile(file)
+    if (!result.ok) return showToast(ui, result.error, 5000)
+    const added = store.importAnnotations(result.annotations, result.origin)
+    if (added === 0) return showToast(ui, 'Nada novo: essas anotações já estão aqui.')
+    const foreign = result.origin !== location.origin ? ` · anotações de ${hostOf(result.origin)}` : '' // IMPO-04
+    showToast(ui, `${plural(added, 'anotação importada', 'anotações importadas')}${foreign}`, foreign ? 5000 : 2500)
   }
 
   function activate() {
@@ -209,8 +196,6 @@ export function createController(deps: ControllerDeps = {}) {
     state = 'inactive'
     editor?.close()
     editor = null
-    presentation?.close()
-    presentation = null
     for (const undo of teardown.splice(0)) undo()
     overlay.hide()
     markers.hideAll()

@@ -3,6 +3,7 @@ import { el } from './dom'
 import { BRUSH, CATEGORY_PIXEL_ICON, DOWNLOAD, PENCIL, pixelIcon, TRASH } from './icons'
 import type { AnnotationStore } from '@/lib/store'
 import { hostOf, plural } from '@/lib/format'
+import { locate } from '@/lib/resolve'
 
 export interface PanelActions {
   onFocus(id: string): void
@@ -14,8 +15,6 @@ export interface PanelActions {
   onPresent(): void // APRE-01
   onImport(file: File): void // IMPO-02
   onDraw(id: string): void // DESE-01
-  /** Importada cujo elemento não está nesta página (IMPO-05). */
-  isMissing?(id: string): boolean
 }
 
 const NOTE_PREVIEW = 60
@@ -44,7 +43,7 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
   let confirming = false
   let collapsed = false
   let manual = false // o dev recolheu/expandiu à mão: a largura da tela deixa de decidir
-  let thumbUrls: string[] = [] // miniaturas do Desenho, liberadas a cada render
+  const thumbUrls = new Map<Blob, string>() // miniatura por print composto; liberada quando o Desenho sai
 
   // Importar .zip (IMPO-02): o input fica escondido; o botão do rodapé abre o seletor.
   const fileInput = el('input', { type: 'file', accept: '.zip,application/zip', hidden: true })
@@ -106,13 +105,7 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
     edit.setAttribute('aria-label', `Editar anotação ${a.number}`)
     const del = el('button', { type: 'button', className: 'pxa-icon pxa-danger', title: 'Excluir anotação', onclick: () => actions.onDelete(a.id) }, pixelIcon(TRASH))
     del.setAttribute('aria-label', `Excluir anotação ${a.number}`)
-    const draw: HTMLButtonElement[] = []
-    if (a.shot) {
-      const b = el('button', { type: 'button', className: 'pxa-icon', title: 'Desenhar', onclick: () => actions.onDraw(a.id) }, pixelIcon(BRUSH))
-      b.setAttribute('aria-label', `Desenhar no print da anotação ${a.number}`)
-      draw.push(b)
-    }
-    const li = el('li', { className: 'pxa-item' }, main, ...draw, edit, del)
+    const li = el('li', { className: 'pxa-item' }, main, ...drawButton(a), edit, del)
     li.dataset.id = a.id
     return li
   }
@@ -122,22 +115,40 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
     const out: Array<Node | string> = []
     if (a.errors?.length) out.push(' ', el('span', { className: 'pxa-err', textContent: `⚠ ${a.errors.length}`, title: `${plural(a.errors.length, 'erro', 'erros')} no console` }))
     if (a.importedFrom) out.push(' ', el('span', { className: 'pxa-imported', textContent: `#${a.importedFrom.number} de ${hostOf(a.importedFrom.origin)}` }))
-    if (actions.isMissing?.(a.id)) out.push(' ', el('span', { className: 'pxa-missing', textContent: 'elemento não encontrado' }))
+    if (a.importedFrom && locate(store, a.id) === 'missing') out.push(' ', el('span', { className: 'pxa-missing', textContent: 'elemento não encontrado' }))
     return out
   }
 
-  /** Miniatura do print composto quando há Desenho (DESE-04). */
+  /** Desenhar no print (DESE-01); sem print, sem botão (DESE-05). */
+  function drawButton(a: Item): HTMLButtonElement[] {
+    if (!a.shot) return []
+    const b = el('button', { type: 'button', className: 'pxa-icon', title: 'Desenhar', onclick: () => actions.onDraw(a.id) }, pixelIcon(BRUSH))
+    b.setAttribute('aria-label', `Desenhar no print da anotação ${a.number}`)
+    return [b]
+  }
+
+  /** Miniatura do print composto quando há Desenho (DESE-04). A URL é reaproveitada entre renders. */
   function thumb(a: Item): Node[] {
     if (!a.drawing) return []
-    const url = URL.createObjectURL(a.drawing.composite)
-    thumbUrls.push(url)
+    const blob = a.drawing.composite
+    let url = thumbUrls.get(blob)
+    if (!url) thumbUrls.set(blob, (url = URL.createObjectURL(blob)))
     return [el('img', { className: 'pxa-thumb', src: url, alt: `Print com desenho da anotação ${a.number}` })]
   }
 
+  function releaseThumbs(items: readonly Item[]) {
+    const live = new Set(items.map((a) => a.drawing?.composite))
+    for (const [blob, url] of thumbUrls) {
+      if (live.has(blob)) continue
+      URL.revokeObjectURL(url)
+      thumbUrls.delete(blob)
+    }
+  }
+
   function render() {
-    if (!visible) return // oculto: show() renderiza ao voltar
-    for (const url of thumbUrls.splice(0)) URL.revokeObjectURL(url)
     const items = store.list()
+    releaseThumbs(items)
+    if (!visible) return // oculto: show() renderiza ao voltar
     title.textContent = `PxA · Anotações (${items.length})`
     exportZip.disabled = items.length === 0
     if (items.length === 0) confirming = false

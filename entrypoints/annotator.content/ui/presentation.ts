@@ -1,22 +1,20 @@
 import type { UiHost } from './host'
-import { el } from './dom'
+import { captureKeys, el } from './dom'
 import { CATEGORY_PIXEL_ICON, pixelIcon } from './icons'
+import { startTick } from '../tick'
 import type { AnnotationStore } from '@/lib/store'
-import type { Annotation } from '@/lib/types'
-import { resolveAnnotation } from '@/lib/resolve'
+import { displayShot } from '@/lib/export-names'
+import { locate } from '@/lib/resolve'
 import { CATEGORY_ICON, categoryOf } from '@/lib/viewport'
 
 export interface PresentationOptions {
   /** Saída pelo usuário (Esc ou ✕). `close()` chamado de fora não dispara isto. */
   onClose(): void
-  resolve?: (id: string) => Element | null
 }
 
 /** Folga do recorte em volta do elemento, em px. */
 const SPOT_PAD = 4
 export const PRESENTING_CLASS = 'pxa-presenting'
-
-const displayShot = (a: Annotation): Blob | null => a.drawing?.composite ?? a.shot
 
 /**
  * Modo Apresentação (APRE-01..06): uma Anotação por vez, com recorte (spotlight) em volta do
@@ -24,13 +22,11 @@ const displayShot = (a: Annotation): Blob | null => a.drawing?.composite ?? a.sh
  * A classe `pxa-presenting` na camada tira o Painel da frente sem mexer no estado dele.
  */
 export function openPresentation(ui: UiHost, store: AnnotationStore, opts: PresentationOptions): { close(): void } {
-  const resolve = opts.resolve ?? ((id: string) => resolveAnnotation(store, id))
   const list = [...store.list()]
   let index = Math.max(0, list.findIndex((a) => a.pathname === location.pathname))
   let target: Element | null = null
   let shotUrl: string | null = null
   let drawn = ''
-  let frame = 0
   let closed = false
 
   const spot = el('div', { className: 'pxa-spot' })
@@ -40,26 +36,19 @@ export function openPresentation(ui: UiHost, store: AnnotationStore, opts: Prese
   ui.layer.classList.add(PRESENTING_CLASS)
   ui.layer.append(spot, card)
 
-  function spotKey(): string {
-    if (!target) return 'none'
-    const r = target.getBoundingClientRect()
-    return `${r.left - SPOT_PAD},${r.top - SPOT_PAD},${r.width + 2 * SPOT_PAD},${r.height + 2 * SPOT_PAD}`
-  }
+  /** Acompanha a rolagem suave e mudanças de layout: lê o rect e escreve só se mudou. */
   function placeSpot() {
-    const key = spotKey()
+    const r = target?.getBoundingClientRect()
+    const box = r ? [r.left - SPOT_PAD, r.top - SPOT_PAD, r.width + 2 * SPOT_PAD, r.height + 2 * SPOT_PAD] : null
+    const key = box ? box.join() : 'none'
     if (key === drawn) return
     drawn = key
-    if (key === 'none') {
+    if (!box) {
       spot.style.display = 'none'
       return
     }
-    const [left, top, width, height] = key.split(',')
-    Object.assign(spot.style, { display: 'block', left: `${left}px`, top: `${top}px`, width: `${width}px`, height: `${height}px` })
-  }
-  // Acompanha a rolagem suave e mudanças de layout: lê o rect e escreve só se mudou.
-  const loop = () => {
-    placeSpot()
-    frame = requestAnimationFrame(loop)
+    const [left, top, width, height] = box.map((v) => `${v}px`)
+    Object.assign(spot.style, { display: 'block', left, top, width, height })
   }
 
   const nav = (label: string, text: string, onclick: () => void, disabled = false) => {
@@ -71,8 +60,8 @@ export function openPresentation(ui: UiHost, store: AnnotationStore, opts: Prese
   function show(i: number) {
     index = Math.min(list.length - 1, Math.max(0, i))
     const a = list[index]!
-    const sameRoute = a.pathname === location.pathname
-    target = sameRoute ? resolve(a.id) : null
+    const where = locate(store, a.id)
+    target = typeof where === 'string' ? null : where
     target?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
     placeSpot()
 
@@ -80,13 +69,12 @@ export function openPresentation(ui: UiHost, store: AnnotationStore, opts: Prese
     shotUrl = null
     const extra: Node[] = []
     const v = a.viewport
-    const nowWidth = innerWidth
-    if (v.category !== categoryOf(nowWidth)) {
-      const here = CATEGORY_ICON[categoryOf(nowWidth)]
-      extra.push(el('p', { className: 'pxa-present-warn', textContent: `anotada em ${CATEGORY_ICON[v.category]} ${v.width}px, você está em ${here} ${nowWidth}px` }))
+    const here = categoryOf(innerWidth)
+    if (v.category !== here) {
+      extra.push(el('p', { className: 'pxa-present-warn', textContent: `anotada em ${CATEGORY_ICON[v.category]} ${v.width}px, você está em ${CATEGORY_ICON[here]} ${innerWidth}px` }))
     }
     if (!target) {
-      extra.push(el('p', { className: 'pxa-present-where', textContent: sameRoute ? 'elemento não encontrado' : `anotada em ${a.path}` }))
+      extra.push(el('p', { className: 'pxa-present-where', textContent: where === 'missing' ? 'elemento não encontrado' : `anotada em ${a.path}` }))
       const shot = displayShot(a)
       if (shot) {
         shotUrl = URL.createObjectURL(shot)
@@ -121,20 +109,14 @@ export function openPresentation(ui: UiHost, store: AnnotationStore, opts: Prese
     End: () => show(list.length - 1),
     Escape: () => exit(),
   }
-  const onKey = (ev: KeyboardEvent) => {
-    const action = KEYS[ev.key]
-    if (!action) return
-    ev.preventDefault()
-    ev.stopImmediatePropagation()
-    action()
-  }
-  window.addEventListener('keydown', onKey, { capture: true })
+  const releaseKeys = captureKeys((ev) => KEYS[ev.key])
+  let stopTick = () => {}
 
   function close() {
     if (closed) return
     closed = true
-    cancelAnimationFrame(frame)
-    window.removeEventListener('keydown', onKey, { capture: true })
+    stopTick()
+    releaseKeys()
     if (shotUrl) URL.revokeObjectURL(shotUrl)
     spot.remove()
     card.remove()
@@ -150,6 +132,6 @@ export function openPresentation(ui: UiHost, store: AnnotationStore, opts: Prese
     return { close }
   }
   show(index)
-  frame = requestAnimationFrame(loop)
+  stopTick = startTick(placeSpot)
   return { close }
 }

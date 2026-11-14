@@ -1,8 +1,7 @@
 import type { UiHost } from './host'
 import { el } from './dom'
 import type { PageError } from '@/lib/types'
-import { errorText } from '@/lib/error-log'
-import { plural } from '@/lib/format'
+import { errorCountLabel, errorText } from '@/lib/error-log'
 
 export interface EditorOptions {
   anchor: DOMRect
@@ -21,7 +20,7 @@ function createErrorList(form: HTMLElement, before: Node) {
   function render() {
     if (list.length === 0) return box.remove()
     box.replaceChildren(
-      el('span', { className: 'pxa-errors-title', textContent: `⚠ ${plural(list.length, 'erro', 'erros')}` }),
+      el('span', { className: 'pxa-errors-title', textContent: errorCountLabel(list.length) }),
       el('ul', {}, ...list.map((e, i) => {
         const remove = el('button', { type: 'button', className: 'pxa-icon', textContent: '✕', title: 'Remover erro', onclick: () => { list = list.filter((_, j) => j !== i); render() } })
         remove.setAttribute('aria-label', `Remover erro ${i + 1}`)
@@ -64,13 +63,8 @@ export function openNoteEditor(ui: UiHost, opts: EditorOptions): { close(): void
   const errors = createErrorList(form, hint)
   // O probe responde em até 300ms; quem salvar antes disso espera a lista chegar (não perde os erros).
   let pending: Promise<void> | null = null
-  if (Array.isArray(opts.errors)) errors.set(opts.errors)
-  else if (opts.errors) {
-    pending = (opts.errors as Promise<readonly PageError[]>).then(
-      (list) => { if (!closed) errors.set(list) },
-      () => undefined,
-    ).finally(() => { pending = null })
-  }
+  if (opts.errors instanceof Promise) pending = opts.errors.then((list) => { if (!closed) errors.set(list) }, () => undefined)
+  else if (opts.errors) errors.set(opts.errors)
 
   const close = () => {
     closed = true

@@ -12,6 +12,7 @@ export const IMPORT_LIMITS = {
 export type ImportResult = { ok: true; origin: string; annotations: Annotation[] } | { ok: false; error: string }
 
 const TOO_BIG = '.zip grande demais para importar.'
+const UNREADABLE = 'Não consegui ler este .zip.'
 const WANTED = /^(pxa\.json|shots\/[\w-]+\.png)$/
 
 class TooBig extends Error {}
@@ -35,7 +36,7 @@ export function readImportZip(bytes: Uint8Array, limits = IMPORT_LIMITS): Import
       },
     })
   } catch (e) {
-    return { ok: false, error: e instanceof TooBig ? TOO_BIG : 'Não consegui ler este .zip.' }
+    return { ok: false, error: e instanceof TooBig ? TOO_BIG : UNREADABLE }
   }
 
   const json = files[MANIFEST_FILE]
@@ -56,4 +57,14 @@ export function readImportZip(bytes: Uint8Array, limits = IMPORT_LIMITS): Import
     }
   })
   return { ok: true, origin: parsed.manifest.origin, annotations }
+}
+
+/** Lê o arquivo escolhido no Painel; o tamanho é checado antes de carregar tudo na memória. */
+export async function readImportFile(file: Blob, limits = IMPORT_LIMITS): Promise<ImportResult> {
+  if (file.size > limits.maxInputBytes) return { ok: false, error: TOO_BIG }
+  try {
+    return readImportZip(new Uint8Array(await file.arrayBuffer()), limits)
+  } catch {
+    return { ok: false, error: UNREADABLE }
+  }
 }
