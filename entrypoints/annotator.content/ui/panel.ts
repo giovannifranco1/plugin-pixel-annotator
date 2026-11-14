@@ -1,6 +1,6 @@
 import type { UiHost } from './host'
 import { el } from './dom'
-import { CATEGORY_PIXEL_ICON, DOWNLOAD, PENCIL, pixelIcon, TRASH } from './icons'
+import { CATEGORY_PIXEL_ICON, CHEVRON_DOWN, CHEVRON_UP, DOWNLOAD, PENCIL, pixelIcon, TRASH } from './icons'
 import type { AnnotationStore } from '@/lib/store'
 
 export interface PanelActions {
@@ -46,7 +46,7 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
   function setCollapsed(value: boolean) {
     collapsed = value
     panel.classList.toggle('pxa-collapsed', value)
-    collapse.textContent = value ? '▴' : '▾'
+    collapse.replaceChildren(pixelIcon(value ? CHEVRON_UP : CHEVRON_DOWN))
     collapse.setAttribute('aria-label', value ? 'Expandir painel' : 'Recolher painel')
     collapse.setAttribute('aria-expanded', String(!value))
   }

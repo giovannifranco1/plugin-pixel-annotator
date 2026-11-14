@@ -134,6 +134,24 @@ export const SPEAKER_OFF = [
   '............',
 ]
 
+// Recolher/expandir o painel (seta grossa, mesmo tamanho do ícone de exportar).
+export const CHEVRON_DOWN = [
+  '............',
+  '............',
+  '............',
+  '.KK......KK.',
+  '.KKK....KKK.',
+  '..KKK..KKK..',
+  '...KKKKKK...',
+  '....KKKK....',
+  '.....KK.....',
+  '............',
+  '............',
+  '............',
+]
+
+export const CHEVRON_UP = [...CHEVRON_DOWN].reverse()
+
 export const CATEGORY_PIXEL_ICON: Record<ScreenCategory, readonly string[]> = { mobile: PHONE, tablet: TABLET, desktop: MONITOR }
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
