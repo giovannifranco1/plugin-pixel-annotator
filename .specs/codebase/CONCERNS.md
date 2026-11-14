@@ -12,5 +12,6 @@
 - **Hooks de `fetch`/XHR no main world:** observar a promise do `fetch` marca a rejeição como tratada; se a página chamar `fetch()` sem encadear nada, deixa de sair o `unhandledrejection` dela (o erro de rede continua registrado). `console.error` com objeto grande paga um `JSON.stringify` inteiro antes do corte em 500 caracteres.
 - **Privacidade do Registro de erros:** só query e fragmento saem da URL; tokens no caminho continuam. Documentado no README; o dev revisa a lista no editor antes de salvar.
 - **Import:** `unzipSync` roda na thread da página; um `.zip` perto do limite (50 MB) pode travar a página por um instante. O limite de 100 MB descompactados usa o tamanho declarado no cabeçalho do zip.
+- **Bytes da página no Firefox:** objetos DOM (File, Blob do canvas) chegam ao content script por Xray; métodos de typed array que leem `constructor` (`subarray`, `slice`, `map`) falham com "Permission denied". Entrada de arquivo passa por `ownBytes()` (`lib/import.ts`). O export usa só `set` no fflate e funciona.
 - **Firefox ainda não verificado** para o Registro de erros, a Apresentação, o Desenho e o Importar: checklist em `.specs/features/2026-11-14-equipe-claude/manual-check.md`.
 - **Painel em telas estreitas:** abaixo de 768px o painel se recolhe sozinho para não cobrir a página, até o dev recolher ou expandir à mão.

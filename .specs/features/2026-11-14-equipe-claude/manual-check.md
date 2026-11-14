@@ -19,6 +19,7 @@ Carregar `.output/firefox-mv3/manifest.json` em `about:debugging#/runtime/this-f
 - [ ] **ERRO-06:** numa página com CSP restritiva (ex: github.com), anotar normalmente. A anotação sai sem erros e sem aviso.
 - [ ] **APRE-01..06:** com 3 anotações, clicar em **Apresentar**. Conferir o escurecimento em volta do elemento, → / Espaço / ← / Home / End / Esc, e que o Painel volta como estava ao sair.
 - [ ] **DESE-01..05:** clicar no ícone de rabisco de um item, desenhar com as 4 ferramentas e as 3 cores, Ctrl+Z, Limpar, Esc (fecha sem salvar) e Salvar. A miniatura aparece no item; o `.zip` traz `shots/01.png` (com desenho) e `shots/01-original.png`.
+- [ ] **IMPO-02 (Firefox/Zen, bug corrigido):** importar um `.zip` exportado; antes falhava com "Não consegui ler este .zip." e `Permission denied to access property "constructor"` no console. Deve importar.
 - [ ] **IMPO-01..07:** exportar num site e, em outra aba (de preferência outro host, ex: `127.0.0.1` em vez de `localhost`), clicar em **Importar .zip**. Marcadores nas mesmas posições, aviso "anotações de …", importar de novo não duplica, e recarregar a aba mostra o aviso de saída (IMPO-07).
 
 ## Chrome (uso real)

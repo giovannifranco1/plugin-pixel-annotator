@@ -6,6 +6,7 @@
 - UI injetada: elementos criados com `el()` (`ui/dom.ts`) dentro do host do Shadow DOM; CSS só em `ui/styles.ts`.
 - Módulos de UI com desenho por frame expõem `measure()`, que lê o layout e devolve a escrita. O tick junta todas as leituras antes das escritas.
 - Modais (Apresentação, Desenho) registram atalhos com `captureKeys()` (`ui/dom.ts`), na captura em `window`, e o desligam no `close()` idempotente.
+- Bytes vindos de objetos da página (`File` do input, Blobs de elementos criados no DOM) passam por `ownBytes()` antes de `subarray`/fflate: no Firefox eles pertencem à página e ler `constructor` é negado.
 - Campos novos de `Annotation` são opcionais e só existem com conteúdo (`errors` com ≥1 erro; o store normaliza). Nomes de arquivos em `shots/` saem só de `shotFiles()` (`lib/export-names.ts`).
 - Lógica pura vai em `lib/` (sem `browser.*`), testável no Vitest.
 - Commits: Conventional Commits. Scopes: `content`, `background`, `capture`, `export`, `ui`, `build`, `specs`.

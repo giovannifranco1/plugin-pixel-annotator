@@ -17,6 +17,12 @@ const WANTED = /^(pxa\.json|shots\/[\w-]+\.png)$/
 
 class TooBig extends Error {}
 
+/** A mensagem do toast é genérica; a causa real vai para o console da aba para diagnóstico. */
+function unreadable(cause: unknown): ImportResult {
+  console.warn(`[PxA] ${UNREADABLE}`, cause)
+  return { ok: false, error: UNREADABLE }
+}
+
 /**
  * Lê um .zip exportado por outro PxA (IMPO-02/03): valida o `pxa.json` e reconstrói as Anotações
  * com os prints de `shots/`. Só `pxa.json` e `shots/*.png` são descompactados.
@@ -36,7 +42,7 @@ export function readImportZip(bytes: Uint8Array, limits = IMPORT_LIMITS): Import
       },
     })
   } catch (e) {
-    return { ok: false, error: e instanceof TooBig ? TOO_BIG : UNREADABLE }
+    return e instanceof TooBig ? { ok: false, error: TOO_BIG } : unreadable(e)
   }
 
   const json = files[MANIFEST_FILE]
@@ -59,12 +65,23 @@ export function readImportZip(bytes: Uint8Array, limits = IMPORT_LIMITS): Import
   return { ok: true, origin: parsed.manifest.origin, annotations }
 }
 
+/**
+ * Cópia dos bytes num buffer da própria extensão. No Firefox, o `File` do input é da página: os bytes
+ * de `arrayBuffer()` e o `Uint8Array` sobre eles pertencem à página (Xray), e o `subarray` que o fflate
+ * usa lê `constructor` → "Permission denied to access property "constructor"". `set` copia sem isso.
+ */
+export function ownBytes(source: Uint8Array): Uint8Array {
+  const bytes = new Uint8Array(source.length)
+  bytes.set(source)
+  return bytes
+}
+
 /** Lê o arquivo escolhido no Painel; o tamanho é checado antes de carregar tudo na memória. */
 export async function readImportFile(file: Blob, limits = IMPORT_LIMITS): Promise<ImportResult> {
   if (file.size > limits.maxInputBytes) return { ok: false, error: TOO_BIG }
   try {
-    return readImportZip(new Uint8Array(await file.arrayBuffer()), limits)
-  } catch {
-    return { ok: false, error: UNREADABLE }
+    return readImportZip(ownBytes(new Uint8Array(await file.arrayBuffer())), limits)
+  } catch (e) {
+    return unreadable(e)
   }
 }

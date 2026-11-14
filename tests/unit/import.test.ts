@@ -1,6 +1,6 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { strToU8, zipSync, type Zippable } from 'fflate'
-import { readImportFile, readImportZip, IMPORT_LIMITS } from '@/lib/import'
+import { ownBytes, readImportFile, readImportZip, IMPORT_LIMITS } from '@/lib/import'
 import { buildManifest } from '@/lib/manifest'
 import { annotation } from './fixtures/annotations'
 
@@ -82,4 +82,47 @@ describe('import', () => {
     const ok = new Blob([zip({ 'pxa.json': strToU8(JSON.stringify(buildManifest([], meta))) }) as BlobPart])
     expect(await readImportFile(ok)).toMatchObject({ ok: true, origin: 'https://staging.app.com' })
   })
+
+  test('falha de leitura registra a causa no console (diagnóstico), sem mudar a mensagem', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const boom = new Error('arrayBuffer negado')
+    const file = { size: 10, arrayBuffer: async () => { throw boom } } as unknown as Blob
+    expect(await readImportFile(file)).toEqual({ ok: false, error: 'Não consegui ler este .zip.' })
+    expect(warn).toHaveBeenCalledWith('[PxA] Não consegui ler este .zip.', boom)
+    warn.mockClear()
+    expect(readImportZip(strToU8('não é zip'))).toEqual({ ok: false, error: 'Não consegui ler este .zip.' })
+    expect(warn).toHaveBeenCalledWith('[PxA] Não consegui ler este .zip.', expect.any(Error))
+    warn.mockRestore()
+  })
+
+  /** Como no Firefox: bytes do arquivo da página chegam por Xray e ler `constructor` é negado. */
+  function pageOwned(bytes: Uint8Array): Uint8Array {
+    const view = new Uint8Array(bytes)
+    Object.defineProperty(view, 'constructor', { get() { throw new Error('Permission denied to access property "constructor"') } })
+    return view
+  }
+  const validZip = () => zip({ 'pxa.json': strToU8(JSON.stringify(buildManifest([annotation(1)], meta))), 'shots/01.png': png(1) })
+
+  test('IMPO-02 (Firefox) bytes da página: o fflate falharia; ownBytes copia para um buffer da extensão', () => {
+    expect(readImportZip(pageOwned(validZip()))).toEqual({ ok: false, error: 'Não consegui ler este .zip.' }) // o mecanismo do bug
+    const own = ownBytes(pageOwned(validZip()))
+    expect(Array.from(own)).toEqual(Array.from(validZip()))
+    expect(readImportZip(own)).toMatchObject({ ok: true, annotations: [expect.objectContaining({ id: 'id-1' })] })
+  })
+
+  test('IMPO-02 (Firefox) readImportFile importa mesmo quando o buffer do arquivo vem da página', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const OrigU8 = globalThis.Uint8Array
+    const bytes = validZip()
+    // O primeiro Uint8Array montado sobre o buffer do arquivo nasce "da página" (constructor negado).
+    const file = { size: bytes.byteLength, arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) } as unknown as Blob
+    const spy = vi.spyOn(globalThis, 'Uint8Array').mockImplementationOnce(function (this: unknown, ...args: unknown[]) {
+      return pageOwned(new OrigU8(...(args as [ArrayBuffer])))
+    } as unknown as typeof Uint8Array)
+    const r = await readImportFile(file)
+    spy.mockRestore()
+    warn.mockRestore()
+    expect(r).toMatchObject({ ok: true, annotations: [expect.objectContaining({ id: 'id-1' })] })
+  })
 })
+
