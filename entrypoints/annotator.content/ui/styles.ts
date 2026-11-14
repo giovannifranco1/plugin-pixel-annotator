@@ -126,6 +126,8 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 }
 .pxa-audit-value:hover:not(:disabled) { background: none; color: #ff3e7f; }
 .pxa-audit-count, .pxa-audit-props { color: #5b5266; }
+.pxa-audit-fix { width: 100%; padding-left: 4px; font-weight: 700; }
+.pxa-audit-ok { margin: 0; padding: 3px 0; color: #2f7d32; font-weight: 700; }
 .pxa-audit details { margin: 2px 0 4px; }
 .pxa-audit summary { cursor: pointer; color: #5b5266; padding: 2px 0; }
 .pxa-swatch { width: 12px; height: 12px; border: 2px solid #1a1226; }

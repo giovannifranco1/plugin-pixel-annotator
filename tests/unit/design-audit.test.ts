@@ -72,10 +72,17 @@ describe('design-audit', () => {
       sample({ colors: ['rgba(122, 122, 122, 0.5)'] }), // translúcida não compara com opaca
     ], 4)
     const by = (v: string) => r.colors.find((e) => e.value === v)!
-    expect(by('#7a7a7a')).toMatchObject({ flags: ['similar'], similarTo: '#777777', suggestion: 'usar #777777' })
+    expect(by('#7a7a7a')).toMatchObject({ flags: ['similar'], similarTo: '#777777', similarCount: 30, suggestion: 'usar #777777' })
     expect(by('#747474').flags).toEqual([])
     expect(by('#777777').flags).toEqual([])
     expect(by('#7a7a7a80').flags).toEqual([])
+  })
+
+  test('DETE-03 diferença imperceptível (ΔE < 1) é a mesma cor: uma linha só, sem Achado', () => {
+    const r = buildAuditReport([...times(30, { colors: ['rgb(124, 119, 95)'] }), ...times(2, { colors: ['rgb(124, 119, 96)'] })], 4)
+    expect(r.colors).toHaveLength(1)
+    expect(r.colors[0]).toMatchObject({ value: '#7c775f', count: 32, flags: [], variants: ['#7c7760'] })
+    expect(r.colors[0]!.elements).toHaveLength(32)
   })
 
   test('DETE-03 dois valores raros parecidos entre si não são Achado: falta uma referência clara (3× mais usada)', () => {
@@ -128,9 +135,9 @@ describe('design-audit', () => {
 
   test('DETE-02 cabeçalho com cores, tamanhos, famílias e espaçamentos fora da escala', () => {
     const r = buildAuditReport([sample({ colors: ['rgb(1, 2, 3)', 'rgb(200, 0, 0)'], fontSize: '12px', fontFamily: 'Inter', spacings: [['margin-top', '13px'], ['margin-left', '7px']] })], 4)
-    expect(auditHeadline(r)).toBe('2 cores · 1 tamanho de fonte · 1 família · 2 espaçamentos fora da escala de 4px')
+    expect(auditHeadline(r)).toBe('2 achados · 2 cores · 1 tamanho de fonte · 1 família · 2 espaçamentos fora da escala de 4px')
     const none = buildAuditReport([], 8)
-    expect(auditHeadline(none)).toBe('0 cores · 0 tamanhos de fonte · 0 famílias · 0 espaçamentos fora da escala de 8px')
+    expect(auditHeadline(none)).toBe('Nenhum achado · 0 cores · 0 tamanhos de fonte · 0 famílias · 0 espaçamentos fora da escala de 8px')
   })
 
   test('DETE-05 notas dizem a propriedade e o que usar', () => {
@@ -144,7 +151,8 @@ describe('design-audit', () => {
     expect(findingNote('color', one(r.colors, '#7a7a7a'), 4)).toBe('[Raio-X] cor #7a7a7a parecida com #777777: usar #777777 (1 elemento)')
     expect(findingNote('font-size', one(r.fontSizes, '13px'), 4)).toBe('[Raio-X] tamanho de fonte 13px parecido com 14px: usar 14px (1 elemento)')
     expect(findingNote('font-family', one(r.families, 'Times New Roman'), 4)).toBe('[Raio-X] família Times New Roman é a fonte padrão do navegador (a página usa Inter): usar font-family: inherit (1 elemento)')
-    expect(flagTexts('font-family', one(r.families, 'Times New Roman'), 4)).toEqual(['fonte padrão do navegador'])
+    expect(flagTexts('font-family', one(r.families, 'Times New Roman'), 4)).toEqual(['fonte padrão do navegador (a página usa Inter)'])
+    expect(flagTexts('color', one(r.colors, '#7a7a7a'), 4)).toEqual(['parecida com #777777 (30×)'])
     expect(flagTexts('spacing', one(r.spacings, '13px'), 4)).toEqual(['fora da escala de 4px'])
   })
 })

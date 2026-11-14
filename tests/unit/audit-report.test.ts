@@ -67,13 +67,39 @@ describe('audit-report', () => {
     expect($('.pxa-audit-foot')!.textContent).toContain('40 elementos')
   })
 
-  test('DETE-09 Achados à vista; os demais valores recolhidos em "outros N valores"', async () => {
+  test('DETE-09 Achados à vista; os demais recolhidos em "N valores sem problema"', async () => {
     await openReport()
     expect(row('#7a7a7a').closest('details')).toBeNull()
     expect(row('#777777').closest('details')).not.toBeNull()
     const summaries = $$('.pxa-audit summary').map((s) => s.textContent)
-    expect(summaries).toContain('1 outro valor') // cores
+    expect(summaries).toContain('1 valor sem problema') // cores
     expect(row('12px').closest('details')!.open).toBe(false)
+  })
+
+  test('DETE-09 seção sem Achado diz "tudo certo"; cabeçalho começa pelos Achados', async () => {
+    await openReport()
+    const section = (title: string) => $$('.pxa-audit h3').find((h) => h.textContent === title)!
+    expect(section('Famílias').nextElementSibling!.textContent).toBe('✓ tudo certo')
+    expect(section('Cores').nextElementSibling!.textContent).not.toBe('✓ tudo certo')
+    expect($('.pxa-audit-head')!.textContent).toMatch(/^3 achados · /)
+  })
+
+  test('DETE-09 cada Achado diz a referência com os usos e o que usar', async () => {
+    await openReport()
+    expect(row('#7a7a7a').textContent).toContain('parecida com #777777 (39×)')
+    expect(row('#7a7a7a').querySelector('.pxa-audit-fix')!.textContent).toBe('→ usar #777777')
+    expect(row('13px').querySelector('.pxa-audit-fix')!.textContent).toBe('→ usar 12px ou 14px')
+  })
+
+  test('DETE-03 variante imperceptível aparece junto da cor, sem virar Achado', async () => {
+    const scan = vi.fn(async (): Promise<ScanResult> => ({
+      elements, truncated: false, ms: 1,
+      samples: elements.map((_, i) => sample({ colors: [i < 30 ? 'rgb(124, 119, 95)' : 'rgb(124, 119, 96)'] })),
+    }))
+    await openReport(scan)
+    expect($$('.pxa-audit-row[data-kind="color"]')).toHaveLength(1)
+    expect(row('#7c775f').textContent).toContain('também #7c7760')
+    expect(row('#7c775f').querySelector('.pxa-audit-annotate')).toBeNull()
   })
 
   test('DETE-04 hover num valor destaca os elementos que o usam; sair limpa', async () => {

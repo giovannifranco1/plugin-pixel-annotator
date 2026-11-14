@@ -34,6 +34,10 @@ export interface AuditEntry {
   flags: AuditFlag[]
   /** Valor de referência do Achado: semente parecida ou família dominante. */
   similarTo?: string
+  /** Usos da referência (`similarTo`), para dizer quão mais usada ela é. */
+  similarCount?: number
+  /** Cores: variantes imperceptíveis (ΔE < 1) somadas a esta linha. */
+  variants?: string[]
   /** Espaçamentos: propriedades onde aparece (lados juntos viram o nome base). */
   props?: string[]
   /** O que usar no lugar (DETE-05). */
@@ -54,6 +58,8 @@ export interface AuditReport {
 
 /** ΔE76 em Lab: ~2,3 é o limiar perceptível; até 5 é "quase igual". */
 const SIMILAR_DELTA_E = 5
+/** Abaixo disso ninguém vê a diferença (arredondamento de oklch()/color-mix()): é a mesma cor. */
+const SAME_COLOR_DELTA_E = 1
 /** Tamanhos de fonte a até 1px são "quase iguais". */
 const SIMILAR_FONT_PX = 1
 /** Folga para valores subpixel (rem/em/zoom). */
@@ -170,11 +176,33 @@ function markSimilar<K>(entries: AuditEntry[], key: (e: AuditEntry) => K, isNear
     if (seed && canStray(entry) && rareNear(entry, seed)) {
       entry.flags.push('similar')
       entry.similarTo = seed.value
+      entry.similarCount = seed.count
       entry.suggestion = `usar ${seed.value}`
     } else {
       seeds.push({ entry, key: k })
     }
   }
+}
+
+/**
+ * Junta no valor mais usado as variantes que ninguém distingue (ex: `#7c7760` × `#7c775f`): os elementos
+ * somam numa linha só. Devolve as variantes de cada valor que ficou.
+ */
+function mergeImperceptible(groups: Groups, same: (a: string, b: string) => boolean, onMerge: (from: string, into: string) => void): Map<string, string[]> {
+  const kept: string[] = []
+  const variants = new Map<string, string[]>()
+  for (const [value, set] of [...groups].sort(([a, x], [b, y]) => y.size - x.size || a.localeCompare(b))) {
+    const into = kept.find((k) => same(k, value))
+    if (!into) {
+      kept.push(value)
+      continue
+    }
+    for (const i of set) groups.get(into)!.add(i)
+    groups.delete(value)
+    onMerge(value, into)
+    variants.set(into, [...(variants.get(into) ?? []), value])
+  }
+  return variants
 }
 
 /** Família padrão do navegador em poucos elementos, quando a página escolheu outra (botão/campo sem `font: inherit`). */
@@ -243,8 +271,14 @@ export function buildAuditReport(samples: readonly AuditSample[], scale: AuditSc
     }
   })
 
-  const colorEntries = toEntries(colors)
   const alpha255 = (c: Rgba) => Math.round(c.a * 255)
+  const variants = mergeImperceptible(colors, (a, b) => {
+    const ca = rgbaOf.get(a)!
+    const cb = rgbaOf.get(b)!
+    return alpha255(ca) === alpha255(cb) && deltaE(ca, cb) < SAME_COLOR_DELTA_E
+  }, (from, into) => backgroundArea.set(into, (backgroundArea.get(into) ?? 0) + (backgroundArea.get(from) ?? 0)))
+  const colorEntries = toEntries(colors)
+  for (const e of colorEntries) if (variants.has(e.value)) e.variants = variants.get(e.value)
   markSimilar(
     colorEntries,
     (e) => rgbaOf.get(e.value)!,
@@ -291,10 +325,15 @@ export const AUDIT_KINDS: Record<AuditKind, { title: string; subject: [one: stri
   spacing: { title: 'Espaçamentos', subject: ['espaçamento', 'espaçamentos'], similar: 'parecido', entries: (r) => r.spacings },
 }
 
-/** Cabeçalho do relatório (DETE-02). */
+/** Seções na ordem do relatório. */
+export const KIND_LIST = Object.keys(AUDIT_KINDS) as AuditKind[]
+
+/** Cabeçalho do relatório (DETE-02): começa pelo número de Achados (DETE-09). */
 export function auditHeadline(r: AuditReport): string {
   const count = (kind: AuditKind) => plural(AUDIT_KINDS[kind].entries(r).length, ...AUDIT_KINDS[kind].subject)
+  const findings = KIND_LIST.reduce((n, kind) => n + AUDIT_KINDS[kind].entries(r).filter((e) => e.flags.length).length, 0)
   return [
+    findings ? plural(findings, 'achado', 'achados') : 'Nenhum achado',
     count('color'),
     count('font-size'),
     count('font-family'),
@@ -314,8 +353,8 @@ export function scaleNotice(r: AuditReport): string | null {
 /** Motivo de cada marca: curto na etiqueta do relatório, completo na nota. */
 function reason(kind: AuditKind, flag: AuditFlag, e: AuditEntry, scale: number, long: boolean): string {
   if (flag === 'off-scale') return `fora da escala de ${scale}px`
-  if (flag === 'similar') return `${AUDIT_KINDS[kind].similar} com ${e.similarTo}`
-  return long ? `é a fonte padrão do navegador (a página usa ${e.similarTo})` : 'fonte padrão do navegador'
+  if (flag === 'similar') return `${AUDIT_KINDS[kind].similar} com ${e.similarTo}${long ? '' : ` (${e.similarCount}×)`}`
+  return long ? `é a fonte padrão do navegador (a página usa ${e.similarTo})` : `fonte padrão do navegador (a página usa ${e.similarTo})`
 }
 
 /** Etiquetas da linha do relatório. */

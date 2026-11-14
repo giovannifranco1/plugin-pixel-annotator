@@ -1,5 +1,5 @@
 import {
-  AUDIT_KINDS, auditHeadline, buildAuditReport, findingNote, flagTexts, plural, scaleNotice,
+  AUDIT_KINDS, auditHeadline, buildAuditReport, findingNote, flagTexts, KIND_LIST, plural, scaleNotice,
   type AuditEntry, type AuditKind, type AuditReport, type AuditScale,
 } from '@/lib/design-audit'
 import { scanDocument, SCAN_LIMIT, type ScanResult } from '../audit-scan'
@@ -15,8 +15,6 @@ export interface AuditReportActions {
 /** Destaque do hover (DETE-04): no máximo 300 caixas, lendo no máximo 2.000 elementos por frame. */
 const MAX_HIGHLIGHT = 300
 const MAX_HIGHLIGHT_READS = 2000
-
-const KINDS = Object.keys(AUDIT_KINDS) as AuditKind[]
 
 const routeKey = () => location.href
 const count = (n: number) => n.toLocaleString('pt-BR')
@@ -90,7 +88,9 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
       el('button', { type: 'button', className: 'pxa-audit-value', textContent: e.value, title: `${e.value}: ir até o próximo elemento`, onclick: goToNext }),
       el('span', { className: 'pxa-audit-count', textContent: `${e.count}×` }),
       ...(e.props?.length ? [el('span', { className: 'pxa-audit-props', textContent: e.props.join(', ') })] : []),
+      ...(e.variants?.length ? [el('span', { className: 'pxa-audit-props', textContent: `também ${e.variants.join(', ')}`, title: 'Diferença imperceptível: conta como a mesma cor' })] : []),
       ...flagTexts(kind, e, scale).map((t) => el('span', { className: 'pxa-tag', textContent: t })),
+      ...(e.flags.length && e.suggestion ? [el('span', { className: 'pxa-audit-fix', textContent: `→ ${e.suggestion}` })] : []),
     )
     li.dataset.value = e.value
     li.dataset.kind = kind
@@ -109,14 +109,15 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
     const current = report
     head.textContent = auditHeadline(current)
     body.replaceChildren(
-      ...KINDS.flatMap((kind) => {
+      ...KIND_LIST.flatMap((kind) => {
         const entries = AUDIT_KINDS[kind].entries(current)
         const findings = entries.filter((e) => e.flags.length)
         const rest = entries.filter((e) => !e.flags.length)
         const rows = (list: AuditEntry[]) => el('ul', {}, ...list.map((e) => row(kind, e, elements)))
-        // DETE-09: Achados à vista, o resto recolhido.
-        const more = rest.length ? [el('details', {}, el('summary', { textContent: plural(rest.length, 'outro valor', 'outros valores') }), rows(rest))] : []
-        return [el('h3', { textContent: AUDIT_KINDS[kind].title }), rows(findings), ...more]
+        // DETE-09: Achados à vista; seção sem Achado diz que está tudo certo; o resto recolhido.
+        const top = findings.length ? rows(findings) : el('p', { className: 'pxa-audit-ok', textContent: '✓ tudo certo' })
+        const more = rest.length ? [el('details', {}, el('summary', { textContent: plural(rest.length, 'valor sem problema', 'valores sem problema') }), rows(rest))] : []
+        return [el('h3', { textContent: AUDIT_KINDS[kind].title }), top, ...more]
       }),
     )
     foot.textContent = `${count(elements.length)} elementos em ${Math.round(result.ms)} ms`
