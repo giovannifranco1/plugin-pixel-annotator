@@ -1,5 +1,5 @@
 import { LOUPE_SIZE, physicalPoint, sampleWindow, type Pixels } from '@/lib/loupe'
-import { captureTab, captureWithoutUi, type CaptureTab } from '../screenshot'
+import { captureTab, captureWithoutUi, withShotBitmap, type CaptureTab } from '../screenshot'
 import type { UiHost } from './host'
 import { el } from './dom'
 import { showToast } from './toast'
@@ -19,10 +19,8 @@ export interface LoupeDeps {
   onOff?(): void
 }
 
-async function decodeShot(dataUrl: string): Promise<Pixels> {
-  // createImageBitmap a partir do Blob: não depende do img-src da CSP da página (igual ao recorte do print).
-  const img = await createImageBitmap(await (await fetch(dataUrl)).blob())
-  try {
+const decodeShot = (dataUrl: string): Promise<Pixels> =>
+  withShotBitmap(dataUrl, (img) => {
     const canvas = document.createElement('canvas')
     canvas.width = img.width
     canvas.height = img.height
@@ -30,10 +28,7 @@ async function decodeShot(dataUrl: string): Promise<Pixels> {
     if (!ctx) throw new Error('canvas indisponível')
     ctx.drawImage(img, 0, 0)
     return ctx.getImageData(0, 0, img.width, img.height)
-  } finally {
-    img.close()
-  }
-}
+  })
 
 /** Lupa pixel sobre um print congelado da aba (LUPA-01..04). */
 export function createLoupe(ui: UiHost, deps: LoupeDeps = {}) {
@@ -51,6 +46,7 @@ export function createLoupe(ui: UiHost, deps: LoupeDeps = {}) {
   let settle: ReturnType<typeof setTimeout> | undefined
   let pointer: { x: number; y: number } | null = null
   let drawn = ''
+  let listeners: AbortController | null = null
 
   const onMove = (e: PointerEvent) => { pointer = { x: e.clientX, y: e.clientY } }
   const onKey = (e: KeyboardEvent) => {
@@ -90,18 +86,16 @@ export function createLoupe(ui: UiHost, deps: LoupeDeps = {}) {
     generation++
     pixels = null
     clearTimeout(settle)
-    if (on) {
-      window.addEventListener('pointermove', onMove, { capture: true, passive: true })
-      window.addEventListener('keydown', onKey, { capture: true })
-      document.addEventListener('scroll', invalidate, { capture: true, passive: true })
-      window.addEventListener('resize', invalidate)
-      void refresh()
-    } else {
-      window.removeEventListener('pointermove', onMove, { capture: true })
-      window.removeEventListener('keydown', onKey, { capture: true })
-      document.removeEventListener('scroll', invalidate, { capture: true })
-      window.removeEventListener('resize', invalidate)
-    }
+    listeners?.abort()
+    listeners = null
+    if (!on) return
+    listeners = new AbortController()
+    const { signal } = listeners
+    window.addEventListener('pointermove', onMove, { capture: true, passive: true, signal })
+    window.addEventListener('keydown', onKey, { capture: true, signal })
+    document.addEventListener('scroll', invalidate, { capture: true, passive: true, signal })
+    window.addEventListener('resize', invalidate, { signal })
+    void refresh()
   }
 
   /** Hex do pixel físico sob o cursor, ou null sem print/cursor. */
@@ -122,14 +116,14 @@ export function createLoupe(ui: UiHost, deps: LoupeDeps = {}) {
     })
     ctx.strokeStyle = 'rgba(26, 18, 38, .25)'
     ctx.lineWidth = 1
+    ctx.beginPath()
     for (let i = 1; i < LOUPE_SIZE; i++) {
-      ctx.beginPath()
       ctx.moveTo(i * ZOOM + 0.5, 0)
       ctx.lineTo(i * ZOOM + 0.5, VIEW)
       ctx.moveTo(0, i * ZOOM + 0.5)
       ctx.lineTo(VIEW, i * ZOOM + 0.5)
-      ctx.stroke()
     }
+    ctx.stroke()
     const mid = Math.floor(LOUPE_SIZE / 2) * ZOOM
     ctx.strokeStyle = '#ff3e7f'
     ctx.lineWidth = 2
@@ -138,12 +132,12 @@ export function createLoupe(ui: UiHost, deps: LoupeDeps = {}) {
 
   /** Lê cursor e print; devolve a escrita (tick). */
   function measure(): () => void {
+    const key = !on || !pointer ? 'off' : `${pointer.x},${pointer.y},${pixels ? 'ready' : 'loading'},${generation}`
+    if (key === drawn) return () => {}
     const vw = innerWidth
     const vh = innerHeight
-    const s = on ? sample() : null
-    const key = !on || !pointer ? 'off' : `${pointer.x},${pointer.y},${s ? s.hex : 'loading'},${generation}`
+    const s = key === 'off' ? null : sample()
     return () => {
-      if (key === drawn) return
       drawn = key
       if (!on || !pointer) {
         view.style.display = 'none'

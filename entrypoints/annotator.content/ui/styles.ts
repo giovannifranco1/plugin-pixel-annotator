@@ -103,6 +103,7 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 
 .pxa-box { position: fixed; display: none; pointer-events: none; border: 1px solid; }
 .pxa-box.pxa-danger { border: 2px solid #e8132b; background: rgba(232, 19, 43, .12); }
+.pxa-box-label:empty { display: none; }
 .pxa-box-label {
   position: absolute; left: -2px; top: -18px; padding: 0 4px;
   background: #e8132b; color: #fff; font-weight: 700; white-space: nowrap;

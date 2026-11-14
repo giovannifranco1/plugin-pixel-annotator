@@ -1,12 +1,13 @@
 import { clips, contentOverflow, leakNote, overflowOutside, shortSelector } from '@/lib/leak'
-import { isVisible } from '../audit-scan'
+import { intersectsViewport } from '@/lib/crop'
+import { isVisible, pageWalker } from '../page'
 import { createBoxes, type BoxSpec } from './boxes'
 import type { UiHost } from './host'
 
 /** Paleta pixel por profundidade (XRAY-01). O vermelho fica reservado aos vazamentos. */
 const DEPTH_COLORS = ['#3ec6ff', '#ffd23e', '#7ddc3e', '#b77bff', '#ff9a3e', '#3effc4']
 /** Acima disso no viewport, só os vazamentos (XRAY-06). */
-export const XRAY_LIMIT = 1500
+const XRAY_LIMIT = 1500
 /** Mudanças de layout sem rolagem (conteúdo carregando, animação) entram a cada 500ms. */
 const REFRESH_MS = 500
 
@@ -31,22 +32,25 @@ export function createXray(ui: UiHost, opts: XrayOptions = {}) {
   let dirty = false
   let leaks = new Map<Element, Leak>()
   let notice: string | null = null
-  let timer: ReturnType<typeof setInterval> | undefined
+  let stop: (() => void) | null = null
   const markDirty = () => { dirty = true }
 
   function setOn(next: boolean) {
     if (next === on) return
     on = next
     dirty = true
-    if (on) {
-      document.addEventListener('scroll', markDirty, { capture: true, passive: true })
-      window.addEventListener('resize', markDirty)
-      timer = setInterval(markDirty, REFRESH_MS)
-    } else {
-      document.removeEventListener('scroll', markDirty, { capture: true })
-      window.removeEventListener('resize', markDirty)
+    stop?.()
+    stop = null
+    leaks = new Map()
+    if (!on) return
+    const listeners = new AbortController()
+    const { signal } = listeners
+    document.addEventListener('scroll', markDirty, { capture: true, passive: true, signal })
+    window.addEventListener('resize', markDirty, { signal })
+    const timer = setInterval(markDirty, REFRESH_MS)
+    stop = () => {
+      listeners.abort()
       clearInterval(timer)
-      leaks = new Map()
     }
   }
 
@@ -76,31 +80,27 @@ export function createXray(ui: UiHost, opts: XrayOptions = {}) {
   }
 
   function measure(): () => void {
+    if (!dirty) return () => {}
+    dirty = false
     if (!on) {
-      if (!dirty) return () => {}
-      dirty = false
       return () => {
         boxes.clear()
         setNotice(null)
       }
     }
-    if (!dirty) return () => {}
-    dirty = false
     const vw = innerWidth
     const vh = innerHeight
     const rects = new Map<Element, DOMRect>()
     const styles = new Map<Element, CSSStyleDeclaration>()
     const depth = new Map<Element, number>()
     const seen: Array<{ node: Element; outline: BoxSpec; leak: Leak | null }> = []
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, {
-      acceptNode: (n) => ((n as Element).hasAttribute('data-pxa-ignore') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
-    })
+    const walker = pageWalker()
     for (let node: Element | null = document.body; node; node = walker.nextNode() as Element | null) {
       const d = node === document.body ? 0 : (depth.get(node.parentElement!) ?? 0) + 1
       depth.set(node, d)
       const r = node.getBoundingClientRect()
       rects.set(node, r)
-      if (r.width <= 0 || r.height <= 0 || r.bottom < 0 || r.right < 0 || r.top > vh || r.left > vw) continue
+      if (r.width <= 0 || r.height <= 0 || !intersectsViewport(r, vw, vh)) continue
       const style = getComputedStyle(node)
       styles.set(node, style)
       if (!isVisible(style, r)) continue

@@ -1,3 +1,7 @@
+import { toHex } from './color'
+
+export { toHex }
+
 /** Pixels RGBA do print da aba (mesma forma do ImageData). */
 export interface Pixels {
   width: number
@@ -6,9 +10,6 @@ export interface Pixels {
 }
 
 export const LOUPE_SIZE = 15
-
-const hex2 = (n: number) => n.toString(16).padStart(2, '0')
-export const toHex = (r: number, g: number, b: number): string => `#${hex2(r)}${hex2(g)}${hex2(b)}`
 
 /**
  * Ponto do cursor (px CSS) → pixel físico do print (LUPA-04). A escala vem do próprio print

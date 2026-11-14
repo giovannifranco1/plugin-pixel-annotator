@@ -21,7 +21,7 @@ describe('audit-scan', () => {
   test('DETE-01 varre só elementos visíveis, fora da UI do PxA', async () => {
     document.body.innerHTML = `
       <div id="a" style="color: rgb(1, 2, 3); padding: 13px">texto</div>
-      <p id="none" style="display: none">x</p>
+      <p id="none" style="display: none">x<b id="dentro-do-none">y</b></p>
       <p id="hidden" style="visibility: hidden">x</p>
       <p id="zero" data-zero>x</p>`
     ui.layer.append(document.createElement('div'))

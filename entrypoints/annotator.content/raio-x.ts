@@ -5,12 +5,16 @@ import { el } from './ui/dom'
 import { createGrid } from './ui/grid'
 import type { UiHost } from './ui/host'
 import { createLoupe, type LoupeDeps } from './ui/loupe'
+import { showToast } from './ui/toast'
 import { createXray } from './ui/xray'
 
 export interface RaioXActions {
-  /** Anotar um Achado: elementos afetados + nota pré-preenchida (DETE-05). */
-  annotate(elements: Element[], note: string): void
+  /** Abre a nota pré-preenchida e cria uma anotação por alvo ao salvar. */
+  annotate(targets: Element[], note: string): void
 }
+
+/** DETE-05: acima disso, uma anotação só no primeiro elemento (a nota já traz a contagem). */
+const MAX_FINDING_ANNOTATIONS = 5
 
 export interface RaioXDeps {
   scan?: typeof scanDocument
@@ -19,12 +23,21 @@ export interface RaioXDeps {
 }
 
 /** Resultado do clique na página com o Raio-X ligado. */
-export type RaioXPick = { handled: true } | { target: Element; note: string } | null
+type RaioXPick = { handled: true } | { target: Element; note: string } | null
 
 /** Barra Raio-X do Painel e as quatro ferramentas: Detector, X-ray, Grade e Lupa. */
 export function createRaioX(ui: UiHost, actions: RaioXActions, deps: RaioXDeps = {}) {
   const status = el('span', { className: 'pxa-rx-status' })
-  const report = createAuditReport(ui, { annotate: actions.annotate, onClose: sync }, { scan: deps.scan })
+
+  /** "Anotar" um Achado: pula elementos que sumiram (e avisa) e limita a 5 alvos (DETE-05). */
+  function annotateFinding(elements: Element[], note: string) {
+    const alive = elements.filter((e) => e.isConnected)
+    const gone = elements.length - alive.length
+    if (gone) showToast(ui, gone === 1 ? '1 elemento sumiu da página' : `${gone} elementos sumiram da página`)
+    if (alive.length) actions.annotate(alive.length > MAX_FINDING_ANNOTATIONS ? alive.slice(0, 1) : alive, note)
+  }
+
+  const report = createAuditReport(ui, { annotate: annotateFinding, onClose: sync }, { scan: deps.scan })
   const xray = createXray(ui, { onNotice: (text) => { status.textContent = text ?? '' } })
   const grid = createGrid(ui)
   const loupe = createLoupe(ui, { capture: deps.capture, decode: deps.decode, onOff: sync })

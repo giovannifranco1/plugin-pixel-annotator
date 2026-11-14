@@ -1,7 +1,7 @@
 import type { UiHost } from './host'
 import { el } from './dom'
 
-export type GridStep = 0 | 4 | 8
+type GridStep = 0 | 4 | 8
 
 /** Linha de base fixa em 4px (GRAD-01). */
 const BASELINE = 4

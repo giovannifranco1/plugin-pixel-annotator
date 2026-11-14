@@ -25,8 +25,6 @@ export interface ControllerDeps {
 }
 
 const FOCUS_HIGHLIGHT_MS = 1500
-/** DETE-05: acima disso, uma anotação só no primeiro elemento (a nota já traz a contagem). */
-const MAX_FINDING_ANNOTATIONS = 5
 /** Painel aberto cobriria a página no mobile: recolhe sozinho nessa categoria de tela. */
 const isMobile = () => categoryOf(innerWidth) === 'mobile'
 
@@ -76,15 +74,10 @@ export function createController(deps: ControllerDeps = {}) {
     openEditor(target.getBoundingClientRect(), rx?.note, (note) => void save(target, note))
   }
 
-  /** Anotar um Achado do Raio-X: nota pré-preenchida editável, um print por elemento (DETE-05). */
-  function annotateElements(elements: Element[], note: string) {
-    if (state !== 'active') return
-    const alive = elements.filter((e) => e.isConnected)
-    const gone = elements.length - alive.length
-    if (gone) showToast(ui, gone === 1 ? '1 elemento sumiu da página' : `${gone} elementos sumiram da página`)
-    const targets = alive.length > MAX_FINDING_ANNOTATIONS ? alive.slice(0, 1) : alive
+  /** Uma nota pré-preenchida (editável) para vários elementos: um print por elemento ao salvar (Raio-X). */
+  function annotateElements(targets: Element[], note: string) {
     const first = targets[0]
-    if (!first) return
+    if (state !== 'active' || !first) return
     first.scrollIntoView({ block: 'center', inline: 'nearest' })
     overlay.highlight(first)
     openEditor(first.getBoundingClientRect(), note, async (final) => {

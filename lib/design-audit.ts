@@ -1,3 +1,5 @@
+import { hex2, toHex } from './color'
+
 /** Estilos computados crus de um elemento visível (DETE-01). */
 export interface AuditSample {
   /** color, background-color, border-{top,right,bottom,left}-color */
@@ -41,7 +43,6 @@ const SIMILAR_DELTA_E = 5
 /** Tolerância para valores vindos de rem/em/zoom (ex: 12.004px). */
 const SCALE_TOLERANCE = 0.01
 
-const hex2 = (n: number) => Math.round(Math.min(255, Math.max(0, n))).toString(16).padStart(2, '0')
 const round2 = (n: number) => Math.round(n * 100) / 100
 
 function channel(v: string, max: number): number {
@@ -67,11 +68,13 @@ export function normalizeColor(css: string): string | null {
   const [r, g, b] = parts.slice(0, 3).map((p) => channel(p, 255)) as [number, number, number]
   const a = parts[3] === undefined ? 1 : channel(parts[3], 1)
   if (a <= 0) return null
-  const base = `#${hex2(r)}${hex2(g)}${hex2(b)}`
+  const base = toHex(r, g, b)
   return a >= 1 ? base : `${base}${hex2(a * 255)}`
 }
 
-function toLab(hex: string): [number, number, number] | null {
+type Lab = [number, number, number]
+
+function toLab(hex: string): Lab | null {
   if (!/^#[0-9a-f]{6}([0-9a-f]{2})?$/.test(hex)) return null
   const lin = [1, 3, 5].map((i) => {
     const c = parseInt(hex.slice(i, i + 2), 16) / 255
@@ -87,12 +90,9 @@ function toLab(hex: string): [number, number, number] | null {
 }
 
 /** Distância perceptual ΔE76 entre duas cores normalizadas (Infinity se não for hex). */
-export function colorDistance(a: string, b: string): number {
-  const la = toLab(a)
-  const lb = toLab(b)
-  if (!la || !lb) return Infinity
-  return Math.hypot(la[0] - lb[0], la[1] - lb[1], la[2] - lb[2])
-}
+export const colorDistance = (a: string, b: string): number => labDistance(toLab(a), toLab(b))
+
+const labDistance = (a: Lab | null, b: Lab | null) => (a && b ? Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) : Infinity)
 
 /** `auto`/`normal`/não-px → null; negativos contam pelo valor absoluto. */
 export function parsePx(v: string): number | null {
@@ -116,10 +116,8 @@ function add(groups: Groups, value: string, index: number) {
   set.add(index)
 }
 
-function toEntries(groups: Groups, flagsOf: (value: string, count: number) => AuditFlag[]): AuditEntry[] {
-  const entries = [...groups].map(([value, set]): AuditEntry => ({ value, count: set.size, elements: [...set], flags: flagsOf(value, set.size) }))
-  return sortEntries(entries)
-}
+const toEntries = (groups: Groups, flagsOf: (value: string, count: number) => AuditFlag[]): AuditEntry[] =>
+  [...groups].map(([value, set]) => ({ value, count: set.size, elements: [...set], flags: flagsOf(value, set.size) }))
 
 const sortEntries = (entries: AuditEntry[]) =>
   entries.sort((a, b) => Number(b.flags.length > 0) - Number(a.flags.length > 0) || b.count - a.count || a.value.localeCompare(b.value))
@@ -128,11 +126,13 @@ const orphan = (count: number): AuditFlag[] => (count <= ORPHAN_MAX ? ['orphan']
 
 /** Cada cor entra no grupo da primeira semente (mais usada) com o mesmo alfa a ΔE ≤ 5. */
 function markSimilar(colors: AuditEntry[]) {
-  const seeds: AuditEntry[] = []
+  const seeds: Array<{ entry: AuditEntry; alpha: string; lab: Lab | null }> = []
   for (const c of [...colors].sort((a, b) => b.count - a.count || a.value.localeCompare(b.value))) {
-    const seed = seeds.find((s) => alphaOf(s.value) === alphaOf(c.value) && colorDistance(s.value, c.value) <= SIMILAR_DELTA_E)
+    const alpha = alphaOf(c.value)
+    const lab = toLab(c.value)
+    const seed = seeds.find((s) => s.alpha === alpha && labDistance(s.lab, lab) <= SIMILAR_DELTA_E)?.entry
     if (!seed) {
-      seeds.push(c)
+      seeds.push({ entry: c, alpha, lab })
       continue
     }
     c.flags = ['similar', ...c.flags]
@@ -167,8 +167,8 @@ export function buildAuditReport(samples: readonly AuditSample[], scale: AuditSc
   return {
     scale,
     colors: sortEntries(colorEntries),
-    fonts: toEntries(fonts, (_, n) => orphan(n)),
-    spacings: spacingEntries,
+    fonts: sortEntries(toEntries(fonts, (_, n) => orphan(n))),
+    spacings: sortEntries(spacingEntries),
     fontSizes: sizes.size,
     offScale: spacingEntries.filter((e) => e.flags.includes('off-scale')).length,
   }
@@ -191,11 +191,17 @@ const SUBJECT: Record<AuditKind, { label: string; used: string }> = {
   spacing: { label: 'espaçamento', used: 'usado' },
 }
 
+/**
+ * Texto de cada marca do Achado. `kind` ausente = etiqueta curta da linha do relatório ("órfã");
+ * com `kind` = frase da nota ("usado só 2×").
+ */
+export function flagTexts(e: AuditEntry, scale: number, kind?: AuditKind): string[] {
+  return e.flags.map((f) =>
+    f === 'off-scale' ? `fora da escala de ${scale}px` : f === 'similar' ? `parecida com ${e.similarTo}` : kind ? `${SUBJECT[kind].used} só ${e.count}×` : 'órfã',
+  )
+}
+
 /** Nota pré-preenchida do Achado (DETE-05). */
 export function findingNote(kind: AuditKind, e: AuditEntry, scale: number): string {
-  const { label, used } = SUBJECT[kind]
-  const reasons = e.flags.map((f) =>
-    f === 'off-scale' ? `fora da escala de ${scale}px` : f === 'similar' ? `parecida com ${e.similarTo}` : `${used} só ${e.count}×`,
-  )
-  return `[Raio-X] ${label} ${e.value} ${reasons.join('; ')} (${plural(e.count, 'elemento', 'elementos')})`
+  return `[Raio-X] ${SUBJECT[kind].label} ${e.value} ${flagTexts(e, scale, kind).join('; ')} (${plural(e.count, 'elemento', 'elementos')})`
 }

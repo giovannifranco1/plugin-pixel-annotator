@@ -1,4 +1,5 @@
-import { auditHeadline, buildAuditReport, findingNote, type AuditEntry, type AuditKind, type AuditReport, type AuditScale } from '@/lib/design-audit'
+import { intersectsViewport } from '@/lib/crop'
+import { auditHeadline, buildAuditReport, findingNote, flagTexts, type AuditEntry, type AuditKind, type AuditReport, type AuditScale } from '@/lib/design-audit'
 import { scanDocument, SCAN_LIMIT, type ScanResult } from '../audit-scan'
 import { createBoxes, type BoxSpec } from './boxes'
 import type { UiHost } from './host'
@@ -9,17 +10,15 @@ export interface AuditReportActions {
   onClose(): void
 }
 
-/** Teto de caixas do destaque por hover (DETE-04). */
+/** Destaque do hover (DETE-04): no máximo 300 caixas, lendo no máximo 2.000 elementos por frame. */
 const MAX_HIGHLIGHT = 300
+const MAX_HIGHLIGHT_READS = 2000
 
 const SECTIONS: Array<{ kind: AuditKind; title: string; pick(r: AuditReport): AuditEntry[] }> = [
   { kind: 'color', title: 'Cores', pick: (r) => r.colors },
   { kind: 'font', title: 'Fontes', pick: (r) => r.fonts },
   { kind: 'spacing', title: 'Espaçamentos', pick: (r) => r.spacings },
 ]
-
-const tagText = (e: AuditEntry, scale: number) =>
-  e.flags.map((f) => (f === 'off-scale' ? `fora da escala de ${scale}px` : f === 'similar' ? `parecida com ${e.similarTo}` : 'órfã'))
 
 const routeKey = () => location.href
 
@@ -35,7 +34,7 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
   const head = el('div', { className: 'pxa-audit-head' })
   const close = el('button', { type: 'button', className: 'pxa-icon pxa-head-btn', textContent: '×', onclick: () => hide() })
   close.setAttribute('aria-label', 'Fechar relatório')
-  const scaleBtn = el('button', { type: 'button', onclick: () => setScale(scale === 4 ? 8 : 4) })
+  const scaleBtn = el('button', { type: 'button', onclick: () => { scale = scale === 4 ? 8 : 4; render() } })
   const rescan = el('button', { type: 'button', textContent: 'Varrer de novo', onclick: () => void run() })
   const notices = el('div', { className: 'pxa-audit-notices' })
   const body = el('div', { className: 'pxa-audit-body' })
@@ -57,16 +56,10 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
   let open = false
   let scale: AuditScale = 4
   let result: ScanResult | null = null
-  let report: AuditReport | null = null
   let scannedAt = ''
   let stale = false
   let hovered: Element[] = []
   let runId = 0
-
-  function setScale(next: AuditScale) {
-    scale = next
-    render()
-  }
 
   function renderNotices() {
     const lines: string[] = []
@@ -75,19 +68,20 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
     notices.replaceChildren(...lines.map((t) => el('p', { textContent: t })))
   }
 
-  function row(kind: AuditKind, e: AuditEntry, elements: Element[]) {
-    const targets = e.elements.map((i) => elements[i]!)
+  function row(kind: AuditKind, e: AuditEntry, elements: readonly Element[]) {
+    // Índices → elementos só quando usados (hover/Anotar): uma cor comum pode ter milhares.
+    const targets = () => e.elements.map((i) => elements[i]!)
     const li = el(
       'li',
-      { className: 'pxa-audit-row', onmouseenter: () => { hovered = targets }, onmouseleave: () => { hovered = [] } },
+      { className: 'pxa-audit-row', onmouseenter: () => { hovered = targets() }, onmouseleave: () => { hovered = [] } },
       ...(kind === 'color' ? [swatch(e.value)] : []),
       el('span', { className: 'pxa-audit-value', textContent: e.value, title: e.value }),
       el('span', { className: 'pxa-audit-count', textContent: `${e.count}×` }),
-      ...tagText(e, scale).map((t) => el('span', { className: 'pxa-tag', textContent: t })),
+      ...flagTexts(e, scale).map((t) => el('span', { className: 'pxa-tag', textContent: t })),
     )
     li.dataset.value = e.value
     if (e.flags.length) {
-      li.append(el('button', { type: 'button', className: 'pxa-audit-annotate', textContent: 'Anotar', onclick: () => actions.annotate(targets, findingNote(kind, e, scale)) }))
+      li.append(el('button', { type: 'button', className: 'pxa-audit-annotate', textContent: 'Anotar', onclick: () => actions.annotate(targets(), findingNote(kind, e, scale)) }))
     }
     return li
   }
@@ -96,14 +90,11 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
     scaleBtn.textContent = `Escala: ${scale}px`
     renderNotices()
     if (!result) return
-    report = buildAuditReport(result.samples, scale)
+    const report = buildAuditReport(result.samples, scale)
     const elements = result.elements
     head.textContent = auditHeadline(report)
     body.replaceChildren(
-      ...SECTIONS.flatMap(({ kind, title, pick }) => {
-        const entries = pick(report!)
-        return [el('h3', { textContent: title }), el('ul', {}, ...entries.map((e) => row(kind, e, elements)))]
-      }),
+      ...SECTIONS.flatMap(({ kind, title, pick }) => [el('h3', { textContent: title }), el('ul', {}, ...pick(report).map((e) => row(kind, e, elements)))]),
     )
     foot.textContent = `${elements.length.toLocaleString('pt-BR')} elementos em ${Math.round(result.ms)} ms`
   }
@@ -129,6 +120,9 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
     open = false
     runId++
     hovered = []
+    // Solta a varredura (até 10.000 elementos) e as linhas: reabrir varre de novo.
+    result = null
+    body.replaceChildren()
     box.style.display = 'none'
     actions.onClose()
   }
@@ -137,12 +131,11 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
   function measure(): () => void {
     const changedRoute = open && result !== null && !stale && routeKey() !== scannedAt
     const specs: BoxSpec[] = []
-    for (const target of hovered) {
+    for (const target of hovered.slice(0, MAX_HIGHLIGHT_READS)) {
       if (specs.length >= MAX_HIGHLIGHT) break
       if (!target.isConnected) continue
       const r = target.getBoundingClientRect()
-      if (r.bottom < 0 || r.right < 0 || r.top > innerHeight || r.left > innerWidth) continue
-      specs.push({ left: r.left, top: r.top, width: r.width, height: r.height })
+      if (intersectsViewport(r, innerWidth, innerHeight)) specs.push({ left: r.left, top: r.top, width: r.width, height: r.height })
     }
     return () => {
       if (changedRoute) {
