@@ -1,6 +1,6 @@
 # Diversão — Especificação
 
-> **Status:** Rascunho, aguardando aprovação do dev. Próximas fases neste andar: Design → Tasks → Execute.
+> **Status:** Aprovada pelo dev em 2026-11-14. Próximas fases neste andar: Design → Tasks → Execute.
 > **Branch:** `feature/ui-diversao` (andar "Diversão" no Maestri), a partir de `develop` em `91e6134`.
 
 ## Problema
@@ -12,7 +12,7 @@ O PxA já funciona, mas é uma ferramenta "séria" com cara de pixel art e nada 
 - [ ] O PxA tem personalidade visível: um mascote que reage ao que o dev faz.
 - [ ] Usar o PxA dá pequenas recompensas (XP, nível, conquistas) que persistem entre sessões.
 - [ ] Tudo é opcional e nunca atrapalha o fluxo de anotar: sem modal bloqueante, sem som por padrão.
-- [ ] Nenhuma permissão nova além de `storage` (ver Q-01). Nada sai do navegador.
+- [ ] Nenhuma permissão nova além de `storage`, aprovada pelo dev só para o Perfil (Q-01). Nada sai do navegador.
 
 ## Fora do Escopo
 
@@ -119,7 +119,7 @@ O PxA já funciona, mas é uma ferramenta "séria" com cara de pixel art e nada 
 
 ## Questões em Aberto
 
-- **Q-01 (precisa do dev):** Persistir o Perfil exige a permissão `storage` (`chrome.storage.local`). Ela **não gera aviso** na instalação, mas o CLAUDE.md pede decisão registrada para permissão nova. Recomendação: aprovar `storage` só para o Perfil. As anotações continuam só na sessão (decisão do M1 mantida).
+- **Q-01 (decidida em 2026-11-14: aprovada a permissão `storage` só para o Perfil):** Persistir o Perfil exige a permissão `storage` (`chrome.storage.local`). Ela **não gera aviso** na instalação, mas o CLAUDE.md pede decisão registrada para permissão nova. Recomendação: aprovar `storage` só para o Perfil. As anotações continuam só na sessão (decisão do M1 mantida).
 - **Q-02:** Arte do Mascote. Proposta: um alfinete rosa com olhos (o mesmo do ícone) para manter a marca. Confirmar no Design com um preview.
 
 ## Coordenação entre andares

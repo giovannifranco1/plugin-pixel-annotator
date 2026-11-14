@@ -10,7 +10,7 @@ Conversa de 2026-11-14 sobre "o que mais a extensão poderia ter". Das 15 ideias
 |---|---|
 | Agrupamento | Itens 1–5 numa feature só ("Diversão") |
 | Som | Desligado por padrão, gerado com Web Audio |
-| Persistência do Perfil | Pendente (Q-01 na spec): recomendação é a permissão `storage` só para o Perfil |
+| Persistência do Perfil | Permissão `storage` aprovada pelo dev em 2026-11-14, só para o Perfil (Q-01) |
 | Anotações | Continuam só na sessão da aba (decisão do M1 não muda) |
 
 ## Ideias descartadas pelo dev na mesma conversa
