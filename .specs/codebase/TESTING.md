@@ -16,7 +16,7 @@
 - **Unit:** toda lógica pura em `lib/`. Os módulos de UI são testados no happy-dom com o host real (`createHost()`). O background usa o `fakeBrowser` (`wxt/testing/fake-browser`) e `spy()` com tipo livre, porque as assinaturas do `@wxt-dev/browser` não descrevem os retornos.
 - **Listeners em `window`:** todo controller criado num teste é desativado no teardown. Senão o interceptor de um teste bloqueia os cliques do seguinte.
 - **E2E:** o build `--mode e2e` (`.output/chrome-mv3-e2e`) recebe `host_permissions: <all_urls>` e expõe `__pxaToggle` no service worker, porque o Playwright não clica no ícone da extensão. O build de produção nunca recebe isso. O harness (`tests/e2e/harness.ts`) traz os helpers `toggle`, `annotate`, `exportZip` (expande o painel se estiver recolhido), `pngSize`, `activeTabId` e os locators `pxa/panel/items/markers/editor/toast`, que atravessam o shadow root aberto.
-- **Fixtures E2E** (`tests/e2e/fixtures/`, servidas pelo Vite na porta 5174): HTML estático com CSS hostil e z-index alto, React 19 sem JSX, Vue 3 com `__file`, SPA com `pushState` e `demo.html`, um painel de clientes em React usado só nos prints do README.
+- **Fixtures E2E** (`tests/e2e/fixtures/`, servidas pelo Vite na porta 5174, ou na `PXA_E2E_PORT` quando definida): HTML estático com CSS hostil e z-index alto, React 19 sem JSX, Vue 3 com `__file`, SPA com `pushState` e `demo.html`, um painel de clientes em React usado só nos prints do README.
 
 ## Parallel-safe
 
