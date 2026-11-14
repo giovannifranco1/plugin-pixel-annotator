@@ -156,3 +156,5 @@ T4 [P] permissão┘    T7 mascot ─┐
 - **Done when:** `EGG-01` dança + jingle (com som), sem toast; `EGG-02` intacto.
 
 **Verify:** gate full com `PXA_E2E_PORT=5175`.
+
+**Status Revisão 1:** Done — 2026-11-14. compile ok · 176 unit · builds Chrome/Firefox MV3 · check:manifest ok · 35 E2E.

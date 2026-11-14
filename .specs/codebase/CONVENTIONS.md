@@ -20,8 +20,6 @@
 | Breakpoint | Faixa Tailwind da largura do viewport (base/sm/md/lg/xl/2xl) |
 | Categoria de tela | Mobile, tablet ou desktop, derivada da largura do viewport |
 | Export | Pacote `.zip` com `feedback.md` + `shots/` |
-| Mascote | Personagem pixel 16×16 (2×) no cabeçalho do Painel, com Humor `idle`/`feliz`/`susto`/`festa`/`dormindo` |
-| XP / Nível | Pontos por anotar (10) e exportar (5 por anotação nova); Nv n+1 exige `25·n·(n+1)` XP |
-| Conquista | Marco desbloqueável uma vez (catálogo em `lib/achievements.ts`) |
+| Mascote | Alfinete fofo em pixel 16×16 (2×) no cabeçalho do Painel, com Humor `idle`/`feliz`/`susto`/`festa`/`dormindo` e paleta por Tema |
 | Tema | Paleta da UI do PxA via custom properties `--pxa-*` (`ui/themes.ts`) |
-| Perfil | XP, conquistas, tema e som, em `storage.local` (`pxa:profile`); único estado persistido |
+| Perfil | Tema e som, em `storage.local` (`pxa:profile`); único estado persistido |

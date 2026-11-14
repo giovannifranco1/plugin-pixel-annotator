@@ -151,14 +151,14 @@ Três features rodam em paralelo a partir do mesmo `develop`: **Diversão**, **R
 
 | ID | Story | Status |
 |---|---|---|
-| MASC-01..07 | Mascote no painel | Pending (Revisão 1) |
+| MASC-01..07 | Mascote no painel | Verified (unit `mascot`/`fun`, E2E `fun.spec`; MASC-05 com `emulateMedia`, MASC-07 troca de cor no Noite) |
 | CONQ-01..07 | XP, nível e conquistas | Removido (Revisão 1) |
-| SOM-01..04 | Sons 8-bit | Pending (Revisão 1: ícone) |
-| TEMA-01..05 | Temas de paleta | Pending (Revisão 1: 2 temas) |
-| EGG-01..02 | Easter egg | Pending (Revisão 1: sem conquista) |
+| SOM-01..04 | Sons 8-bit | Verified (unit `sound`/`fun`; E2E ícone pixel + CSP). Ouvir os sons: checklist manual |
+| TEMA-01..05 | Temas de paleta | Verified (unit `themes` com contraste WCAG, E2E troca/persistência/marcador) |
+| EGG-01..02 | Easter egg | Verified (unit `konami`/`fun`, E2E teclas chegam à página) |
 
 ## Critérios de Sucesso
 
 - [ ] Em uma sessão de 5 anotações + export, o dev vê o Mascote reagir pelo menos 3 vezes.
-- [x] Nenhuma regressão nos 127 testes unitários e 27 E2E do M1 (agora 192 unit e 34 E2E).
+- [x] Nenhuma regressão nos 127 testes unitários e 27 E2E do M1 (agora 176 unit e 35 E2E).
 - [x] `check:manifest` atualizado: só `activeTab`, `scripting` e `storage`.

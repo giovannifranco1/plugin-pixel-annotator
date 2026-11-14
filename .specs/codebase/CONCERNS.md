@@ -9,7 +9,7 @@
 - **Ordem dos listeners:** um listener da página registrado em `window`/captura **antes** da injeção do PxA ainda roda antes do interceptor. É uma limitação aceita.
 - **Top layer:** `<dialog>` modal e `popover` da página podem cobrir a UI do PxA. É uma limitação aceita.
 - **Atributo temporário `data-pxa-probe`:** o probe marca o elemento por alguns milissegundos, e isso pode acordar um `MutationObserver` da página.
-- **Perfil entre abas (Diversão):** gravação ler → modificar → gravar em fila por aba; duas abas gravando no mesmo milissegundo podem perder um incremento de XP. Perda mínima aceita no design (D7).
+- **Perfil entre abas (Diversão):** gravação ler → modificar → gravar em fila por aba; duas abas trocando tema/som no mesmo milissegundo: vale a última gravação.
 - **`ui/styles.ts` todo em custom properties:** merges de outras features que tragam cores em hex precisam convertê-las para `var(--pxa-*)` (e o teste TEMA-03 acusa hex fora do lugar).
 - **Anotar em página servida por `context.route` falha no E2E** ("Falha ao anotar"), já no commit base do M1. Causa não investigada (fora do escopo da Diversão); provavelmente a captura de print. Só afeta testes que usam páginas roteadas.
 - **Painel em telas estreitas:** abaixo de 768px o painel se recolhe sozinho para não cobrir a página, até o dev recolher ou expandir à mão.

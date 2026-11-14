@@ -14,9 +14,9 @@
 - 2026-11-13 — Regras de execução (Sentinel): seguir o nano-spec fase a fase, 1 commit por fase, nunca push/merge/PR.
 
 - 2026-11-14 — Diversão: permissão `storage` aprovada pelo dev só para o Perfil (Q-01); anotações continuam só na sessão. `check:manifest` exige `activeTab` + `scripting` + `storage`.
-- 2026-11-14 — Diversão (agente do andar, sem decisão do dev): perda mínima de XP aceita quando duas abas gravam no mesmo instante (D7); conquistas não dão XP (D5); fanfarra só no `.zip`, copiar markdown faz festa sem som (D14); Maratona conta anotações criadas na aba, mesmo se excluídas depois (D6).
+- 2026-11-14 — Diversão (agente do andar, sem decisão do dev): fanfarra só no `.zip`, copiar markdown faz festa sem som (D14).
 - 2026-11-14 — Diversão: botão primário do tema Padrão passou de texto branco para tinta escura sobre o rosa (3,36:1 → 5,39:1) para cumprir TEMA-05.
-- 2026-11-14 — Diversão: Q-02 (arte do mascote) implementada com o alfinete do ícone; confirmação do dev pendente (`assets/mascot-preview.html`).
+- 2026-11-14 — **Diversão, Revisão 1 (dev, após testar):** o 1º mascote "dava medo" → alfinete fofo sem boca (opção C de 3), com cores por tema (MASC-07); XP, nível e conquistas removidos; só os temas Padrão e Noite; ícone de som em pixel art no lugar do emoji; Konami mantido só como dança + jingle (dev escolheu). O som foi aprovado como estava.
 
 ## Blockers
 
