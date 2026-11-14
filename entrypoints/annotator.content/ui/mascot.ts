@@ -93,7 +93,10 @@ export const MASCOT: Record<Mood, readonly string[]> = {
 export function createMascot(theme: ThemeId = 'padrao') {
   const node = el('span', { className: 'pxa-mascot', title: 'PxA' })
   node.setAttribute('role', 'img')
-  let frames = buildFrames(theme)
+  // Quadros montados uma vez por tema, na primeira vez que o tema aparece.
+  const cache = new Map<ThemeId, Record<Mood, SVGSVGElement>>()
+  const framesOf = (id: ThemeId) => cache.get(id) ?? cache.set(id, buildFrames(id)).get(id)!
+  let frames = framesOf(theme)
   let current: Mood = 'idle'
   let timer: ReturnType<typeof setTimeout> | undefined
 
@@ -114,7 +117,8 @@ export function createMascot(theme: ThemeId = 'padrao') {
       draw(mood)
     },
     setTheme(id: ThemeId) {
-      frames = buildFrames(id)
+      if (frames === framesOf(id)) return
+      frames = framesOf(id)
       draw(current)
     },
   }

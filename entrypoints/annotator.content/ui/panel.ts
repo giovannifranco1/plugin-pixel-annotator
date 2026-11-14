@@ -30,10 +30,9 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
   exportZip.setAttribute('aria-label', 'Exportar .zip')
   const list = el('ol')
   const footer = el('footer')
-  // Pontos de inserção do cabeçalho para outras features (mascote, nível): o painel não conhece o conteúdo.
+  // Ponto de inserção no cabeçalho para outras features (mascote): o painel não conhece o conteúdo.
   const headStart = el('span', { className: 'pxa-head-slot' })
-  const headEnd = el('span', { className: 'pxa-head-slot' })
-  const header = el('header', {}, headStart, title, headEnd, exportZip, collapse)
+  const header = el('header', {}, headStart, title, exportZip, collapse)
   const panel = el('aside', { className: 'pxa-panel' }, header, list, footer)
   panel.setAttribute('aria-label', 'Anotações do PxA')
   panel.style.display = 'none'
@@ -109,7 +108,7 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
 
   store.subscribe(render)
   return {
-    mount: { panel, header, headStart, headEnd, expand: () => { manual = true; setCollapsed(false) } },
+    mount: { header, headStart },
     show() {
       visible = true
       manual = false

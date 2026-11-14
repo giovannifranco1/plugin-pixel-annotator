@@ -25,7 +25,7 @@ const defaultArea = (): ProfileArea | undefined => {
 }
 
 /**
- * Perfil em `storage.local` (Q-01): compartilhado por todas as abas e origens (CONQ-07).
+ * Perfil em `storage.local` (Q-01): compartilhado por todas as abas e origens.
  * Entre abas, a corrida fica restrita ao intervalo de um get/set; aceitamos essa perda mínima (design D7).
  * Sem storage (API ausente ou erro), o perfil vale só para a aba e a UI segue igual (D8).
  */

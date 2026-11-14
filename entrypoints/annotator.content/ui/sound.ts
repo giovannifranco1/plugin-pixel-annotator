@@ -32,7 +32,7 @@ const defaultFactory: AudioFactory = () => {
 export function createSound(factory: AudioFactory = defaultFactory) {
   let ctx: AudioContext | undefined
   let failed = false
-  let busyUntil = 0 // um som depois do outro (ex: fanfarra e jingle da conquista)
+  let busyUntil = 0 // um som depois do outro, sem sobrepor
   return {
     play(name: SoundName): void {
       if (failed) return

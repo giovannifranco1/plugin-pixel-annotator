@@ -11,11 +11,8 @@ import { applyTheme, THEMES } from './themes'
 
 /** Onde a Diversão entra no Painel (pontos de inserção de `ui/panel.ts`). */
 export interface PanelMount {
-  panel: HTMLElement
   header: HTMLElement
   headStart: HTMLElement
-  headEnd: HTMLElement
-  expand(): void
 }
 
 export interface FunDeps {
@@ -73,7 +70,9 @@ export function createFun(ui: UiHost, store: AnnotationStore, mount: PanelMount,
   const party = () => mascot.set('festa', PARTY_MS)
 
   store.subscribe(() => {
-    for (const a of store.list().filter((x) => x.number > lastNumber)) {
+    const list = store.list()
+    if ((list.at(-1)?.number ?? 0) <= lastNumber) return // edição, exclusão ou limpeza
+    for (const a of list.filter((x) => x.number > lastNumber)) {
       lastNumber = a.number
       mascot.set(a.viewport.category === 'mobile' ? 'susto' : 'feliz', HAPPY_MS) // MASC-02
       play('blip')
