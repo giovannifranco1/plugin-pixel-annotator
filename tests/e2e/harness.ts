@@ -1,9 +1,10 @@
 import { test as base, chromium, type BrowserContext, type Page, type Worker } from '@playwright/test'
 import path from 'node:path'
+import { PORT } from './port'
 
 // `wxt build --mode e2e` sai com sufixo do modo; o build de produção nunca recebe o host permission de E2E.
 const EXT = path.resolve('.output/chrome-mv3-e2e')
-export const BASE = 'http://localhost:5174'
+export const BASE = `http://localhost:${PORT}`
 
 type Fixtures = {
   context: BrowserContext
