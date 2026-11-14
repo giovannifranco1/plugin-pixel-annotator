@@ -68,6 +68,15 @@ A extensão temporária do Firefox some quando o navegador fecha. É só carrega
    - **Exportar .zip** (ícone ⤓ no cabeçalho do painel): `feedback.md` completo com os prints em `shots/`. Descompacte na pasta do projeto e peça *"resolve o feedback.md"*.
 6. Clique no ícone de novo para sair. As anotações ficam guardadas enquanto a aba estiver aberta.
 
+### Raio-X: achar o que o olho não vê
+
+A barra **Raio-X**, logo abaixo do cabeçalho do painel, traz quatro ferramentas. Nenhuma altera a página: tudo é desenhado por cima, na UI do PxA.
+
+- **Detector:** varre a página e lista as **cores**, as **fontes** e os **espaçamentos** em uso, com quantas vezes cada um aparece (ex: `23 cores · 11 tamanhos de fonte · 3 espaçamentos fora da escala de 4px`). Marca espaçamentos fora da escala (4px, ou 8px no botão **Escala**), cores quase iguais (`#7a7a7a` parecida com `#777777`) e valores usados só 1 ou 2 vezes. Passe o mouse num valor para ver onde ele está na página e clique em **Anotar** para virar anotação com a nota pronta, ex: `[Raio-X] espaçamento 13px fora da escala de 4px (3 elementos)`.
+- **X-ray:** contorna cada elemento da tela com uma cor por profundidade e pinta de **vermelho** o que vaza do pai. Clique no vermelho e a nota já vem escrita: `[Raio-X] vaza do pai div.card em 12px`.
+- **Grade:** colunas de 8px (clique de novo para 4px) e linha de base de 4px sobre a página. Ela não sai nos prints.
+- **Lupa:** zoom 8× dos pixels sob o cursor, com a cor em hex. Clique para copiar o hex e aperte Esc para sair.
+
 ## Recursos
 
 - **Marcadores numerados** sobre cada elemento anotado, na cor da tela em que você anotou: verde no mobile, amarelo no tablet e azul no desktop. Quando a largura atual é de outra categoria, o marcador fica esmaecido.
@@ -162,6 +171,7 @@ A lógica pura fica em `lib/`, com testes em `tests/unit/`. A extensão fica em 
 ## Roadmap
 
 - **M1 — Modo Anotação** ✅ (este README)
+- **Raio-X** ✅ Detector de design system, X-ray, Grade e Lupa
 - **M2 — Ponte com o Claude Code:** servidor MCP local para o Claude Code ler as anotações sem download, e persistência por site
 
 ## Licença

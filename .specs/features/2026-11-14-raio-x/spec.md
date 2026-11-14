@@ -1,6 +1,6 @@
 # Raio-X — Especificação
 
-> **Status:** Aprovada pelo dev em 2026-11-14. Próximas fases neste andar: Design → Tasks → Execute.
+> **Status:** Implementada em 2026-11-14 (Design → Tasks → Execute → /simplify → Docs). Verificação manual no Firefox pendente com o dev (`manual-check.md`).
 > **Branch:** `feature/content-raio-x` (andar "Raio-X" no Maestri), a partir de `develop` em `91e6134`.
 
 ## Problema
@@ -9,10 +9,10 @@ O PxA hoje depende do olho do dev: ele precisa *perceber* o problema para anotá
 
 ## Objetivos
 
-- [ ] Em uma página média (até ~3.000 elementos), o Detector mostra o relatório em menos de 1s.
-- [ ] Cada achado do Raio-X vira uma Anotação normal (com seletor, print e contexto) em 1 clique.
-- [ ] As ferramentas não mudam a página: tudo é desenhado no Shadow DOM do PxA.
-- [ ] Nenhuma permissão nova: só `activeTab` + `scripting`.
+- [x] Em uma página média (até ~3.000 elementos), o Detector mostra o relatório em menos de 1s.
+- [x] Cada achado do Raio-X vira uma Anotação normal (com seletor, print e contexto) em 1 clique.
+- [x] As ferramentas não mudam a página: tudo é desenhado no Shadow DOM do PxA.
+- [x] Nenhuma permissão nova: só `activeTab` + `scripting`.
 
 ## Fora do Escopo
 
@@ -115,13 +115,13 @@ Três features rodam em paralelo a partir do mesmo `develop`: **Diversão**, **R
 
 | ID | Story | Status |
 |---|---|---|
-| DETE-01..07 | Detector de design system | Pending |
-| XRAY-01..06 | Modo X-ray | Pending |
-| GRAD-01..03 | Grade de 8px | Pending |
-| LUPA-01..04 | Lupa pixel | Pending |
+| DETE-01..07 | Detector de design system | Verified — unit (`design-audit`, `audit-scan`, `audit-report`, `controller-raio-x`) + E2E `raio-x.spec.ts` (3.014 elementos em 113–150 ms) |
+| XRAY-01..06 | Modo X-ray | Verified — unit (`leak`, `xray`, `raio-x`, `controller-raio-x`) + E2E (XRAY-01/02/04/05) |
+| GRAD-01..03 | Grade de 8px | Verified — unit (`grid`) + E2E (print sem a grade, por pixel) |
+| LUPA-01..04 | Lupa pixel | Verified — unit (`loupe`, `loupe-ui`) + E2E (LUPA-01/02). LUPA-04 com DPR 2 real e Firefox: pendente manual (`manual-check.md`) |
 
 ## Critérios de Sucesso
 
-- [ ] Numa página de teste com 3 espaçamentos fora da escala, 2 cores quase iguais e 1 filho vazando, o Raio-X aponta todos (fixture E2E).
-- [ ] Nenhuma regressão nos 127 testes unitários e 27 E2E do M1.
-- [ ] `check:manifest` continua passando sem permissões novas.
+- [x] Numa página de teste com 3 espaçamentos fora da escala, 2 cores quase iguais e 1 filho vazando, o Raio-X aponta todos (fixture E2E).
+- [x] Nenhuma regressão nos 127 testes unitários e 27 E2E do M1 (agora 186 unit e 34 E2E).
+- [x] `check:manifest` continua passando sem permissões novas.

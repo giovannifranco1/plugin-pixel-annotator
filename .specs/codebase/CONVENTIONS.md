@@ -19,3 +19,10 @@
 | Breakpoint | Faixa Tailwind da largura do viewport (base/sm/md/lg/xl/2xl) |
 | Categoria de tela | Mobile, tablet ou desktop, derivada da largura do viewport |
 | Export | Pacote `.zip` com `feedback.md` + `shots/` |
+| Raio-X | Ferramentas de inspeção abertas pela barra do Painel: Detector, X-ray, Grade e Lupa |
+| Detector | Varre estilos computados e lista cores, fontes e espaçamentos com contagem |
+| Achado | Valor marcado pelo Raio-X (fora da escala, cor parecida, órfão ou vazamento); vira Anotação com nota `[Raio-X] …` |
+| Escala | Múltiplo esperado dos espaçamentos (4px, ou 8px) |
+| Modo X-ray | Contornos por profundidade; vermelho = vaza do pai ou conteúdo maior que a caixa |
+| Grade | Colunas de 8/4px + linha de base de 4px sobre a página, fora do print |
+| Lupa | Zoom 8× de 15×15 pixels físicos sobre um print congelado; clique copia o hex |

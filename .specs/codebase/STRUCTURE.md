@@ -16,17 +16,22 @@ pixel-annotator/
 │       ├── exporter.ts           # .zip e copiar markdown
 │       ├── unload-guard.ts       # aviso de saída (AVIS-01)
 │       ├── tick.ts               # laço requestAnimationFrame
-│       └── ui/                   # host (Shadow DOM), dom (el()), styles, overlay, note-editor, markers, panel, toast
+│       ├── raio-x.ts             # barra Raio-X: compõe Detector, X-ray, Grade e Lupa
+│       ├── audit-scan.ts         # varredura fatiada dos elementos visíveis (Detector)
+│       ├── page.ts               # walker da página, visibilidade, pular subárvore
+│       └── ui/                   # host (Shadow DOM), dom (el()), styles, overlay, note-editor, markers, panel, toast,
+│                                 # boxes (pool de contornos), audit-report, xray, grid, loupe
 ├── lib/                          # lógica pura testável
 │   ├── types.ts  store.ts  messages.ts  format.ts
 │   ├── selector.ts  viewport.ts  css-filter.ts  outer-html.ts  crop.ts  resolve.ts
 │   ├── markdown.ts  export-names.ts  capture-queue.ts  component-detect.ts
+│   ├── design-audit.ts  leak.ts  loupe.ts  color.ts   # Raio-X
 ├── public/icon/                  # ícones pixel 16/32/48/128 (gerados por scripts/gen-icons.mjs)
 ├── media/                        # imagens do README: icon.png (256) e prints (npm run screenshots)
 ├── scripts/                      # check-manifest.mjs (PLAT-01), gen-icons.mjs, screenshots/ (prints do README)
 ├── tests/
 │   ├── unit/                     # Vitest (+ fixtures/annotations.ts, __snapshots__)
-│   └── e2e/                      # Playwright: harness.ts, *.spec.ts, fixtures/ (html, react, vue, spa, demo)
+│   └── e2e/                      # Playwright: harness.ts, *.spec.ts, fixtures/ (html, react, vue, spa, demo, raio-x)
 ├── .specs/
 ├── README.md
 ├── wxt.config.ts  vitest.config.ts  playwright.config.ts  playwright.screenshots.config.ts  tsconfig.json

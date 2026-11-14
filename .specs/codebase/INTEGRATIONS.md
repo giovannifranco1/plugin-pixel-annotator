@@ -2,10 +2,11 @@
 
 - **APIs do navegador:**
   - `action` (clique, badge e título por aba) e `scripting.executeScript` (com `files` e `func`, `world: 'MAIN'` para o probe), autorizados por `activeTab`.
-  - `tabs.captureVisibleTab`: no Firefox funciona só com `activeTab` a partir da versão 126 (bug 1784920).
+  - `tabs.captureVisibleTab`: no Firefox funciona só com `activeTab` a partir da versão 126 (bug 1784920). Usado pelo print das anotações e pela Lupa do Raio-X, pela mesma fila.
+  - Typed OM (`computedStyleMap`, só Chrome) para saber se uma margem é `auto`; `requestIdleCallback` para fatiar a varredura do Detector.
   - `runtime.onMessage` / `tabs.sendMessage`.
   - Download via `<a download>` com blob, **sem** a permissão `downloads`.
-  - Clipboard via `navigator.clipboard.writeText` a partir do clique do dev.
+  - Clipboard via `navigator.clipboard.writeText` a partir do clique do dev (markdown e hex da Lupa).
 - **Frameworks da página (leitura, não dependência):**
   - React: `__reactFiber$*`/`__reactInternalInstance$*`, com `_debugSource` só até o React 18 em dev.
   - Vue 3: `__vueParentComponent`, com `type.__file` em dev.

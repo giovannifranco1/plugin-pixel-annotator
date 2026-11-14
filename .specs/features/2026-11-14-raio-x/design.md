@@ -40,7 +40,8 @@ flowchart LR
 | `annotator.content/ui/xray.ts` | novo | Contornos por profundidade + vazamentos em vermelho (XRAY-01..06) |
 | `annotator.content/ui/grid.ts` | novo | Grade em `repeating-linear-gradient` (GRAD-01..03) |
 | `annotator.content/ui/loupe.ts` | novo | Lupa: print congelado, zoom 8×, hex, copiar, Esc (LUPA-01..04) |
-| `annotator.content/screenshot.ts` | alterado (pequeno) | Extrai `captureWithoutUi(ui, capture)` (esconder UI → 2 frames → foto → mostrar), reusado pela Lupa |
+| `annotator.content/screenshot.ts` | alterado (pequeno) | Extrai `captureWithoutUi(ui, capture)` (esconder UI → 2 frames → foto → mostrar) e `withShotBitmap(dataUrl, fn)`, reusados pela Lupa |
+| `annotator.content/page.ts`, `lib/color.ts` | novos (/simplify) | Walker da página + visibilidade + pular `display:none` (Detector e X-ray); `toHex` único |
 | `annotator.content/controller.ts` | alterado (pequeno) | Cria o Raio-X, inclui `raioX.measure()` no tick, consulta `raioX.pick()` no clique, `annotateElements()` reusa `openEditor` + `save` |
 | `annotator.content/ui/panel.ts` | alterado (pequeno) | Parâmetro opcional `toolbar` inserido logo abaixo do `<header>` (ponto único) |
 | `annotator.content/ui/styles.ts` | alterado (append) | Bloco CSS `/* Raio-X */` no fim, com as cores atuais |
@@ -185,13 +186,10 @@ openEditor(target.getBoundingClientRect(), rx?.note, (note) => void save(target,
 // tick: [overlay.measure(), markers.measure(), raioX.measure()]
 // deactivate: raioX.reset()
 
-/** DETE-05: até 5 elementos, um print cada; acima disso, só o primeiro (a nota já traz a contagem). */
-function annotateElements(elements: Element[], note: string) {
-  if (state !== 'active') return
-  const alive = elements.filter((e) => e.isConnected)
-  if (alive.length < elements.length) showToast(ui, `${elements.length - alive.length} elemento(s) sumiram da página`)
-  const targets = alive.length > 5 ? alive.slice(0, 1) : alive
-  if (!targets.length) return
+/** Genérico: uma nota editável, um print por alvo. A regra do DETE-05 (pular sumidos e avisar,
+ *  máx. 5 alvos, senão só o primeiro) fica em raio-x.ts (`annotateFinding`), fora do controller. */
+function annotateElements(targets: Element[], note: string) {
+  if (state !== 'active' || !targets[0]) return
   targets[0].scrollIntoView({ block: 'center', inline: 'nearest' })
   overlay.highlight(targets[0])
   openEditor(targets[0].getBoundingClientRect(), note, async (final) => {

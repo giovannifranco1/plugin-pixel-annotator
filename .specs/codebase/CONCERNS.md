@@ -9,4 +9,7 @@
 - **Ordem dos listeners:** um listener da página registrado em `window`/captura **antes** da injeção do PxA ainda roda antes do interceptor. É uma limitação aceita.
 - **Top layer:** `<dialog>` modal e `popover` da página podem cobrir a UI do PxA. É uma limitação aceita.
 - **Atributo temporário `data-pxa-probe`:** o probe marca o elemento por alguns milissegundos, e isso pode acordar um `MutationObserver` da página.
+- **Raio-X — heurísticas:** margem `auto` vem resolvida em px no `getComputedStyle`; o Chrome confirma pelo Typed OM, mas no Firefox (sem `computedStyleMap`) margens laterais iguais e > 0 contam como `auto` e somem do relatório. O X-ray ignora `position: fixed` (o contêiner é o viewport) e usa o `offsetParent` para `absolute`.
+- **Raio-X — custo:** com o X-ray ligado, cada scroll relê o retângulo de todos os elementos (flag de sujo, sem throttle) e há um recálculo a cada 500ms. Acima de 1.500 elementos no viewport só os vazamentos são desenhados. A Lupa guarda o print inteiro da aba (`ImageData`, ~15–33MB em DPR 2) enquanto está ligada.
+- **Raio-X — Firefox não verificado:** `requestIdleCallback`, clipboard no content script e `createImageBitmap`/`getImageData` da Lupa. Checklist em `.specs/features/2026-11-14-raio-x/manual-check.md`.
 - **Painel em telas estreitas:** abaixo de 768px o painel se recolhe sozinho para não cobrir a página, até o dev recolher ou expandir à mão.

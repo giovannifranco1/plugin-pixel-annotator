@@ -2,7 +2,7 @@
 
 **Spec**: `.specs/features/2026-11-14-raio-x/spec.md`
 **Design**: `.specs/features/2026-11-14-raio-x/design.md`
-**Status**: Approved — 2026-11-14 (agente do andar, por instrução do dev)
+**Status**: Done — 2026-11-14. Gate full: compile ok · 186 unit · builds Chrome/Firefox MV3 · check:manifest ok · 34 E2E (`PXA_E2E_PORT=5176`). Checklist manual do dev em `manual-check.md`.
 
 > **Breakdown:** horizontal. Lógica pura em `lib/` primeiro (TDD), depois a UI de cada ferramenta (unit no happy-dom), depois a composição, a integração no controller/painel e o E2E.
 > **Commits:** 1 por fase do nano-spec; não por task.

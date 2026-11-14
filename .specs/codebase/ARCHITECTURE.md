@@ -10,4 +10,6 @@ Fluxo: ícone → background checa/injeta → annotator ativa overlay e painel �
 
 **Laço por frame** (`tick.ts`, só com o modo ativo): todas as leituras de layout primeiro (`overlay.measure()`, `markers.measure()`), depois todas as escritas, escrevendo só o que mudou. Elementos que sumiram são buscados de novo pelo seletor no máximo a cada 500ms ou na troca de rota. O nó reencontrado fica memorizado (`store.rememberRef`).
 
-Detalhes e decisões: `.specs/features/2026-11-13-modo-anotacao/design.md`.
+**Raio-X** (`raio-x.ts`, só no annotator): barra no Painel com Detector, X-ray, Grade e Lupa, tudo desenhado no Shadow DOM, sem mudar a página. Entra no controller por três pontos: `raioX.measure()` no tick, `raioX.pick(el)` no clique (a Lupa consome o clique, o X-ray devolve alvo + nota pré-preenchida) e `annotateElements(targets, note)` (uma nota editável, um print por alvo). O Detector varre em fatias de 500 com `requestIdleCallback` (`audit-scan.ts`) e agrupa em `lib/design-audit.ts`. O X-ray só recalcula com flag de sujo (scroll/resize/500ms). A Lupa usa a mesma captura do print (`captureWithoutUi`), sem permissão nova.
+
+Detalhes e decisões: `.specs/features/2026-11-13-modo-anotacao/design.md` e `.specs/features/2026-11-14-raio-x/design.md`.
