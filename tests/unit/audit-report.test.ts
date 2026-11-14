@@ -159,6 +159,18 @@ describe('audit-report', () => {
     expect(ui.root.querySelector('.pxa-audit-notices')!.textContent).not.toContain('seguem a escala')
   })
 
+  test('DETE-11 o cabeçalho arrasta a janela e a posição fica ao fechar e reabrir', async () => {
+    const report = await openReport()
+    const header = ui.root.querySelector<HTMLElement>('.pxa-audit header')!
+    expect(header.tabIndex).toBe(0)
+    header.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+    const top = $('.pxa-audit')!.style.top
+    expect(top).toBe('26px') // 10 do retângulo simulado + 16
+    button('Fechar relatório').click()
+    await report.open()
+    expect($('.pxa-audit')!.style.top).toBe(top)
+  })
+
   test('SPA: rota mudou com o relatório aberto → aviso para varrer de novo', async () => {
     const report = await openReport()
     report.measure()()

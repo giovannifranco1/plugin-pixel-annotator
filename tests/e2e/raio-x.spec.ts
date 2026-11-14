@@ -58,6 +58,30 @@ test('DETE-04 hover num valor destaca os elementos que o usam', async ({ page })
   await expect(pxa(page).locator('.pxa-audit-hl .pxa-box:visible')).toHaveCount(4) // 3 #777777 + 1 #777778 (mesma cor)
 })
 
+test('DETE-11 arrastar o cabeçalho tira o relatório de cima do conteúdo, sem anotar nada', async ({ page }) => {
+  await tool(page, 'Detector').click()
+  const report = pxa(page).locator('.pxa-audit')
+  await expect(report.locator('.pxa-audit-foot')).toContainText(' ms') // varredura terminou: o cabeçalho não muda mais
+  const before = (await report.boundingBox())!
+  const head = (await report.locator('header').boundingBox())!
+  await page.mouse.move(head.x + 40, head.y + head.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(head.x + 340, head.y + head.height / 2 + 40, { steps: 5 })
+  await page.mouse.up()
+  const after = (await report.boundingBox())!
+  expect(Math.round(after.x - before.x)).toBe(300)
+  expect(Math.round(after.y - before.y)).toBe(40)
+  // não sai da tela: arrastar muito para baixo para no limite
+  await page.mouse.move(after.x + 40, after.y + 20)
+  await page.mouse.down()
+  await page.mouse.move(after.x + 40, after.y + 5000, { steps: 3 })
+  await page.mouse.up()
+  const clamped = (await report.boundingBox())!
+  expect(Math.round(clamped.y + clamped.height)).toBeLessThanOrEqual(720)
+  await expect(editor(page)).toHaveCount(0) // arrastar não vira clique na página
+  await expect(items(page)).toHaveCount(0)
+})
+
 test('DETE-10 clicar no valor rola até o elemento lá embaixo', async ({ page }) => {
   await tool(page, 'Detector').click()
   await expect(page.locator('#longe')).not.toBeInViewport()

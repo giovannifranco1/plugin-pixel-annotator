@@ -112,6 +112,8 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
   background: #1a1226; color: #fff; font-weight: 700;
 }
 .pxa-audit-head { flex: 1; }
+.pxa-audit header { cursor: move; user-select: none; touch-action: none; }
+.pxa-audit header:focus-visible { outline: 2px dashed #ff3e7f; outline-offset: -4px; }
 .pxa-audit header button { padding: 0 6px; box-shadow: none; }
 .pxa-audit-tools { display: flex; gap: 6px; padding: 6px 8px; }
 .pxa-audit-notices p { margin: 0; padding: 4px 8px; background: #ffe1ec; font-weight: 700; }

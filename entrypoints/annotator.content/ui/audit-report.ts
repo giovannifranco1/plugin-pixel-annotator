@@ -4,6 +4,7 @@ import {
 } from '@/lib/design-audit'
 import { scanDocument, SCAN_LIMIT, type ScanResult } from '../audit-scan'
 import { createBoxes, type BoxSpec } from './boxes'
+import { makeDraggable } from './draggable'
 import type { UiHost } from './host'
 import { el } from './dom'
 
@@ -35,6 +36,7 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
   const head = el('div', { className: 'pxa-audit-head' })
   const close = el('button', { type: 'button', className: 'pxa-icon pxa-head-btn', textContent: '×', onclick: () => hide() })
   close.setAttribute('aria-label', 'Fechar relatório')
+  const header = el('header', {}, head, close)
   const scaleBtn = el('button', { type: 'button', onclick: () => { scale = scale === 4 ? 8 : 4; render() } })
   const rescan = el('button', { type: 'button', textContent: 'Varrer de novo', onclick: () => void run() })
   const notices = el('div', { className: 'pxa-audit-notices' })
@@ -43,7 +45,7 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
   const box = el(
     'section',
     { className: 'pxa-audit' },
-    el('header', {}, head, close),
+    header,
     el('div', { className: 'pxa-audit-tools' }, scaleBtn, rescan),
     notices,
     body,
@@ -52,6 +54,7 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
   box.setAttribute('aria-label', 'Relatório do Detector')
   box.style.display = 'none'
   ui.layer.append(box)
+  makeDraggable(box, header) // DETE-11: tira a janela de cima do que o dev está olhando
   const boxes = createBoxes(ui, 'pxa-audit-hl')
 
   let open = false
