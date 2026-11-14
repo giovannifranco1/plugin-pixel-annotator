@@ -67,11 +67,9 @@ export function createController(deps: ControllerDeps = {}) {
 
   function onPick(el: Element) {
     if (state !== 'active') return
-    const rx = raioX.pick(el)
-    if (rx && 'handled' in rx) return
-    const target = rx?.target ?? el
-    overlay.highlight(target)
-    openEditor(target.getBoundingClientRect(), rx?.note, (note) => void save(target, note))
+    if (raioX.pick()) return
+    overlay.highlight(el)
+    openEditor(el.getBoundingClientRect(), undefined, (note) => void save(el, note))
   }
 
   /** Uma nota pré-preenchida (editável) para vários elementos: um print por elemento ao salvar (Raio-X). */

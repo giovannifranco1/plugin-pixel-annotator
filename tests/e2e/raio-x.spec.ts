@@ -1,8 +1,10 @@
 import type { Page } from '@playwright/test'
-import { BASE, editor, expect, exportZip, items, pxa, test, toast } from './harness'
+import { BASE, editor, expect, items, pxa, test, toast } from './harness'
 
 const tool = (page: Page, name: string) => pxa(page).locator('.pxa-rx-bar button', { hasText: name })
-const row = (page: Page, value: string) => pxa(page).locator(`.pxa-audit-row[data-value="${value}"]`)
+const row = (page: Page, value: string, kind = value.startsWith('#') ? 'color' : 'spacing') =>
+  pxa(page).locator(`.pxa-audit-row[data-value="${value}"][data-kind="${kind}"]`)
+const flagged = (page: Page, kind: string) => pxa(page).locator(`.pxa-audit-row[data-kind="${kind}"]:has(.pxa-audit-annotate)`)
 
 test.beforeEach(async ({ page, toggle }) => {
   await page.setViewportSize({ width: 1280, height: 720 })
@@ -11,18 +13,23 @@ test.beforeEach(async ({ page, toggle }) => {
   await expect(pxa(page).locator('.pxa-rx-bar')).toBeVisible()
 })
 
-test('critério de sucesso: aponta 3 espaçamentos fora da escala, 2 cores quase iguais e 1 filho vazando', async ({ page }) => {
+test('critério de sucesso: aponta espaçamentos, cor, tamanho e fonte errados sem acusar tokens nem cores modernas', async ({ page }) => {
   await tool(page, 'Detector').click()
   await expect(pxa(page).locator('.pxa-audit-head')).toContainText('3 espaçamentos fora da escala de 4px')
-  for (const v of ['13px', '7px', '10px']) await expect(row(page, v)).toContainText('fora da escala de 4px')
+  // tem que achar
+  await expect(flagged(page, 'spacing').locator('.pxa-audit-value')).toHaveText(['13px', '18px', '7px'])
+  await expect(row(page, '13px')).toContainText('padding')
+  await expect(flagged(page, 'color').locator('.pxa-audit-value')).toHaveText(['#7a7a7a'])
   await expect(row(page, '#7a7a7a')).toContainText('parecida com #777777')
-  await expect(row(page, '#777777')).toContainText('3×')
-
-  await tool(page, 'X-ray').click()
-  const danger = pxa(page).locator('.pxa-xray .pxa-danger')
-  await expect(danger).toHaveCount(1)
-  await expect(danger).toHaveText('vaza 60px')
-  expect(await pxa(page).locator('.pxa-xray .pxa-box:visible').count()).toBeGreaterThan(5) // contornos (XRAY-01)
+  await expect(flagged(page, 'font-size').locator('.pxa-audit-value')).toHaveText(['15px'])
+  await expect(row(page, '15px', 'font-size')).toContainText('parecido com 16px')
+  await expect(flagged(page, 'font-family')).toHaveCount(1)
+  await expect(flagged(page, 'font-family')).toContainText('fonte padrão do navegador')
+  // não pode acusar: tokens do Tailwind, cor oklch() (vira #ff0000), sr-only (3px)
+  for (const v of ['2px', '6px', '10px', '14px']) await expect(row(page, v).locator('.pxa-audit-annotate')).toHaveCount(0)
+  await expect(row(page, '#ff0000')).toHaveCount(1)
+  await expect(pxa(page).locator('.pxa-audit')).not.toContainText('oklch')
+  await expect(row(page, '3px')).toHaveCount(0)
 })
 
 test('DETE-01/DETE-06 página média (3.000 elementos): relatório em menos de 1s', async ({ page, toggle }) => {
@@ -41,53 +48,25 @@ test('DETE-01/DETE-06 página média (3.000 elementos): relatório em menos de 1
 
 test('DETE-04 hover num valor destaca os elementos que o usam', async ({ page }) => {
   await tool(page, 'Detector').click()
+  await pxa(page).locator('.pxa-audit-row[data-kind="color"]').first().locator('xpath=ancestor::section//summary').first().click()
   await row(page, '#777777').hover()
   await expect(pxa(page).locator('.pxa-audit-hl .pxa-box:visible')).toHaveCount(3)
 })
 
-test('DETE-05 "Anotar" um Achado cria a anotação com a nota pré-preenchida', async ({ page }) => {
+test('DETE-10 clicar no valor rola até o elemento lá embaixo', async ({ page }) => {
+  await tool(page, 'Detector').click()
+  await expect(page.locator('#longe')).not.toBeInViewport()
+  await row(page, '18px').locator('.pxa-audit-value').click()
+  await expect(page.locator('#longe')).toBeInViewport()
+})
+
+test('DETE-05 "Anotar" um Achado cria a anotação com a nota que diz o que usar', async ({ page }) => {
   await tool(page, 'Detector').click()
   await row(page, '13px').getByRole('button', { name: 'Anotar' }).click()
-  await expect(editor(page)).toHaveValue('[Raio-X] espaçamento 13px fora da escala de 4px; usado só 1× (1 elemento)')
+  await expect(editor(page)).toHaveValue('[Raio-X] espaçamento 13px (padding) fora da escala de 4px: usar 12px ou 14px (1 elemento)')
   await editor(page).press('Enter')
   await expect(items(page)).toHaveCount(1)
   await expect(items(page).first()).toContainText('[Raio-X] espaçamento 13px')
-})
-
-test('XRAY-04/XRAY-05 clique no vermelho abre nota "vaza do pai"; clique comum abre nota vazia', async ({ page }) => {
-  await tool(page, 'X-ray').click()
-  await expect(pxa(page).locator('.pxa-xray .pxa-danger')).toHaveCount(1)
-  await page.locator('#vazando').click()
-  await expect(editor(page)).toHaveValue('[Raio-X] vaza do pai #caixa em 60px')
-  await editor(page).press('Enter')
-  await expect(items(page)).toHaveCount(1)
-  await page.locator('#lupa').click()
-  await expect(editor(page)).toHaveValue('')
-})
-
-test('GRAD-01/GRAD-03 grade ligada aparece na tela, mas o print da anotação sai sem ela', async ({ page }) => {
-  await tool(page, 'Grade').click()
-  await expect(tool(page, 'Grade')).toHaveText('Grade 8px')
-  await expect(pxa(page).locator('.pxa-grid')).toBeVisible()
-  await page.locator('#alvo-branco').click()
-  await editor(page).fill('fundo branco')
-  await editor(page).press('Enter')
-  await expect(items(page)).toHaveCount(1)
-  const { files } = await exportZip(page)
-  const b64 = Buffer.from(files['shots/01.png']!).toString('base64')
-  // Centro do recorte = miolo do #alvo-branco. Com a grade no print haveria linhas a cada 4/8px.
-  const notWhite = await page.evaluate(async (data) => {
-    const img = await createImageBitmap(await (await fetch(`data:image/png;base64,${data}`)).blob())
-    const canvas = new OffscreenCanvas(img.width, img.height)
-    const ctx = canvas.getContext('2d')!
-    ctx.drawImage(img, 0, 0)
-    const px = ctx.getImageData(Math.floor(img.width / 2) - 20, Math.floor(img.height / 2) - 20, 40, 40).data
-    let n = 0
-    for (let i = 0; i < px.length; i += 4) if (px[i] !== 255 || px[i + 1] !== 255 || px[i + 2] !== 255) n++
-    return n
-  }, b64)
-  expect(notWhite).toBe(0)
-  await expect(pxa(page).locator('.pxa-grid')).toBeVisible() // volta depois do print
 })
 
 test('LUPA-01/LUPA-02 lupa mostra o hex sob o cursor e o clique copia sem criar anotação', async ({ page, context }) => {

@@ -11,7 +11,7 @@ const pixels = { width: 1, height: 1, data: new Uint8ClampedArray([255, 0, 0, 25
 
 beforeEach(() => {
   ui = createHost()
-  document.body.innerHTML = '<div id="pai" style="width: 10px"><p id="filho">x</p></div>'
+  document.body.innerHTML = '<p>x</p>'
   Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
   rx = createRaioX(ui, { annotate }, { scan, capture: async () => 'data:', decode: async () => pixels })
   ui.layer.append(rx.toolbar)
@@ -26,17 +26,11 @@ const button = (label: string) => Array.from(rx.toolbar.querySelectorAll('button
 const pressed = (label: string) => button(label).getAttribute('aria-pressed')
 
 describe('raio-x', () => {
-  test('barra com Detector, X-ray, Grade e Lupa, cada um alternando aria-pressed', async () => {
-    expect(Array.from(rx.toolbar.querySelectorAll('button')).map((b) => b.textContent)).toEqual(['Detector', 'X-ray', 'Grade', 'Lupa'])
+  test('barra com Detector e Lupa, cada um alternando aria-pressed', async () => {
+    expect(Array.from(rx.toolbar.querySelectorAll('button')).map((b) => b.textContent)).toEqual(['Detector', 'Lupa'])
     button('Detector').click()
     expect(pressed('Detector')).toBe('true')
     await vi.waitFor(() => expect(scan).toHaveBeenCalled())
-    button('X-ray').click()
-    expect(pressed('X-ray')).toBe('true')
-    button('Grade').click()
-    expect(button('Grade').textContent).toBe('Grade 8px')
-    button('Grade').click()
-    expect(button('Grade').textContent).toBe('Grade 4px')
     button('Lupa').click()
     expect(pressed('Lupa')).toBe('true')
     button('Detector').click()
@@ -47,32 +41,21 @@ describe('raio-x', () => {
     button('Lupa').click()
     window.dispatchEvent(new PointerEvent('pointermove', { clientX: 0, clientY: 0 }))
     await vi.waitFor(async () => {
-      expect(rx.pick(document.body)).toEqual({ handled: true })
+      expect(rx.pick()).toBe(true)
       await Promise.resolve()
       expect(writeText).toHaveBeenCalledWith('#ff0000')
     })
   })
 
-  test('XRAY-04/05 com X-ray: clique num vermelho devolve alvo e nota; fora dele segue normal', () => {
-    const rects: Record<string, DOMRect> = { pai: new DOMRect(0, 0, 10, 10), filho: new DOMRect(0, 0, 40, 10) }
-    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
-      return rects[this.id] ?? new DOMRect(0, 0, 0, 0)
-    })
-    expect(rx.pick(document.getElementById('filho')!)).toBeNull() // X-ray desligado
-    button('X-ray').click()
-    rx.measure()()
-    expect(rx.pick(document.getElementById('filho')!)).toEqual({ target: document.getElementById('filho'), note: '[Raio-X] vaza do pai #pai em 30px' })
-    expect(rx.pick(document.getElementById('pai')!)).toBeNull()
+  test('sem a Lupa o clique segue para a anotação', () => {
+    expect(rx.pick()).toBe(false)
   })
 
-  test('reset desliga todas as ferramentas', () => {
-    button('X-ray').click()
-    button('Grade').click()
+  test('reset desliga o Detector e a Lupa', async () => {
+    button('Detector').click()
     button('Lupa').click()
     rx.reset()
-    expect(['X-ray', 'Lupa'].map(pressed)).toEqual(['false', 'false'])
-    expect(button('Grade').textContent).toBe('Grade')
-    rx.measure()()
-    expect(ui.root.querySelector<HTMLElement>('.pxa-grid')!.style.display).toBe('none')
+    expect(['Detector', 'Lupa'].map(pressed)).toEqual(['false', 'false'])
+    expect(ui.root.querySelector<HTMLElement>('.pxa-audit')!.style.display).toBe('none')
   })
 })

@@ -9,12 +9,12 @@ const created: Array<ReturnType<typeof create>> = []
 const createController = (deps: ControllerDeps) => { const c = create(deps); created.push(c); return c }
 const capture = vi.fn(async (_el: Element, note: string) => draft({ note, selector: '#x', pathname: location.pathname }))
 const writeText = vi.fn(async (_: string) => {})
-const sample = (spacings: string[]): AuditSample => ({ colors: [], fontSize: '', fontFamily: '', fontWeight: '', spacings })
+const sample = (value: string): AuditSample => ({ background: '', colors: [], fontSize: '', fontFamily: '', area: 100, spacings: [{ prop: 'padding-top', value }] })
 
 /** Varredura falsa: todos os <i> da página com espaçamento 13px (fora da escala). */
 const scan = vi.fn(async () => {
   const elements = Array.from(document.querySelectorAll('i'))
-  return { elements, samples: elements.map(() => sample(['13px'])), truncated: false, ms: 1 }
+  return { elements, samples: elements.map(() => sample('13px')), truncated: false, ms: 1 }
 })
 const raioX = { scan, capture: async () => 'data:', decode: async () => ({ width: 1, height: 1, data: new Uint8ClampedArray([0, 0, 255, 255]) }) }
 
@@ -58,7 +58,7 @@ describe('controller + Raio-X', () => {
   test('DETE-05 "Anotar" abre a nota pré-preenchida editável e cria uma anotação por elemento (até 5)', async () => {
     const c = await annotateFinding(2)
     $('.pxa-audit-annotate')!.click()
-    expect(textarea()!.value).toBe('[Raio-X] espaçamento 13px fora da escala de 4px; usado só 2× (2 elementos)')
+    expect(textarea()!.value).toBe('[Raio-X] espaçamento 13px (padding-top) fora da escala de 4px: usar 12px ou 14px (2 elementos)')
     textarea()!.value = 'ajustar para 12px'
     pressEnter()
     await vi.waitFor(() => expect(c.store.list()).toHaveLength(2))
@@ -85,25 +85,6 @@ describe('controller + Raio-X', () => {
     expect(capture.mock.calls.map(([el]) => el.id)).toEqual(['i0', 'i2'])
   })
 
-  test('XRAY-04 clique num elemento vermelho abre a nota pré-preenchida; XRAY-05 clique comum segue normal', async () => {
-    document.body.innerHTML = '<div id="pai"><p id="filho">x</p></div><span id="ok">ok</span>'
-    const rects: Record<string, DOMRect> = { pai: new DOMRect(0, 0, 10, 10), filho: new DOMRect(0, 0, 40, 10), ok: new DOMRect(0, 50, 10, 10) }
-    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
-      return rects[this.id] ?? new DOMRect(0, 0, 0, 0)
-    })
-    const c = createController({ ui, capture, raioX })
-    c.toggle()
-    button('X-ray').click()
-    await vi.waitFor(() => expect(ui.root.querySelector('.pxa-xray .pxa-danger')).not.toBeNull()) // tick desenhou
-    click(document.getElementById('filho')!)
-    expect(textarea()!.value).toBe('[Raio-X] vaza do pai #pai em 30px')
-    pressEnter()
-    await vi.waitFor(() => expect(c.store.list()).toHaveLength(1))
-    expect(capture.mock.calls[0]![0].id).toBe('filho')
-    click(document.getElementById('ok')!)
-    expect(textarea()!.value).toBe('')
-  })
-
   test('LUPA-02 clique com a Lupa ligada copia o hex e não abre o editor', async () => {
     document.body.innerHTML = '<p id="alvo">x</p>'
     const c = createController({ ui, capture, raioX })
@@ -122,11 +103,9 @@ describe('controller + Raio-X', () => {
   test('desativar o modo desliga as ferramentas do Raio-X', () => {
     const c = createController({ ui, capture, raioX })
     c.toggle()
-    button('X-ray').click()
-    button('Grade').click()
+    button('Lupa').click()
     c.toggle()
     c.toggle()
-    expect(button('X-ray').getAttribute('aria-pressed')).toBe('false')
-    expect(button('Grade').textContent).toBe('Grade')
+    expect(button('Lupa').getAttribute('aria-pressed')).toBe('false')
   })
 })

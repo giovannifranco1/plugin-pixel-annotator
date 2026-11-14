@@ -9,17 +9,13 @@ afterEach(() => ui.host.remove())
 const shown = () => Array.from(ui.root.querySelectorAll<HTMLElement>('.pxa-box')).filter((b) => b.style.display !== 'none')
 
 describe('boxes', () => {
-  test('desenha caixas com posição, cor e rótulo, abaixo do resto da UI', () => {
+  test('desenha caixas na posição, abaixo do resto da UI', () => {
     ui.layer.append(document.createElement('aside'))
-    const boxes = createBoxes(ui, 'pxa-test')
-    boxes.draw([{ left: 10, top: 20, width: 30, height: 40, color: 'rgb(1, 2, 3)' }, { left: 0, top: 0, width: 5, height: 5, label: 'vaza 12px', danger: true }])
-    const [a, b] = shown()
+    createBoxes(ui, 'pxa-test').draw([{ left: 10, top: 20, width: 30, height: 40 }, { left: 0, top: 0, width: 5, height: 5 }])
     expect(ui.layer.firstElementChild!.classList.contains('pxa-test')).toBe(true)
-    expect(a!.style.cssText).toContain('left: 10px')
-    expect(a!.style.height).toBe('40px')
-    expect(a!.style.borderColor).toBe('rgb(1, 2, 3)')
-    expect(b!.classList.contains('pxa-danger')).toBe(true)
-    expect(b!.textContent).toBe('vaza 12px')
+    expect(shown()).toHaveLength(2)
+    expect(shown()[0]!.style.cssText).toContain('left: 10px')
+    expect(shown()[0]!.style.height).toBe('40px')
   })
 
   test('reaproveita nós, esconde os que sobram e não reescreve o que não mudou', () => {

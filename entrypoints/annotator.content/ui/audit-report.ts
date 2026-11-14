@@ -16,7 +16,8 @@ const MAX_HIGHLIGHT_READS = 2000
 
 const SECTIONS: Array<{ kind: AuditKind; title: string; pick(r: AuditReport): AuditEntry[] }> = [
   { kind: 'color', title: 'Cores', pick: (r) => r.colors },
-  { kind: 'font', title: 'Fontes', pick: (r) => r.fonts },
+  { kind: 'font-size', title: 'Tamanhos de fonte', pick: (r) => r.fontSizes },
+  { kind: 'font-family', title: 'Famílias', pick: (r) => r.families },
   { kind: 'spacing', title: 'Espaçamentos', pick: (r) => r.spacings },
 ]
 
@@ -58,6 +59,8 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
   let result: ScanResult | null = null
   let scannedAt = ''
   let stale = false
+  /** Fração dos espaçamentos na escala atual (aviso abaixo de 50%). */
+  let scaleFit = 1
   let hovered: Element[] = []
   let runId = 0
 
@@ -65,21 +68,33 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
     const lines: string[] = []
     if (result?.truncated) lines.push(`Cortado em ${SCAN_LIMIT.toLocaleString('pt-BR')} elementos.`)
     if (stale) lines.push('A página mudou. Varra de novo.')
+    if (scaleFit < 0.5) lines.push(`Só ${Math.round(scaleFit * 100)}% dos espaçamentos seguem a escala de ${scale}px: a página talvez use outra escala.`)
     notices.replaceChildren(...lines.map((t) => el('p', { textContent: t })))
   }
 
   function row(kind: AuditKind, e: AuditEntry, elements: readonly Element[]) {
-    // Índices → elementos só quando usados (hover/Anotar): uma cor comum pode ter milhares.
+    // Índices → elementos só quando usados (hover/clique/Anotar): uma cor comum pode ter milhares.
     const targets = () => e.elements.map((i) => elements[i]!)
+    let next = 0
+    /** DETE-10: cada clique rola até o próximo elemento vivo que usa o valor. */
+    const goToNext = () => {
+      const alive = targets().filter((t) => t.isConnected)
+      const target = alive[next++ % Math.max(1, alive.length)]
+      if (!target) return
+      target.scrollIntoView({ block: 'center', inline: 'nearest' })
+      hovered = alive
+    }
     const li = el(
       'li',
       { className: 'pxa-audit-row', onmouseenter: () => { hovered = targets() }, onmouseleave: () => { hovered = [] } },
       ...(kind === 'color' ? [swatch(e.value)] : []),
-      el('span', { className: 'pxa-audit-value', textContent: e.value, title: e.value }),
+      el('button', { type: 'button', className: 'pxa-audit-value', textContent: e.value, title: `${e.value}: ir até o próximo elemento`, onclick: goToNext }),
       el('span', { className: 'pxa-audit-count', textContent: `${e.count}×` }),
-      ...flagTexts(e, scale).map((t) => el('span', { className: 'pxa-tag', textContent: t })),
+      ...(e.props?.length ? [el('span', { className: 'pxa-audit-props', textContent: e.props.join(', ') })] : []),
+      ...flagTexts(kind, e, scale).map((t) => el('span', { className: 'pxa-tag', textContent: t })),
     )
     li.dataset.value = e.value
+    li.dataset.kind = kind
     if (e.flags.length) {
       li.append(el('button', { type: 'button', className: 'pxa-audit-annotate', textContent: 'Anotar', onclick: () => actions.annotate(targets(), findingNote(kind, e, scale)) }))
     }
@@ -88,13 +103,24 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
 
   function render() {
     scaleBtn.textContent = `Escala: ${scale}px`
+    const report = result && buildAuditReport(result.samples, scale)
+    scaleFit = report?.scaleFit ?? 1
     renderNotices()
-    if (!result) return
-    const report = buildAuditReport(result.samples, scale)
+    if (!result || !report) return
     const elements = result.elements
     head.textContent = auditHeadline(report)
     body.replaceChildren(
-      ...SECTIONS.flatMap(({ kind, title, pick }) => [el('h3', { textContent: title }), el('ul', {}, ...pick(report).map((e) => row(kind, e, elements)))]),
+      ...SECTIONS.flatMap(({ kind, title, pick }) => {
+        const entries = pick(report)
+        const findings = entries.filter((e) => e.flags.length)
+        const rest = entries.filter((e) => !e.flags.length)
+        const rows = (list: AuditEntry[]) => el('ul', {}, ...list.map((e) => row(kind, e, elements)))
+        // DETE-09: Achados à vista, o resto recolhido.
+        const more = rest.length
+          ? [el('details', {}, el('summary', { textContent: rest.length === 1 ? '1 outro valor' : `${rest.length} outros valores` }), rows(rest))]
+          : []
+        return [el('h3', { textContent: title }), rows(findings), ...more]
+      }),
     )
     foot.textContent = `${elements.length.toLocaleString('pt-BR')} elementos em ${Math.round(result.ms)} ms`
   }
@@ -104,6 +130,7 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
     hovered = []
     stale = false
     result = null
+    scaleFit = 1
     head.textContent = 'Varrendo…'
     body.replaceChildren()
     foot.textContent = ''

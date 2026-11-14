@@ -97,19 +97,10 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 .pxa-rx-title { font-weight: 700; margin-right: 2px; }
 .pxa-rx-bar button { padding: 1px 6px; box-shadow: 1px 1px 0 #1a1226; }
 .pxa-rx-bar button[aria-pressed="true"] { background: #ff3e7f; color: #fff; }
-.pxa-rx-status { width: 100%; color: #5b5266; }
-.pxa-rx-status:empty { display: none; }
 .pxa-panel.pxa-collapsed .pxa-rx-bar { display: none; }
 
-.pxa-box { position: fixed; display: none; pointer-events: none; border: 1px solid; }
-.pxa-box.pxa-danger { border: 2px solid #e8132b; background: rgba(232, 19, 43, .12); }
-.pxa-box-label:empty { display: none; }
-.pxa-box-label {
-  position: absolute; left: -2px; top: -18px; padding: 0 4px;
-  background: #e8132b; color: #fff; font-weight: 700; white-space: nowrap;
-}
+.pxa-box { position: fixed; display: none; pointer-events: none; }
 .pxa-audit-hl .pxa-box { border: 2px dashed #ff3e7f; background: rgba(255, 62, 127, .15); }
-.pxa-grid { position: fixed; inset: 0; pointer-events: none; }
 
 .pxa-audit {
   position: fixed; top: 12px; left: 12px; width: 340px; max-width: calc(100vw - 24px); max-height: calc(100vh - 80px);
@@ -129,8 +120,14 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 .pxa-audit ul { list-style: none; margin: 0; padding: 0; }
 .pxa-audit-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 3px 0; border-bottom: 2px dotted #d8cfc0; }
 .pxa-audit-row:hover { background: #ffe1ec; }
-.pxa-audit-value { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
-.pxa-audit-count { color: #5b5266; }
+.pxa-audit-value {
+  max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700;
+  padding: 0; background: none; border: 0; box-shadow: none; text-decoration: underline dotted;
+}
+.pxa-audit-value:hover:not(:disabled) { background: none; color: #ff3e7f; }
+.pxa-audit-count, .pxa-audit-props { color: #5b5266; }
+.pxa-audit details { margin: 2px 0 4px; }
+.pxa-audit summary { cursor: pointer; color: #5b5266; padding: 2px 0; }
 .pxa-swatch { width: 12px; height: 12px; border: 2px solid #1a1226; }
 .pxa-tag { padding: 0 4px; background: #1a1226; color: #fff; }
 .pxa-audit-annotate { margin-left: auto; padding: 0 6px; box-shadow: 1px 1px 0 #1a1226; }
