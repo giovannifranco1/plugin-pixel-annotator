@@ -169,3 +169,10 @@ Remoções valem por cima das decisões acima: D3, D4, D5, D6, D10 e D16 (só o 
 | R4 | **Mascote (MASC-06/07):** grades novas (alfinete fofo sem boca; feliz = olhos `^^`, susto = gota de suor, festa = confete, dormindo = olhos fechados + `z`). Paleta por tema em `MASCOT_PALETTES: Record<ThemeId, …>`; `createMascot(theme)` monta os 5 quadros da paleta e `mascot.setTheme(id)` remonta. `fun.ts` chama `setTheme` junto com `applyTheme`. O `z` usa cor clara própria para aparecer no cabeçalho escuro. |
 | R5 | **Ícone de som (SOM-01):** `SPEAKER_ON`/`SPEAKER_OFF` 12×12 em `ui/icons.ts` (alto-falante com ondas / com X), no botão via `pixelIcon`; `aria-label` continua "Ligar som"/"Desligar som". |
 | R6 | **Konami (EGG-01):** só `mascot.set('festa')` + jingle; `lib/konami.ts` fica. |
+
+## Revisão 2 (2026-11-14, feedback do dev)
+
+| # | Decisão |
+|---|---|
+| R2-1 | **Paleta única:** `MASCOT_PALETTES` por tema volta a ser `MASCOT_PALETTE` (K `#1a1226`, P `#ff3e7f`, W, G, Y, B, Z `#ffffff`). Saem `setTheme`, o cache por tema e a chamada em `fun.ts`. R4 da Revisão 1 fica sem efeito na parte de cor. |
+| R2-2 | **Arte:** cabeça 10×8 (era 12×9), olhos de 1×2 px nas colunas 6 e 9, longe do contorno (no cabeçalho escuro o contorno some e olho colado na borda vira listra); sem bochecha (`R` sai). Feliz/festa = olhos em traço; susto = olhos de 3 px + gota; dormindo = traço baixo + `z` 4×4 desenhado com diagonal (o 3×3 parecia um `I`). |
