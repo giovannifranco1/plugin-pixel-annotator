@@ -130,3 +130,29 @@ T4 [P] permissão┘    T7 mascot ─┐
 | TEMA-01..05 | T3, T9, T10, T12 |
 | EGG-01..02 | T2, T5, T10, T12 |
 | Q-01 (permissão) | T4 |
+
+---
+
+## Revisão 1 (2026-11-14)
+
+### R-T1 Remover XP/nível/conquistas
+- **Where:** apagar `lib/achievements.ts`, `ui/achievement-icons.ts`, `tests/unit/achievements.test.ts`; enxugar `lib/profile.ts`, `ui/fun.ts`, `ui/styles.ts`, `ui/toast.ts`, testes de `profile`/`fun` e `tests/e2e/fun.spec.ts`.
+- **Done when:** nenhuma referência a XP/nível/conquista no código; perfil antigo com `xp`/`achievements` normaliza sem erro (teste).
+
+### R-T2 Só Padrão e Noite
+- **Where:** `lib/profile.ts` (`THEME_IDS`), `ui/themes.ts`, `ui/styles.ts`, `tests/unit/themes.test.ts`.
+- **Done when:** `TEMA-01` lista 2 temas; tema salvo `crt` cai para `padrao` (teste); contraste continua ≥ 4.5.
+
+### R-T3 Mascote novo com cores por tema
+- **Where:** `ui/mascot.ts`, `ui/fun.ts`, `tests/unit/mascot.test.ts`, `tests/unit/fun.test.ts`, `assets/mascot-preview.html`.
+- **Done when:** `MASC-06` grades 16×16 sem boca; `MASC-07` trocar o tema troca as cores do SVG do mascote (teste unit + E2E).
+
+### R-T4 Ícone de som pixel art
+- **Where:** `ui/icons.ts`, `ui/fun.ts`, `tests/unit/fun.test.ts`.
+- **Done when:** botão sem emoji, com SVG `crispEdges`; `aria-label`/`aria-pressed` como antes.
+
+### R-T5 Konami sem conquista
+- **Where:** `ui/fun.ts`, testes.
+- **Done when:** `EGG-01` dança + jingle (com som), sem toast; `EGG-02` intacto.
+
+**Verify:** gate full com `PXA_E2E_PORT=5175`.
