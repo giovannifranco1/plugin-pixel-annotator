@@ -1,5 +1,5 @@
 import {
-  AUDIT_KINDS, auditHeadline, buildAuditReport, findingNote, flagTexts, KIND_LIST, plural, scaleNotice,
+  AUDIT_KINDS, auditHeadline, buildAuditReport, findingNote, flagTexts, isFinding, KIND_LIST, plural, scaleNotice,
   type AuditEntry, type AuditKind, type AuditReport, type AuditScale,
 } from '@/lib/design-audit'
 import { scanDocument, SCAN_LIMIT, type ScanResult } from '../audit-scan'
@@ -19,6 +19,9 @@ const MAX_HIGHLIGHT_READS = 2000
 const routeKey = () => location.href
 const count = (n: number) => n.toLocaleString('pt-BR')
 const inViewport = (r: DOMRect) => r.right >= 0 && r.bottom >= 0 && r.left <= innerWidth && r.top <= innerHeight
+
+/** `<span>` só quando há texto. */
+const optional = (className: string, text: string | false | undefined, title = '') => (text ? [el('span', { className, textContent: text, title })] : [])
 
 function swatch(color: string) {
   const s = el('span', { className: 'pxa-swatch' })
@@ -87,14 +90,14 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
       ...(kind === 'color' ? [swatch(e.value)] : []),
       el('button', { type: 'button', className: 'pxa-audit-value', textContent: e.value, title: `${e.value}: ir até o próximo elemento`, onclick: goToNext }),
       el('span', { className: 'pxa-audit-count', textContent: `${e.count}×` }),
-      ...(e.props?.length ? [el('span', { className: 'pxa-audit-props', textContent: e.props.join(', ') })] : []),
-      ...(e.variants?.length ? [el('span', { className: 'pxa-audit-props', textContent: `também ${e.variants.join(', ')}`, title: 'Diferença imperceptível: conta como a mesma cor' })] : []),
+      ...optional('pxa-audit-props', e.props?.join(', ')),
+      ...optional('pxa-audit-props', e.variants && `também ${e.variants.join(', ')}`, 'Diferença imperceptível: conta como a mesma cor'),
       ...flagTexts(kind, e, scale).map((t) => el('span', { className: 'pxa-tag', textContent: t })),
-      ...(e.flags.length && e.suggestion ? [el('span', { className: 'pxa-audit-fix', textContent: `→ ${e.suggestion}` })] : []),
+      ...optional('pxa-audit-fix', e.suggestion && `→ ${e.suggestion}`), // sugestão só existe em Achado
     )
     li.dataset.value = e.value
     li.dataset.kind = kind
-    if (e.flags.length) {
+    if (isFinding(e)) {
       li.append(el('button', { type: 'button', className: 'pxa-audit-annotate', textContent: 'Anotar', onclick: () => actions.annotate(targets(), findingNote(kind, e, scale)) }))
     }
     return li
@@ -111,8 +114,8 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
     body.replaceChildren(
       ...KIND_LIST.flatMap((kind) => {
         const entries = AUDIT_KINDS[kind].entries(current)
-        const findings = entries.filter((e) => e.flags.length)
-        const rest = entries.filter((e) => !e.flags.length)
+        const findings = entries.filter(isFinding)
+        const rest = entries.filter((e) => !isFinding(e))
         const rows = (list: AuditEntry[]) => el('ul', {}, ...list.map((e) => row(kind, e, elements)))
         // DETE-09: Achados à vista; seção sem Achado diz que está tudo certo; o resto recolhido.
         const top = findings.length ? rows(findings) : el('p', { className: 'pxa-audit-ok', textContent: '✓ tudo certo' })
