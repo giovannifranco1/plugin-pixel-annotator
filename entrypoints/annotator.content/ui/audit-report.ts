@@ -7,6 +7,7 @@ import { createBoxes, type BoxSpec } from './boxes'
 import { makeDraggable } from './draggable'
 import type { UiHost } from './host'
 import { el } from './dom'
+import { circleCheck } from './icons'
 
 export interface AuditReportActions {
   annotate(elements: Element[], note: string): void
@@ -23,26 +24,6 @@ const inViewport = (r: DOMRect) => r.right >= 0 && r.bottom >= 0 && r.left <= in
 
 /** `<span>` só quando há texto. */
 const optional = (className: string, text: string | false | undefined, title = '') => (text ? [el('span', { className, textContent: text, title })] : [])
-
-/** Elemento SVG com atributos (o `el()` é só para HTML). */
-function svgEl<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string>, ...children: SVGElement[]): SVGElementTagNameMap[K] {
-  const node = document.createElementNS('http://www.w3.org/2000/svg', tag)
-  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v)
-  node.append(...children)
-  return node
-}
-
-/**
- * Check em círculo, o mesmo do phren (`CheckCircle2Icon`/`circle-check` do lucide, licença ISC,
- * https://lucide.dev). Inline para não trazer a dependência para a extensão.
- */
-const circleCheck = () =>
-  svgEl(
-    'svg',
-    { viewBox: '0 0 24 24', width: '14', height: '14', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' },
-    svgEl('circle', { cx: '12', cy: '12', r: '10' }),
-    svgEl('path', { d: 'm9 12 2 2 4-4' }),
-  )
 
 function swatch(color: string) {
   const s = el('span', { className: 'pxa-swatch' })

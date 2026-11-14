@@ -14,7 +14,6 @@ beforeEach(() => {
   document.body.innerHTML = '<p>x</p>'
   Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
   rx = createRaioX(ui, { annotate }, { scan, capture: async () => 'data:', decode: async () => pixels })
-  ui.layer.append(rx.toolbar)
 })
 afterEach(() => {
   rx.reset()
@@ -22,12 +21,13 @@ afterEach(() => {
   ui.host.remove()
 })
 
-const button = (label: string) => Array.from(rx.toolbar.querySelectorAll('button')).find((b) => b.textContent!.startsWith(label))!
-const pressed = (label: string) => button(label).getAttribute('aria-pressed')
+const tool = (label: string) => rx.tools.find((t) => t.label === label)!
+const button = (label: string) => ({ click: () => tool(label).toggle() })
+const pressed = (label: string) => String(tool(label).isOn())
 
 describe('raio-x', () => {
-  test('barra com Detector e Lupa, cada um alternando aria-pressed', async () => {
-    expect(Array.from(rx.toolbar.querySelectorAll('button')).map((b) => b.textContent)).toEqual(['Detector', 'Lupa'])
+  test('ferramentas Detector e Lupa para o menu, cada uma ligando e desligando', async () => {
+    expect(rx.tools.map((t) => t.label)).toEqual(['Detector', 'Lupa'])
     button('Detector').click()
     expect(pressed('Detector')).toBe('true')
     await vi.waitFor(() => expect(scan).toHaveBeenCalled())

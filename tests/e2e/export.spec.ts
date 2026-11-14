@@ -48,15 +48,7 @@ test('EXPO-05 limpar tudo + confirmar → painel vazio e sem marcadores', async 
   await expect(pxa(page).locator('.pxa-empty')).toBeVisible()
 })
 
-test('AVIS-01 aviso de saída com anotação não exportada; some após exportar .zip', async ({ page }) => {
-  const dialogs: string[] = []
-  page.on('dialog', async (d) => { dialogs.push(d.type()); await d.dismiss() })
-  await page.close({ runBeforeUnload: true })
-  await expect.poll(() => dialogs).toEqual(['beforeunload'])
-})
-
-test('AVIS-01 sem aviso depois do export .zip', async ({ page }) => {
-  await exportZip(page)
+test('PERS-01 sem aviso de saída: as anotações estão salvas no site, o refresh não perde nada', async ({ page }) => {
   const dialogs: string[] = []
   page.on('dialog', async (d) => { dialogs.push(d.type()); await d.dismiss() })
   await page.close({ runBeforeUnload: true })

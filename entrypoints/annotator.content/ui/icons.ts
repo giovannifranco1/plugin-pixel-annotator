@@ -3,45 +3,13 @@ import type { ScreenCategory } from '@/lib/types'
 // Ícones pixel art desenhados como grade: cada caractere é um pixel ('.' = transparente).
 const PALETTE: Record<string, string> = {
   K: 'currentColor', // contorno: cor do texto do botão, acompanha o tema (TEMA-05)
-  P: '#ff3e7f', // borracha
-  Y: '#f2c94c', // corpo do lápis
-  W: '#f5d7a1', // madeira apontada
-  L: '#d8d2e3', // metal claro
-  G: '#8c8ca0', // metal escuro
+  P: '#ff3e7f', // rosa da marca
+  L: '#d8d2e3', // cinza claro
+  G: '#8c8ca0', // cinza escuro
   M: '#3fbf5f', // tela mobile (mesma cor do marcador)
   B: '#f2c94c', // tela tablet
   D: '#4a8cff', // tela desktop
 }
-
-export const PENCIL = [
-  '............',
-  '..........KK',
-  '........KPPK',
-  '.......KGGK.',
-  '......KYYK..',
-  '.....KYYK...',
-  '....KYYK....',
-  '...KYYK.....',
-  '..KWYK......',
-  '.KWWK.......',
-  'KKK.........',
-  '............',
-]
-
-export const TRASH = [
-  '....KKKK....',
-  '.KKKKKKKKKK.',
-  'KLLLLLLLLLLK',
-  'KKKKKKKKKKKK',
-  '.KLLGLLGLLK.',
-  '.KLLGLLGLLK.',
-  '.KLLGLLGLLK.',
-  '.KLLGLLGLLK.',
-  '.KLLGLLGLLK.',
-  '.KLLLLLLLLK.',
-  '..KKKKKKKK..',
-  '............',
-]
 
 const PHONE = [
   '...KKKKKK...',
@@ -85,21 +53,6 @@ const MONITOR = [
   '.....KK.....',
   '...KKKKKK...',
   '............',
-  '............',
-]
-
-export const DOWNLOAD = [
-  '.....KK.....',
-  '.....PP.....',
-  '.....PP.....',
-  '.....PP.....',
-  '..KK.PP.KK..',
-  '...KPPPPK...',
-  '....KPPK....',
-  '.....KK.....',
-  '............',
-  '.K........K.',
-  '.KKKKKKKKKK.',
   '............',
 ]
 
@@ -152,6 +105,22 @@ export const CHEVRON_DOWN = [
 
 export const CHEVRON_UP = [...CHEVRON_DOWN].reverse()
 
+// Menu de ações do painel (três pontos na vertical).
+export const MENU = [
+  '............',
+  '.....KK.....',
+  '.....KK.....',
+  '............',
+  '............',
+  '.....KK.....',
+  '.....KK.....',
+  '............',
+  '............',
+  '.....KK.....',
+  '.....KK.....',
+  '............',
+]
+
 export const CATEGORY_PIXEL_ICON: Record<ScreenCategory, readonly string[]> = { mobile: PHONE, tablet: TABLET, desktop: MONITOR }
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
@@ -181,18 +150,22 @@ export function pixelIcon(rows: readonly string[], scale = 1, palette: Record<st
   return svg
 }
 
-/** Rabisco + pincel (Desenhar, DESE-01): distinto do lápis de "Editar nota". */
-export const BRUSH = [
-  '............',
-  '..PPPP......',
-  '.P....P.....',
-  'P......P....',
-  'P......P..KK',
-  '.P....P..KYK',
-  '..PPPP..KYK.',
-  '.......KYK..',
-  '......KLK...',
-  '.....KPPK...',
-  '....KPPK....',
-  '....KKK.....',
-]
+/** Elemento SVG com atributos (o `el()` é só para HTML). */
+function svgEl<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string>, ...children: SVGElement[]): SVGElementTagNameMap[K] {
+  const node = document.createElementNS(SVG_NS, tag)
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v)
+  node.append(...children)
+  return node
+}
+
+/**
+ * Check em círculo, o mesmo do phren (`CheckCircle2Icon`/`circle-check` do lucide, licença ISC,
+ * https://lucide.dev). Inline para não trazer a dependência para a extensão.
+ */
+export const circleCheck = () =>
+  svgEl(
+    'svg',
+    { viewBox: '0 0 24 24', width: '14', height: '14', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' },
+    svgEl('circle', { cx: '12', cy: '12', r: '10' }),
+    svgEl('path', { d: 'm9 12 2 2 4-4' }),
+  )

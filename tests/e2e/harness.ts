@@ -65,13 +65,39 @@ export async function annotate(page: Page, selector: string, note: string) {
   await expect(items(page)).toHaveCount(before + 1)
 }
 
-/** Clica em "Exportar .zip" e devolve nome, caminho e arquivos do zip baixado. */
+/**
+ * Apaga as anotações salvas no site (PERS-01), como se fosse o navegador de outra pessoa.
+ * Feche antes as páginas com o PxA ativo nessa origem: conexão aberta bloqueia a exclusão.
+ */
+export async function forgetSaved(page: Page) {
+  await page.evaluate(() => new Promise<void>((resolve, reject) => {
+    const req = indexedDB.deleteDatabase('pxa-annotator')
+    req.onsuccess = () => resolve()
+    req.onerror = () => reject(req.error)
+    req.onblocked = () => reject(new Error('banco ainda aberto em outra página'))
+  }))
+}
+
+/** Abre o ⋮ da anotação n e clica num item do menu dela (Editar, Desenhar no print, Excluir). */
+export async function itemAction(page: Page, n: number, label: string) {
+  await pxa(page).getByRole('button', { name: `Ações da anotação ${n}`, exact: true }).click()
+  await pxa(page).locator('.pxa-menu .pxa-menu-item').filter({ hasText: new RegExp(`^${label}$`) }).click()
+}
+
+/** Item do menu de ações do cabeçalho (abre o menu se estiver fechado). */
+export async function menuItem(page: Page, name: string) {
+  const menu = pxa(page).locator('.pxa-menu')
+  if (!(await menu.isVisible())) await pxa(page).getByRole('button', { name: 'Ações', exact: true }).click()
+  return menu.locator('.pxa-menu-item').filter({ hasText: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`) })
+}
+
+/** Clica em "Exportar .zip" (menu de ações) e devolve nome, caminho e arquivos do zip baixado. */
 export async function exportZip(page: Page) {
   const { readFile } = await import('node:fs/promises')
   const { unzipSync, strFromU8 } = await import('fflate')
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    pxa(page).getByRole('button', { name: 'Exportar .zip' }).click(),
+    menuItem(page, 'Exportar .zip').then((item) => item.click()),
   ])
   const zipPath = (await download.path())!
   const files = unzipSync(new Uint8Array(await readFile(zipPath)))

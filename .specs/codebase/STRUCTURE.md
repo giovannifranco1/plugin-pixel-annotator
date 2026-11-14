@@ -14,17 +14,18 @@ pixel-annotator/
 │       ├── default-style.ts      # CSS padrão por tag (iframe no shadow root)
 │       ├── probe-client.ts       # ponte com o probe do main world (componente e erros)
 │       ├── exporter.ts           # .zip e copiar markdown
-│       ├── unload-guard.ts       # aviso de saída (AVIS-01)
+│       ├── unload-guard.ts       # aviso de saída (AVIS-01), só se o IndexedDB falhar
+│       ├── annotation-db.ts      # anotações no IndexedDB do site (PERS-01)
 │       ├── tick.ts               # laço requestAnimationFrame
 │       ├── profile-storage.ts    # Perfil em storage.local (fila por aba, fallback em memória)
-│       ├── raio-x.ts             # barra Raio-X: Detector e Lupa
+│       ├── raio-x.ts             # Raio-X: Detector e Lupa (ferramentas do menu de ações)
 │       ├── audit-scan.ts         # varredura fatiada dos elementos visíveis (Detector)
 │       └── ui/                   # host (Shadow DOM), dom (el(), captureKeys()), styles, overlay, note-editor, markers, panel, toast
 │                                 # + Diversão: fun (orquestrador), mascot, sound, themes
 │                                 # + Raio-X: boxes (pool do destaque), audit-report, draggable (arrastar janela), loupe
 │                                 # + Equipe e Claude: presentation (Modo Apresentação), draw-editor (Desenho no print)
 ├── lib/                          # lógica pura testável
-│   ├── types.ts  store.ts  messages.ts  format.ts
+│   ├── types.ts  store.ts  messages.ts  format.ts  persist.ts (espelho do store, PERS-01)
 │   ├── selector.ts  viewport.ts  css-filter.ts  outer-html.ts  crop.ts  resolve.ts
 │   ├── markdown.ts  export-names.ts  capture-queue.ts  component-detect.ts
 │   ├── profile.ts  konami.ts  contrast.ts   # Diversão

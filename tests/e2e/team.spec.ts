@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { annotate, BASE, editor, expect, exportZip, items, markers, pngSize, pxa, test, toast } from './harness'
+import { annotate, BASE, editor, expect, exportZip, items, markers, pngSize, pxa, test, toast, menuItem, forgetSaved, itemAction } from './harness'
 import { PORT } from './port'
 
 const button = (page: Page, name: string) => pxa(page).getByRole('button', { name, exact: true })
@@ -54,8 +54,11 @@ test('IMPO-01..05 exportar numa aba e importar em outra recria os marcadores nas
   const { path, files } = await exportZip(page)
   expect(files['pxa.json']).toBeTruthy()
 
+  // Outra pessoa: nada salvo no site (PERS-01 traria as mesmas anotações de volta).
+  await page.close()
   const other = await context.newPage()
   await other.goto(`${BASE}/index.html`)
+  await forgetSaved(other)
   await toggle(other)
   await pxa(other).locator('input[type="file"]').setInputFiles(path)
   await expect(items(other)).toHaveCount(2)
@@ -75,8 +78,10 @@ test('IMPO-05 importada sem elemento na página: item avisa e não tem Marcador'
   await annotate(page, '#save', 'botão')
   const { path } = await exportZip(page)
 
+  await page.close()
   const other = await context.newPage()
   await other.goto(`${BASE}/index.html`)
+  await forgetSaved(other)
   await other.evaluate(() => document.getElementById('save')!.remove())
   await toggle(other)
   await pxa(other).locator('input[type="file"]').setInputFiles(path)
@@ -89,7 +94,7 @@ test('APRE-01..06 Apresentar pelo teclado: spotlight, contador, sair restaura o 
   await toggle(page)
   await annotate(page, '#save', 'primeira')
   await annotate(page, '#abaixo', 'segunda, abaixo da dobra')
-  await button(page, 'Apresentar').click()
+  await (await menuItem(page, 'Apresentar')).click()
   const card = pxa(page).locator('.pxa-present')
   await expect(card.locator('.pxa-present-count')).toHaveText('1/2')
   await expect(card.locator('.pxa-present-note')).toHaveText('primeira')
@@ -119,7 +124,7 @@ test('DESE-01..04 desenhar no print: miniatura no Painel e export com composto +
   await page.goto(`${BASE}/index.html`)
   await toggle(page)
   await annotate(page, '#save', 'botão')
-  await button(page, 'Desenhar no print da anotação 1').click()
+  await itemAction(page, 1, 'Desenhar no print')
   const canvas = pxa(page).locator('.pxa-draw canvas')
   await expect.poll(async () => (await canvas.boundingBox())?.width ?? 0).toBeGreaterThan(50)
   await button(page, 'Círculo').click()
@@ -146,7 +151,7 @@ test('DESE-05 Esc fecha o editor de desenho sem salvar', async ({ page, toggle }
   await page.goto(`${BASE}/index.html`)
   await toggle(page)
   await annotate(page, '#save', 'botão')
-  await button(page, 'Desenhar no print da anotação 1').click()
+  await itemAction(page, 1, 'Desenhar no print')
   await expect(pxa(page).locator('.pxa-draw canvas')).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(pxa(page).locator('.pxa-draw')).toHaveCount(0)

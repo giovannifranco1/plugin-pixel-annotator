@@ -125,7 +125,7 @@ describe('controller', () => {
     click(document.getElementById('alvo')!)
     await typeNote('velha')
     await vi.waitFor(() => expect(c.store.list()).toHaveLength(1))
-    ui.root.querySelector<HTMLButtonElement>('button[aria-label^="Editar"]')!.click()
+    itemAction(1, 'Editar')
     const ta = ui.root.querySelector('textarea')!
     expect(ta.value).toBe('velha')
     ta.value = 'nova'
@@ -135,7 +135,19 @@ describe('controller', () => {
   })
 
   const err: PageError = { kind: 'console', message: 'boom', at: '2026-11-14T12:00:00.000Z', count: 1 }
-  const button = (label: string) => Array.from(ui.root.querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent === label || b.getAttribute('aria-label') === label)!
+  /** Abre o ⋮ da anotação n e clica no item do menu. */
+  const itemAction = (n: number, label: string) => {
+    ui.root.querySelector<HTMLButtonElement>(`button[aria-label="Ações da anotação ${n}"]`)!.click()
+    Array.from(ui.root.querySelectorAll<HTMLButtonElement>('.pxa-menu .pxa-menu-item')).find((b) => b.textContent === label)!.click()
+  }
+  const findButton = (label: string) => Array.from(ui.root.querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent === label || b.getAttribute('aria-label') === label)
+  /** Botão pelo texto; itens do menu de ações (Apresentar…) abrem o menu antes. */
+  const button = (label: string) => {
+    const found = findButton(label)
+    if (found) return found
+    findButton('Ações')!.click()
+    return findButton(label)!
+  }
 
   test('ERRO-03 erros do probe pedidos no clique entram na anotação salva', async () => {
     const errors = vi.fn(async () => [err])
@@ -162,7 +174,7 @@ describe('controller', () => {
     const c = createController({ ui, capture })
     c.store.add(draft({ errors: [err] }))
     c.toggle()
-    ui.root.querySelector<HTMLButtonElement>('button[aria-label^="Editar"]')!.click()
+    itemAction(1, 'Editar')
     ui.root.querySelector<HTMLButtonElement>('.pxa-errors button')!.click()
     const ta = ui.root.querySelector('textarea')!
     ta.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
@@ -206,7 +218,7 @@ describe('controller', () => {
     const c = createController({ ui, capture })
     c.store.add(draft())
     c.toggle()
-    button('Desenhar no print da anotação 1').click()
+    itemAction(1, 'Desenhar no print')
     expect(c.state()).toBe('editing')
     expect(ui.root.querySelector('.pxa-draw')).not.toBeNull()
     button('Cancelar').click()

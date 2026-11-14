@@ -1,17 +1,22 @@
 import type { Annotation } from './types'
+import type { StoreSnapshot } from './persist'
 
 export type AnnotationDraft = Omit<Annotation, 'id' | 'number' | 'createdAt' | 'updatedAt'>
 export type AnnotationPatch = Partial<Pick<Annotation, 'note' | 'errors' | 'drawing'>>
 type Listener = () => void
 
 /**
- * Estado das anotações da aba, só em memória (decisão do MVP).
- * Numeração monotônica (PAIN-04). `dirty` = criação/edição após o último export .zip (AVIS-01).
+ * Estado das anotações da aba. `initial` vem do que foi salvo no site (PERS-01): o refresh não perde nada.
+ * Numeração monotônica (PAIN-04). `dirty` = criação/edição após o último export .zip.
  */
-export function createStore(now: () => Date = () => new Date(), uuid: () => string = () => crypto.randomUUID()) {
-  let items: Annotation[] = []
-  let nextNumber = 1
-  let dirty = false
+export function createStore(
+  now: () => Date = () => new Date(),
+  uuid: () => string = () => crypto.randomUUID(),
+  initial?: StoreSnapshot,
+) {
+  let items: Annotation[] = initial ? [...initial.items].sort((a, b) => a.number - b.number) : []
+  let nextNumber = Math.max(initial?.meta.nextNumber ?? 1, (items.at(-1)?.number ?? 0) + 1)
+  let dirty = initial?.meta.dirty ?? false
   const refs = new Map<string, WeakRef<Element>>()
   const listeners = new Set<Listener>()
   const emit = () => listeners.forEach((l) => l())
@@ -83,6 +88,8 @@ export function createStore(now: () => Date = () => new Date(), uuid: () => stri
       emit()
     },
     isDirty: (): boolean => dirty,
+    /** O que precisa ser salvo além das anotações (PERS-01). */
+    meta: () => ({ nextNumber, dirty }),
     subscribe(l: Listener): () => void {
       listeners.add(l)
       return () => listeners.delete(l)

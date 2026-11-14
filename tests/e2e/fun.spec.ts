@@ -54,11 +54,11 @@ test('TEMA-05 no tema Noite os botões do cabeçalho são só o ícone, todo bra
   await page.goto(`${BASE}/index.html`)
   await toggle(page)
   await annotate(page, '#save', 'botão')
-  const exportBtn = pxa(page).getByRole('button', { name: 'Exportar .zip' })
+  const exportBtn = pxa(page).getByRole('button', { name: 'Ações', exact: true })
   await expect(exportBtn).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)') // Padrão: caixa branca, como antes
   await pxa(page).getByLabel('Tema').selectOption('noite')
-  for (const name of ['Exportar .zip', 'Recolher painel']) {
-    const btn = pxa(page).getByRole('button', { name })
+  for (const name of ['Ações', 'Recolher painel']) {
+    const btn = pxa(page).getByRole('button', { name, exact: true })
     await expect(btn).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
     await expect(btn).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)')
     const fills = await btn.locator('rect').evaluateAll((rects) => [...new Set(rects.map((r) => getComputedStyle(r).fill))])

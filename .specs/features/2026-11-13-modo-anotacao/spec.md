@@ -174,7 +174,7 @@ Quando o dev front pede ajuste visual ao Claude, gasta tempo descrevendo qual el
 ## Casos Limite
 
 - QUANDO o elemento anotado é removido do DOM depois ENTÃO o marcador DEVE sumir e a anotação DEVE continuar no painel e no export com os dados capturados.
-- QUANDO a página recarrega ENTÃO as anotações da sessão SÃO perdidas (comportamento aceito; ver AVIS-01).
+- ~~QUANDO a página recarrega ENTÃO as anotações da sessão SÃO perdidas~~ Revogado em 2026-11-14 (PERS-01, ver STATE.md): as anotações ficam no IndexedDB do site e voltam ao reativar.
 - QUANDO prints são pedidos em sequência rápida ENTÃO o sistema DEVE enfileirar as capturas respeitando o limite de chamadas do navegador, sem perder nenhuma.
 - QUANDO o elemento tem `id` duplicado ou classes geradas (CSS-in-JS/hash) ENTÃO o seletor DEVE ainda ser único (CAPT-02), usando posição estrutural se necessário.
 - QUANDO a nota contém markdown ou crases ENTÃO o `feedback.md` DEVE continuar válido (nota escapada ou em bloco).
@@ -198,7 +198,7 @@ Quando o dev front pede ajuste visual ao Claude, gasta tempo descrevendo qual el
 | PLAT-01 | P1: Chrome e Firefox | Execute | Implemented — manifests checados por `npm run check:manifest`; carregar no Firefox: verificação manual pendente (`manual-check.md`) |
 | PLAT-02 | P1: Chrome e Firefox | Execute | Verified (E2E Chromium) |
 | MARC-01..02 | P2: Marcadores por categoria | Execute | Verified (unit + E2E Chromium) |
-| AVIS-01 | P2: Aviso antes de perder | Execute | Verified no Chromium (E2E); Firefox: verificação manual pendente |
+| AVIS-01 | P2: Aviso antes de perder | Execute | Substituído por PERS-01 em 2026-11-14: só vale quando o IndexedDB falha (fallback em memória) |
 
 **Cobertura:** 36 total, 36 mapeados em tasks, 0 sem mapeamento. 34 Verified, 2 com verificação manual no Firefox pendente (PLAT-01, AVIS-01).
 

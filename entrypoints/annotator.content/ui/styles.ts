@@ -78,7 +78,6 @@ button:focus-visible, .pxa-item-main:focus-visible { outline: 2px dashed var(--p
   background: transparent; border: 0; box-shadow: none;
 }
 .pxa-item button.pxa-icon:hover:not(:disabled) { background: var(--pxa-hover); }
-.pxa-item button.pxa-danger:hover:not(:disabled) { background: var(--pxa-danger-hover); }
 .pxa-item button.pxa-icon:active:not(:disabled) { transform: none; }
 svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; }
 .pxa-cat { display: inline-block; vertical-align: -1px; }
@@ -117,15 +116,27 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 .pxa-layer[data-pxa-theme="noite"] .pxa-panel header .pxa-head-btn:hover:not(:disabled) { background: var(--pxa-hover); }
 .pxa-layer[data-pxa-theme="noite"] .pxa-panel header .pxa-head-btn svg rect { fill: currentColor; }
 
-/* Raio-X */
-.pxa-rx-bar {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px;
-  background: var(--pxa-paper); border-bottom: 2px solid var(--pxa-ink);
+/* Menu de ações do cabeçalho: Raio-X, Apresentar, Importar, Exportar */
+.pxa-menu-btn { position: relative; }
+.pxa-menu-btn.pxa-tool-on::after {
+  content: ''; position: absolute; top: -3px; right: -3px; width: 6px; height: 6px;
+  background: var(--pxa-accent); border: 1px solid var(--pxa-head-bg);
 }
-.pxa-rx-title { font-weight: 700; margin-right: 2px; }
-.pxa-rx-bar button { padding: 1px 6px; box-shadow: 1px 1px 0 var(--pxa-ink); }
-.pxa-rx-bar button[aria-pressed="true"] { background: var(--pxa-primary); color: var(--pxa-on-accent); }
-.pxa-panel.pxa-collapsed .pxa-rx-bar { display: none; }
+.pxa-menu {
+  position: absolute; z-index: 3; top: 34px; right: 6px; min-width: 180px; padding: 4px;
+  display: grid; background: var(--pxa-paper); border: 2px solid var(--pxa-ink); box-shadow: 4px 4px 0 var(--pxa-ink);
+}
+.pxa-menu[hidden] { display: none; }
+.pxa-panel.pxa-collapsed .pxa-menu { top: auto; bottom: calc(100% + 4px); }
+.pxa-menu-sep { margin: 4px 0; border: 0; border-top: 2px dotted var(--pxa-rule); }
+.pxa-menu .pxa-menu-item { display: flex; justify-content: space-between; gap: 12px; text-align: left; padding: 4px 6px; background: none; border: 0; box-shadow: none; }
+.pxa-menu .pxa-menu-item:hover:not(:disabled), .pxa-menu .pxa-menu-item:focus-visible { background: var(--pxa-hover); outline: none; }
+.pxa-menu .pxa-menu-item:active:not(:disabled) { transform: none; }
+.pxa-menu .pxa-menu-item { align-items: center; }
+.pxa-menu .pxa-menu-item svg { flex: none; color: var(--pxa-accent); }
+.pxa-menu .pxa-menu-item.pxa-danger { color: var(--pxa-primary); font-weight: 700; }
+.pxa-menu .pxa-menu-item.pxa-danger:hover:not(:disabled), .pxa-menu .pxa-menu-item.pxa-danger:focus-visible { background: var(--pxa-danger-hover); }
+.pxa-item button.pxa-item-menu[aria-expanded="true"] { background: var(--pxa-hover); }
 
 .pxa-box { position: fixed; display: none; pointer-events: none; }
 .pxa-audit-hl .pxa-box { border: 2px dashed var(--pxa-accent); background: var(--pxa-tint); }

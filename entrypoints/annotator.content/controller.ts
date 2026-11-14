@@ -30,6 +30,8 @@ export interface ControllerDeps {
   store?: AnnotationStore
   capture?: (el: Element, note: string) => Promise<AnnotationDraft>
   raioX?: RaioXDeps
+  /** Aviso nativo de saída com algo não exportado. Desligado quando as anotações são salvas no site (PERS-01). */
+  unloadGuard?: boolean
   /** Erros de console/rede do momento (ERRO-03); padrão: pedido ao probe. */
   errors?: () => Promise<PageError[]>
 }
@@ -39,8 +41,8 @@ const FOCUS_HIGHLIGHT_MS = 1500
 const isMobile = () => categoryOf(innerWidth) === 'mobile'
 
 /**
- * Máquina de estados do Modo Anotação (ANOT-01..08). Anotações vivem no store enquanto a aba
- * existir; desativar o modo só esconde a UI (ANOT-02).
+ * Máquina de estados do Modo Anotação (ANOT-01..08). Anotações vivem no store (salvo no site pelo
+ * index.ts, PERS-01); desativar o modo só esconde a UI (ANOT-02).
  * Os `if (state === X) state = 'active'` são compare-and-set: um callback tardio (captura ou
  * editor fechado pelo toggle) não reativa o modo depois de desligado.
  */
@@ -84,6 +86,7 @@ export function createController(deps: ControllerDeps = {}) {
 
   function onPick(el: Element) {
     if (state !== 'active') return
+    if (panel.closeMenu()) return // clique fora do menu aberto só fecha o menu
     if (raioX.pick()) return
     overlay.highlight(el)
     // Pedido no clique (não no Enter): o editor mostra os erros para o dev remover (ERRO-04).
@@ -117,7 +120,7 @@ export function createController(deps: ControllerDeps = {}) {
     }
   }
 
-  const raioX = createRaioX(ui, { annotate: annotateElements }, deps.raioX)
+  const raioX = createRaioX(ui, { annotate: annotateElements, onToolsChange: () => panel.syncTools() }, deps.raioX)
   const panel = createPanel(ui, store, {
     onFocus(id) {
       const el = resolveAnnotation(store, id)
@@ -145,10 +148,10 @@ export function createController(deps: ControllerDeps = {}) {
     onExportZip: () => void exportZip(ui, store).then((ok) => ok && fun.exported('zip')),
     onCopyMarkdown: () => void copyMarkdown(ui, store).then((ok) => ok && fun.exported('markdown')),
     onClearAll: () => store.clear(),
-  }, raioX.toolbar)
+  }, raioX.tools)
 
   const fun = createFun(ui, store, panel.mount)
-  installUnloadGuard(store)
+  if (deps.unloadGuard ?? true) installUnloadGuard(store)
 
   /** Modo Apresentação (APRE-01..06): hover/clique de anotar ignoram estados fora de `active`. */
   function onPresent() {

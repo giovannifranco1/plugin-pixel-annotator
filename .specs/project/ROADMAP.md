@@ -28,7 +28,7 @@
 ### Features
 
 **Servidor MCP local do PxA** - PLANEJADA
-**Persistência de anotações por origem** - PLANEJADA
+**Persistência de anotações por origem** - FEITA em 2026-11-14 (PERS-01, IndexedDB do site, pedido do dev)
 
 ### Sugestões (não pedidas pelo dev — avaliar antes de planejar)
 

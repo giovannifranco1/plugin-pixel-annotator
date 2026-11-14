@@ -33,7 +33,14 @@ afterEach(() => {
 })
 
 const $ = (sel: string) => ui.root.querySelector<HTMLElement>(sel)
-const button = (label: string) => Array.from(ui.root.querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent!.startsWith(label))!
+const findButton = (label: string) => Array.from(ui.root.querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent!.startsWith(label))
+/** Botão pelo texto; itens do menu de ações (Detector, Lupa…) abrem o menu antes. */
+const button = (label: string) => {
+  const found = findButton(label)
+  if (found) return found
+  $('header button[aria-label="Ações"]')!.click()
+  return findButton(label)!
+}
 const click = (el: Element) => el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true }))
 const textarea = () => ui.root.querySelector('textarea')
 const pressEnter = () => textarea()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
@@ -48,14 +55,35 @@ async function annotateFinding(count: number) {
 }
 
 describe('controller + Raio-X', () => {
-  test('barra Raio-X fica no Painel, entre o cabeçalho e a lista', () => {
+  test('Detector e Lupa ficam no topo do menu de ações, sem título de grupo', () => {
     const c = createController({ ui, capture, raioX })
     c.toggle()
-    // Abaixo do cabeçalho também entra a barra de tema e som da Diversão; a ordem entre as barras não importa.
-    const kids = [...$('.pxa-panel')!.children]
-    const bar = kids.findIndex((k) => k.classList.contains('pxa-rx-bar'))
-    expect(bar).toBeGreaterThan(kids.findIndex((k) => k.tagName === 'HEADER'))
-    expect(bar).toBeLessThan(kids.findIndex((k) => k.tagName === 'OL'))
+    $('header button[aria-label="Ações"]')!.click()
+    const items = Array.from(ui.root.querySelectorAll('.pxa-menu .pxa-menu-item')).map((b) => b.textContent)
+    expect(items).toEqual(['Detector', 'Lupa', 'Apresentar', 'Importar .zip', 'Exportar .zip'])
+    expect($('.pxa-menu-label')).toBeNull()
+  })
+
+  test('com o menu aberto, clicar na página só fecha o menu (não abre o editor)', () => {
+    document.body.innerHTML = '<p id="alvo">x</p>'
+    const c = createController({ ui, capture, raioX })
+    c.toggle()
+    $('header button[aria-label="Ações"]')!.click()
+    click(document.getElementById('alvo')!)
+    expect($('.pxa-menu')!.hidden).toBe(true)
+    expect(textarea()).toBeNull()
+    click(document.getElementById('alvo')!)
+    expect(textarea()).not.toBeNull()
+  })
+
+  test('Lupa ligada marca o ícone de ações; Esc da Lupa desmarca', () => {
+    const c = createController({ ui, capture, raioX })
+    c.toggle()
+    button('Lupa').click()
+    const actionsBtn = $('header button[aria-label="Ações"]')!
+    expect(actionsBtn.classList.contains('pxa-tool-on')).toBe(true)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    expect(actionsBtn.classList.contains('pxa-tool-on')).toBe(false)
   })
 
   test('DETE-05 "Anotar" abre a nota pré-preenchida editável e cria uma anotação por elemento (até 5)', async () => {
@@ -109,6 +137,6 @@ describe('controller + Raio-X', () => {
     button('Lupa').click()
     c.toggle()
     c.toggle()
-    expect(button('Lupa').getAttribute('aria-pressed')).toBe('false')
+    expect(button('Lupa').getAttribute('aria-checked')).toBe('false')
   })
 })
