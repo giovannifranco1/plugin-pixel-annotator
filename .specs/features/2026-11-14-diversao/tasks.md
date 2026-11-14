@@ -158,3 +158,10 @@ T4 [P] permissão┘    T7 mascot ─┐
 **Verify:** gate full com `PXA_E2E_PORT=5175`.
 
 **Status Revisão 1:** Done — 2026-11-14. compile ok · 176 unit · builds Chrome/Firefox MV3 · check:manifest ok · 35 E2E.
+
+## Revisão 2 (2026-11-14)
+
+### R2-T1 Mascote com cor única e arte nova
+- **Where:** `ui/mascot.ts`, `ui/fun.ts`, `tests/unit/mascot.test.ts`, `tests/unit/fun.test.ts`, `tests/e2e/fun.spec.ts`, `assets/mascot-preview.html`.
+- **Done when:** `MASC-06` grades novas 16×16 sem `R`; o mascote tem as mesmas cores no Padrão e no Noite (unit + E2E); nenhum `setTheme`/`MASCOT_PALETTES` no código.
+- **Verify:** gate full com `PXA_E2E_PORT=5175`.
