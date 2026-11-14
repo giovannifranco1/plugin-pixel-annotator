@@ -79,8 +79,14 @@ describe('audit-report', () => {
   test('DETE-09 seção sem Achado diz "tudo certo"; cabeçalho começa pelos Achados', async () => {
     await openReport()
     const section = (title: string) => $$('.pxa-audit h3').find((h) => h.textContent === title)!
-    expect(section('Famílias').nextElementSibling!.textContent).toBe('✓ tudo certo')
-    expect(section('Cores').nextElementSibling!.textContent).not.toBe('✓ tudo certo')
+    const ok = section('Famílias').nextElementSibling!
+    expect(ok.textContent).toBe('tudo certo')
+    // ícone de check em círculo do phren (lucide circle-check): círculo + traço do check
+    const icon = ok.querySelector('svg')!
+    expect(icon.querySelector('circle')!.getAttribute('r')).toBe('10')
+    expect(icon.querySelector('path')!.getAttribute('d')).toBe('m9 12 2 2 4-4')
+    expect(icon.getAttribute('aria-hidden')).toBe('true')
+    expect(section('Cores').nextElementSibling!.classList.contains('pxa-audit-ok')).toBe(false)
     expect($('.pxa-audit-head')!.textContent).toMatch(/^3 achados · /)
   })
 
