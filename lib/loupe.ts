@@ -1,7 +1,5 @@
 import { toHex } from './color'
 
-export { toHex }
-
 /** Pixels RGBA do print da aba (mesma forma do ImageData). */
 export interface Pixels {
   width: number

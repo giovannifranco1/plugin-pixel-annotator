@@ -1,5 +1,7 @@
-import { intersectsViewport } from '@/lib/crop'
-import { auditHeadline, buildAuditReport, findingNote, flagTexts, type AuditEntry, type AuditKind, type AuditReport, type AuditScale } from '@/lib/design-audit'
+import {
+  AUDIT_KINDS, auditHeadline, buildAuditReport, findingNote, flagTexts, plural, scaleNotice,
+  type AuditEntry, type AuditKind, type AuditReport, type AuditScale,
+} from '@/lib/design-audit'
 import { scanDocument, SCAN_LIMIT, type ScanResult } from '../audit-scan'
 import { createBoxes, type BoxSpec } from './boxes'
 import type { UiHost } from './host'
@@ -14,14 +16,11 @@ export interface AuditReportActions {
 const MAX_HIGHLIGHT = 300
 const MAX_HIGHLIGHT_READS = 2000
 
-const SECTIONS: Array<{ kind: AuditKind; title: string; pick(r: AuditReport): AuditEntry[] }> = [
-  { kind: 'color', title: 'Cores', pick: (r) => r.colors },
-  { kind: 'font-size', title: 'Tamanhos de fonte', pick: (r) => r.fontSizes },
-  { kind: 'font-family', title: 'Famílias', pick: (r) => r.families },
-  { kind: 'spacing', title: 'Espaçamentos', pick: (r) => r.spacings },
-]
+const KINDS = Object.keys(AUDIT_KINDS) as AuditKind[]
 
 const routeKey = () => location.href
+const count = (n: number) => n.toLocaleString('pt-BR')
+const inViewport = (r: DOMRect) => r.right >= 0 && r.bottom >= 0 && r.left <= innerWidth && r.top <= innerHeight
 
 function swatch(color: string) {
   const s = el('span', { className: 'pxa-swatch' })
@@ -57,18 +56,18 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
   let open = false
   let scale: AuditScale = 4
   let result: ScanResult | null = null
+  let report: AuditReport | null = null
   let scannedAt = ''
   let stale = false
-  /** Fração dos espaçamentos na escala atual (aviso abaixo de 50%). */
-  let scaleFit = 1
   let hovered: Element[] = []
   let runId = 0
 
   function renderNotices() {
     const lines: string[] = []
-    if (result?.truncated) lines.push(`Cortado em ${SCAN_LIMIT.toLocaleString('pt-BR')} elementos.`)
+    if (result?.truncated) lines.push(`Cortado em ${count(SCAN_LIMIT)} elementos.`)
     if (stale) lines.push('A página mudou. Varra de novo.')
-    if (scaleFit < 0.5) lines.push(`Só ${Math.round(scaleFit * 100)}% dos espaçamentos seguem a escala de ${scale}px: a página talvez use outra escala.`)
+    const fit = report && scaleNotice(report)
+    if (fit) lines.push(fit)
     notices.replaceChildren(...lines.map((t) => el('p', { textContent: t })))
   }
 
@@ -103,39 +102,43 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
 
   function render() {
     scaleBtn.textContent = `Escala: ${scale}px`
-    const report = result && buildAuditReport(result.samples, scale)
-    scaleFit = report?.scaleFit ?? 1
+    report = result && buildAuditReport(result.samples, scale)
     renderNotices()
     if (!result || !report) return
-    const elements = result.elements
-    head.textContent = auditHeadline(report)
+    const { elements } = result
+    const current = report
+    head.textContent = auditHeadline(current)
     body.replaceChildren(
-      ...SECTIONS.flatMap(({ kind, title, pick }) => {
-        const entries = pick(report)
+      ...KINDS.flatMap((kind) => {
+        const entries = AUDIT_KINDS[kind].entries(current)
         const findings = entries.filter((e) => e.flags.length)
         const rest = entries.filter((e) => !e.flags.length)
         const rows = (list: AuditEntry[]) => el('ul', {}, ...list.map((e) => row(kind, e, elements)))
         // DETE-09: Achados à vista, o resto recolhido.
-        const more = rest.length
-          ? [el('details', {}, el('summary', { textContent: rest.length === 1 ? '1 outro valor' : `${rest.length} outros valores` }), rows(rest))]
-          : []
-        return [el('h3', { textContent: title }), rows(findings), ...more]
+        const more = rest.length ? [el('details', {}, el('summary', { textContent: plural(rest.length, 'outro valor', 'outros valores') }), rows(rest))] : []
+        return [el('h3', { textContent: AUDIT_KINDS[kind].title }), rows(findings), ...more]
       }),
     )
-    foot.textContent = `${elements.length.toLocaleString('pt-BR')} elementos em ${Math.round(result.ms)} ms`
+    foot.textContent = `${count(elements.length)} elementos em ${Math.round(result.ms)} ms`
+  }
+
+  /** Cancela a varredura em andamento e solta a anterior (até 10.000 elementos) e as linhas. */
+  function reset() {
+    runId++
+    hovered = []
+    result = null
+    report = null
+    body.replaceChildren()
   }
 
   async function run() {
-    const id = ++runId
-    hovered = []
+    reset()
+    const id = runId
     stale = false
-    result = null
-    scaleFit = 1
     head.textContent = 'Varrendo…'
-    body.replaceChildren()
     foot.textContent = ''
     renderNotices()
-    const r = await scan({ onProgress: (n) => { if (id === runId) foot.textContent = `${n.toLocaleString('pt-BR')} elementos lidos…` } })
+    const r = await scan({ onProgress: (n) => { if (id === runId) foot.textContent = `${count(n)} elementos lidos…` } })
     if (id !== runId || !open) return
     result = r
     scannedAt = routeKey()
@@ -145,11 +148,7 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
   function hide() {
     if (!open) return
     open = false
-    runId++
-    hovered = []
-    // Solta a varredura (até 10.000 elementos) e as linhas: reabrir varre de novo.
-    result = null
-    body.replaceChildren()
+    reset() // reabrir varre de novo
     box.style.display = 'none'
     actions.onClose()
   }
@@ -158,11 +157,11 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
   function measure(): () => void {
     const changedRoute = open && result !== null && !stale && routeKey() !== scannedAt
     const specs: BoxSpec[] = []
-    for (const target of hovered.slice(0, MAX_HIGHLIGHT_READS)) {
-      if (specs.length >= MAX_HIGHLIGHT) break
+    for (let i = 0, n = Math.min(hovered.length, MAX_HIGHLIGHT_READS); i < n && specs.length < MAX_HIGHLIGHT; i++) {
+      const target = hovered[i]!
       if (!target.isConnected) continue
       const r = target.getBoundingClientRect()
-      if (intersectsViewport(r, innerWidth, innerHeight)) specs.push({ left: r.left, top: r.top, width: r.width, height: r.height })
+      if (inViewport(r)) specs.push(r)
     }
     return () => {
       if (changedRoute) {

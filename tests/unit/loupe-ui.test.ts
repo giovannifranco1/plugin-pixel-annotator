@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { createHost, type UiHost } from '@/entrypoints/annotator.content/ui/host'
 import { createLoupe } from '@/entrypoints/annotator.content/ui/loupe'
-import { toHex, type Pixels } from '@/lib/loupe'
+import { toHex } from '@/lib/color'
+import type { Pixels } from '@/lib/loupe'
 
 let ui: UiHost
 let loupe: ReturnType<typeof createLoupe> | null = null

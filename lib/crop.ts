@@ -6,11 +6,6 @@ export function isFullyVisible(rect: Rect, vw: number, vh: number): boolean {
   return rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= vw && rect.y + rect.height <= vh
 }
 
-/** O retângulo cruza o viewport (ao menos em parte)? */
-export function intersectsViewport(rect: Rect, vw: number, vh: number): boolean {
-  return rect.x + rect.width >= 0 && rect.y + rect.height >= 0 && rect.x <= vw && rect.y <= vh
-}
-
 export interface CropPlan {
   crop: Rect // em px da imagem
   outline: Rect // em px da imagem, relativo ao crop

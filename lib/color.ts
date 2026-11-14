@@ -1,5 +1,8 @@
+/** Arredonda e limita a 0–255. */
+const to255 = (n: number) => Math.round(Math.min(255, Math.max(0, n)))
+
 /** Canal 0–255 → 2 dígitos hex (arredonda e limita). */
-export const hex2 = (n: number): string => Math.round(Math.min(255, Math.max(0, n))).toString(16).padStart(2, '0')
+export const hex2 = (n: number): string => to255(n).toString(16).padStart(2, '0')
 
 /** RGB → `#rrggbb`. Usado pelo Detector e pela Lupa, para os dois mostrarem o mesmo hex. */
 export const toHex = (r: number, g: number, b: number): string => `#${hex2(r)}${hex2(g)}${hex2(b)}`
@@ -73,7 +76,7 @@ function num(token: string | undefined, pct = 1): number {
 }
 
 const encode = (lin: Vec3, alpha: number): Rgba => {
-  const [r, g, b] = lin.map((c) => Math.round(Math.min(1, Math.max(0, fromLinear(c))) * 255))
+  const [r, g, b] = lin.map((c) => to255(fromLinear(c) * 255))
   return { r: r!, g: g!, b: b!, a: alpha }
 }
 
@@ -112,9 +115,27 @@ export function parseCssColor(css: string): Rgba | null {
   if (parts.length !== 3) return null
   const channels = parts as [string, string, string]
   if (name === 'rgb' || name === 'rgba') {
-    const [r, g, b] = channels.map((c) => Math.round(Math.min(255, Math.max(0, num(c, 255)))))
+    const [r, g, b] = channels.map((c) => to255(num(c, 255)))
     return { r: r!, g: g!, b: b!, a: alpha }
   }
   const toLin = SPACES[name]
   return toLin ? encode(toLin(channels), alpha) : null
+}
+
+/** sRGB 8 bits → CIE Lab (D65), para medir distância perceptual. */
+function srgbToLab(c: Rgba): Vec3 {
+  const [r, g, b] = [c.r, c.g, c.b].map((v) => toLinear(v / 255)) as Vec3
+  // sRGB linear → XYZ (D65), normalizado pelo branco de referência
+  const x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047
+  const y = r * 0.2126 + g * 0.7152 + b * 0.0722
+  const z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883
+  const f = (t: number) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116)
+  return [116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))]
+}
+
+/** Distância perceptual ΔE76 entre duas cores (ignora o alfa). */
+export function deltaE(a: Rgba, b: Rgba): number {
+  const [l1, a1, b1] = srgbToLab(a)
+  const [l2, a2, b2] = srgbToLab(b)
+  return Math.hypot(l1 - l2, a1 - a2, b1 - b2)
 }

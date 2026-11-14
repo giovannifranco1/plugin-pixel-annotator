@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { physicalPoint, sampleWindow, toHex, type Pixels } from '@/lib/loupe'
+import { toHex } from '@/lib/color'
+import { physicalPoint, sampleWindow, type Pixels } from '@/lib/loupe'
 
 /** Imagem w×h onde o pixel (x, y) tem cor (x, y, 7). */
 function gradient(width: number, height: number): Pixels {

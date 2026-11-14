@@ -1,12 +1,8 @@
 import type { UiHost } from './host'
 import { el } from './dom'
 
-export interface BoxSpec {
-  left: number
-  top: number
-  width: number
-  height: number
-}
+/** Retângulo da caixa (um DOMRect serve direto). */
+export type BoxSpec = Pick<DOMRect, 'left' | 'top' | 'width' | 'height'>
 
 /**
  * Pool de caixas `position: fixed` para destacar muitos elementos (hover do relatório do Detector).

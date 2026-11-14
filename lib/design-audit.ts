@@ -1,4 +1,4 @@
-import { hex2, parseCssColor, toHex } from './color'
+import { deltaE, hex2, parseCssColor, toHex, type Rgba } from './color'
 
 export const SPACING_PROPS = [
   'margin-top', 'margin-right', 'margin-bottom', 'margin-left',
@@ -68,35 +68,30 @@ const DEFAULT_FAMILIES = new Set([
 
 const round2 = (n: number) => Math.round(n * 100) / 100
 
-/** Cor computada → `#rrggbb` (opaca) ou `#rrggbbaa`; `null` para transparente ou formato desconhecido (DETE-08). */
-export function normalizeColor(css: string): string | null {
-  const c = parseCssColor(css)
-  if (!c || c.a <= 0) return null
+/** Cor visível → `#rrggbb` (opaca) ou `#rrggbbaa`. */
+function hexOf(c: Rgba): string {
   const base = toHex(c.r, c.g, c.b)
   return c.a >= 1 ? base : `${base}${hex2(c.a * 255)}`
 }
 
-type Lab = [number, number, number]
-
-function toLab(hex: string): Lab | null {
-  if (!/^#[0-9a-f]{6}([0-9a-f]{2})?$/.test(hex)) return null
-  const lin = [1, 3, 5].map((i) => {
-    const c = parseInt(hex.slice(i, i + 2), 16) / 255
-    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
-  }) as Lab
-  const [r, g, b] = lin
-  // sRGB → XYZ (D65), normalizado pelo branco de referência
-  const x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047
-  const y = r * 0.2126 + g * 0.7152 + b * 0.0722
-  const z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883
-  const f = (t: number) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116)
-  return [116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))]
+/** Cor computada → sRGB visível, ou `null` para transparente e formato desconhecido (DETE-08). */
+function visibleColor(css: string): Rgba | null {
+  const c = parseCssColor(css)
+  return c && c.a > 0 ? c : null
 }
 
-const labDistance = (a: Lab | null, b: Lab | null) => (a && b ? Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) : Infinity)
+/** Cor computada → `#rrggbb` (opaca) ou `#rrggbbaa`; `null` para transparente ou formato desconhecido (DETE-08). */
+export function normalizeColor(css: string): string | null {
+  const c = visibleColor(css)
+  return c && hexOf(c)
+}
 
-/** Distância perceptual ΔE76 entre duas cores normalizadas (Infinity se não for hex). */
-export const colorDistance = (a: string, b: string): number => labDistance(toLab(a), toLab(b))
+/** Distância perceptual ΔE76 entre duas cores CSS (Infinity se alguma não for cor). */
+export function colorDistance(a: string, b: string): number {
+  const ca = parseCssColor(a)
+  const cb = parseCssColor(b)
+  return ca && cb ? deltaE(ca, cb) : Infinity
+}
 
 /** `auto`/`normal`/percentual → null; negativos contam pelo valor absoluto. */
 export function parsePx(v: string): number | null {
@@ -121,14 +116,22 @@ export function scaleNeighbors(px: number, scale: AuditScale): [number, number] 
 }
 
 const firstFamily = (family: string) => (family.split(',')[0] ?? '').trim().replace(/^["']|["']$/g, '')
-const alphaOf = (hex: string) => (hex.length === 9 ? hex.slice(7) : 'ff')
 
 type Groups = Map<string, Set<number>>
 
-function add(groups: Groups, value: string, index: number) {
-  let set = groups.get(value)
-  if (!set) groups.set(value, (set = new Set()))
-  set.add(index)
+function add<T>(groups: Map<string, Set<T>>, key: string, item: T) {
+  let set = groups.get(key)
+  if (!set) groups.set(key, (set = new Set()))
+  set.add(item)
+}
+
+/** Memo por varredura: a página tem poucos valores distintos repetidos em milhares de elementos. */
+function memo<T>(fn: (v: string) => T): (v: string) => T {
+  const cache = new Map<string, T>()
+  return (v) => {
+    if (!cache.has(v)) cache.set(v, fn(v))
+    return cache.get(v)!
+  }
 }
 
 const toEntries = (groups: Groups): AuditEntry[] =>
@@ -138,14 +141,22 @@ const byUse = (a: AuditEntry, b: AuditEntry) => b.count - a.count || a.value.loc
 /** Achados primeiro, depois os mais usados (DETE-09). */
 const sortEntries = (entries: AuditEntry[]) => entries.sort((a, b) => Number(b.flags.length > 0) - Number(a.flags.length > 0) || byUse(a, b))
 
-/**
- * Raro perto da referência: a referência tem ao menos 3× os usos, e o valor tem até 5 usos (até 2, ou
- * 10% da referência). Dois valores bem usados são tokens; dois raros não têm referência clara.
- */
+/** Quando um valor parecido é "perdido" e não token (DETE-03). */
+const RARITY = {
+  /** A referência tem ao menos 3× os usos do valor: sem referência clara não há o que corrigir. */
+  ratio: 3,
+  /** Até 2 usos sempre podem ser perdidos; acima disso, até 10% dos usos da referência… */
+  floor: 2,
+  share: 0.1,
+  /** …e nunca mais de 5 (um valor usado 6+ vezes é escolha, não acidente). */
+  cap: 5,
+  /** Cor de fundo que pinta 10%+ da página é superfície, nunca perdida. */
+  surface: 0.1,
+}
+
+/** Raro perto da referência: dois valores bem usados são tokens; dois raros não têm referência clara. */
 const rareNear = (entry: AuditEntry, ref: AuditEntry) =>
-  ref.count >= entry.count * 3 && entry.count <= Math.min(5, Math.max(2, Math.floor(ref.count * 0.1)))
-/** Fração da página que uma cor de fundo precisa pintar para ser superfície (nunca "perdida"). */
-const SURFACE_SHARE = 0.1
+  ref.count >= entry.count * RARITY.ratio && entry.count <= Math.min(RARITY.cap, Math.max(RARITY.floor, Math.floor(ref.count * RARITY.share)))
 
 /**
  * Agrupamento por semente: em ordem de uso, cada valor perto de uma semente e raro perto dela vira
@@ -199,39 +210,46 @@ export function buildAuditReport(samples: readonly AuditSample[], scale: AuditSc
   const spacings: Groups = new Map()
   const spacingProps = new Map<string, Set<SpacingProp>>()
   const backgroundArea = new Map<string, number>()
+  const rgbaOf = new Map<string, Rgba>()
+  const color = memo((css) => {
+    const c = visibleColor(css)
+    if (!c) return null
+    const hex = hexOf(c)
+    if (!rgbaOf.has(hex)) rgbaOf.set(hex, c)
+    return hex
+  })
+  const px = memo(parsePx)
   let pageArea = 0
   samples.forEach((s, i) => {
     pageArea = Math.max(pageArea, s.area)
-    const bg = normalizeColor(s.background)
+    const bg = color(s.background)
     if (bg) {
       add(colors, bg, i)
       backgroundArea.set(bg, (backgroundArea.get(bg) ?? 0) + s.area)
     }
     for (const c of s.colors) {
-      const hex = normalizeColor(c)
+      const hex = color(c)
       if (hex) add(colors, hex, i)
     }
-    const size = parsePx(s.fontSize)
+    const size = px(s.fontSize)
     if (size !== null) add(sizes, `${size}px`, i)
     const family = firstFamily(s.fontFamily)
     if (family) add(families, family, i)
     for (const { prop, value } of s.spacings) {
-      const px = parsePx(value)
-      if (!px) continue // 0 não é inconsistência; auto/percentual não têm valor de escala
-      const key = `${px}px`
-      add(spacings, key, i)
-      let props = spacingProps.get(key)
-      if (!props) spacingProps.set(key, (props = new Set()))
-      props.add(prop)
+      const n = px(value)
+      if (!n) continue // 0 não é inconsistência; auto/percentual não têm valor de escala
+      add(spacings, `${n}px`, i)
+      add(spacingProps, `${n}px`, prop)
     }
   })
 
   const colorEntries = toEntries(colors)
+  const alpha255 = (c: Rgba) => Math.round(c.a * 255)
   markSimilar(
     colorEntries,
-    (e) => ({ alpha: alphaOf(e.value), lab: toLab(e.value) }),
-    (a, b) => a.alpha === b.alpha && labDistance(a.lab, b.lab) <= SIMILAR_DELTA_E,
-    (e) => (backgroundArea.get(e.value) ?? 0) < pageArea * SURFACE_SHARE, // superfície grande (ex: fundo da página) não é cor perdida
+    (e) => rgbaOf.get(e.value)!,
+    (a, b) => alpha255(a) === alpha255(b) && deltaE(a, b) <= SIMILAR_DELTA_E,
+    (e) => (backgroundArea.get(e.value) ?? 0) < pageArea * RARITY.surface, // superfície grande (ex: fundo da página) não é cor perdida
   )
   const sizeEntries = toEntries(sizes)
   markSimilar(sizeEntries, (e) => parseFloat(e.value), (a, b) => Math.abs(a - b) <= SIMILAR_FONT_PX)
@@ -263,29 +281,40 @@ function fit(spacings: AuditEntry[]): number {
   return total ? spacings.reduce((n, e) => n + (e.flags.length ? 0 : e.count), 0) / total : 1
 }
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+export const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`
+
+/** Uma linha por tipo de seção: título no relatório, palavras na nota e no cabeçalho. */
+export const AUDIT_KINDS: Record<AuditKind, { title: string; subject: [one: string, many: string]; similar: string; entries(r: AuditReport): AuditEntry[] }> = {
+  color: { title: 'Cores', subject: ['cor', 'cores'], similar: 'parecida', entries: (r) => r.colors },
+  'font-size': { title: 'Tamanhos de fonte', subject: ['tamanho de fonte', 'tamanhos de fonte'], similar: 'parecido', entries: (r) => r.fontSizes },
+  'font-family': { title: 'Famílias', subject: ['família', 'famílias'], similar: 'parecida', entries: (r) => r.families },
+  spacing: { title: 'Espaçamentos', subject: ['espaçamento', 'espaçamentos'], similar: 'parecido', entries: (r) => r.spacings },
+}
 
 /** Cabeçalho do relatório (DETE-02). */
 export function auditHeadline(r: AuditReport): string {
+  const count = (kind: AuditKind) => plural(AUDIT_KINDS[kind].entries(r).length, ...AUDIT_KINDS[kind].subject)
   return [
-    plural(r.colors.length, 'cor', 'cores'),
-    plural(r.fontSizes.length, 'tamanho de fonte', 'tamanhos de fonte'),
-    plural(r.families.length, 'família', 'famílias'),
-    `${plural(r.offScale, 'espaçamento', 'espaçamentos')} fora da escala de ${r.scale}px`,
+    count('color'),
+    count('font-size'),
+    count('font-family'),
+    `${plural(r.offScale, ...AUDIT_KINDS.spacing.subject)} fora da escala de ${r.scale}px`,
   ].join(' · ')
 }
 
-const SUBJECT: Record<AuditKind, string> = {
-  color: 'cor',
-  'font-size': 'tamanho de fonte',
-  'font-family': 'família',
-  spacing: 'espaçamento',
+/** Abaixo disso a escala não serve à página: avisar em vez de confiar nos Achados de espaçamento. */
+const SCALE_FIT_MIN = 0.5
+
+/** Aviso de escala que não serve à página, ou `null`. */
+export function scaleNotice(r: AuditReport): string | null {
+  if (r.scaleFit >= SCALE_FIT_MIN) return null
+  return `Só ${Math.round(r.scaleFit * 100)}% dos espaçamentos seguem a escala de ${r.scale}px: a página talvez use outra escala.`
 }
 
 /** Motivo de cada marca: curto na etiqueta do relatório, completo na nota. */
 function reason(kind: AuditKind, flag: AuditFlag, e: AuditEntry, scale: number, long: boolean): string {
   if (flag === 'off-scale') return `fora da escala de ${scale}px`
-  if (flag === 'similar') return `${kind === 'color' ? 'parecida' : 'parecido'} com ${e.similarTo}`
+  if (flag === 'similar') return `${AUDIT_KINDS[kind].similar} com ${e.similarTo}`
   return long ? `é a fonte padrão do navegador (a página usa ${e.similarTo})` : 'fonte padrão do navegador'
 }
 
@@ -297,5 +326,5 @@ export function findingNote(kind: AuditKind, e: AuditEntry, scale: number): stri
   const where = e.props?.length ? ` (${e.props.join(', ')})` : ''
   const why = e.flags.map((f) => reason(kind, f, e, scale, true)).join('; ')
   const fix = e.suggestion ? `: ${e.suggestion}` : ''
-  return `[Raio-X] ${SUBJECT[kind]} ${e.value}${where} ${why}${fix} (${plural(e.count, 'elemento', 'elementos')})`
+  return `[Raio-X] ${AUDIT_KINDS[kind].subject[0]} ${e.value}${where} ${why}${fix} (${plural(e.count, 'elemento', 'elementos')})`
 }

@@ -1,4 +1,4 @@
-import { SPACING_PROPS, type AuditSample, type SpacingProp } from '@/lib/design-audit'
+import { SPACING_PROPS, type AuditSample } from '@/lib/design-audit'
 
 export interface ScanResult {
   elements: Element[]
@@ -44,7 +44,7 @@ function isVisible(style: CSSStyleDeclaration, rect: DOMRect): boolean {
   return rect.width > 0 && rect.height > 0 && (rect.width > 1 || rect.height > 1) && style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse'
 }
 
-const SIDES = ['top', 'right', 'bottom', 'left'] as const
+const BORDERS = (['top', 'right', 'bottom', 'left'] as const).map((side) => [`border-${side}-width`, `border-${side}-color`] as const)
 const TEXT_CONTROLS = new Set(['input', 'textarea', 'select'])
 
 const defaultIdle = (cb: () => void) => {
@@ -54,27 +54,34 @@ const defaultIdle = (cb: () => void) => {
 
 function hasOwnText(el: Element): boolean {
   if (TEXT_CONTROLS.has(el.localName)) return true
-  for (let n = el.firstChild; n; n = n.nextSibling) if (n.nodeType === Node.TEXT_NODE && n.textContent!.trim() !== '') return true
+  for (let n = el.firstChild; n; n = n.nextSibling) if (n.nodeType === Node.TEXT_NODE && /\S/.test((n as Text).data)) return true
   return false
 }
 
 /**
- * Espaçamentos que não são token de escala: margem `auto` e percentuais. `getComputedStyle` devolve os
- * dois já resolvidos em px; no Chrome o Typed OM ainda diz `auto`/`%` (um `computedStyleMap()` só para
- * elementos com espaçamento > 0). Sem ele (Firefox), margens laterais iguais e > 0 contam como `auto`.
+ * Espaçamentos diferentes de 0 que são token de escala: sem margem `auto` e sem percentual. Cada valor é
+ * lido uma vez. `getComputedStyle` devolve `auto` e `%` já resolvidos em px; no Chrome o Typed OM ainda diz
+ * `auto`/`%` (um `computedStyleMap()` só para quem tem espaçamento). Sem ele (Firefox), margens laterais
+ * iguais e > 0 contam como `auto`.
  */
-function layoutSpacings(el: Element, style: CSSStyleDeclaration): Set<SpacingProp> {
-  const positive = SPACING_PROPS.filter((p) => parseFloat(style.getPropertyValue(p)) > 0)
-  if (!positive.length) return new Set()
+function readSpacings(el: Element, style: CSSStyleDeclaration): AuditSample['spacings'] {
+  const spacings: AuditSample['spacings'] = []
+  for (const prop of SPACING_PROPS) {
+    const value = style.getPropertyValue(prop)
+    const n = parseFloat(value)
+    if (n && !Number.isNaN(n)) spacings.push({ prop, value }) // 0, vazio, auto e normal ficam de fora
+  }
+  if (!spacings.length) return spacings
   const map = (el as Element & { computedStyleMap?: () => StylePropertyMapReadOnly }).computedStyleMap?.call(el)
   if (map) {
-    return new Set(positive.filter((p) => {
-      const typed = String(map.get(p))
-      return typed === 'auto' || typed.endsWith('%')
-    }))
+    return spacings.filter(({ prop }) => {
+      const typed = String(map.get(prop))
+      return typed !== 'auto' && !typed.endsWith('%')
+    })
   }
-  const left = style.getPropertyValue('margin-left')
-  return left === style.getPropertyValue('margin-right') && parseFloat(left) > 0 ? new Set(['margin-left', 'margin-right']) : new Set()
+  const left = spacings.find((s) => s.prop === 'margin-left')?.value
+  const centered = left !== undefined && parseFloat(left) > 0 && left === spacings.find((s) => s.prop === 'margin-right')?.value
+  return centered ? spacings.filter((s) => s.prop !== 'margin-left' && s.prop !== 'margin-right') : spacings
 }
 
 /** Estilos computados crus de um elemento (DETE-01/02). */
@@ -82,20 +89,16 @@ function readSample(el: Element, style: CSSStyleDeclaration, rect: DOMRect): Aud
   const text = hasOwnText(el)
   const colors: string[] = []
   if (text) colors.push(style.getPropertyValue('color'))
-  for (const side of SIDES) {
-    if (parseFloat(style.getPropertyValue(`border-${side}-width`)) > 0) colors.push(style.getPropertyValue(`border-${side}-color`))
+  for (const [width, color] of BORDERS) {
+    if (parseFloat(style.getPropertyValue(width)) > 0) colors.push(style.getPropertyValue(color))
   }
-  const skip = layoutSpacings(el, style)
-  const spacings = SPACING_PROPS.filter((prop) => !skip.has(prop))
-    .map((prop) => ({ prop, value: style.getPropertyValue(prop) }))
-    .filter(({ value }) => value && value !== 'auto' && value !== 'normal')
   return {
     background: style.getPropertyValue('background-color'),
-    colors: colors.filter(Boolean),
+    colors,
     area: rect.width * rect.height,
     fontSize: text ? style.getPropertyValue('font-size') : '',
     fontFamily: text ? style.getPropertyValue('font-family') : '',
-    spacings,
+    spacings: readSpacings(el, style),
   }
 }
 
