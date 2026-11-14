@@ -1,6 +1,6 @@
 # Raio-X — Especificação
 
-> **Status:** Implementada em 2026-11-14 (Design → Tasks → Execute → /simplify → Docs). Verificação manual no Firefox pendente com o dev (`manual-check.md`).
+> **Status:** Revisão 2 em 2026-11-14. Depois de ver a primeira versão, o dev cortou o X-ray e a Grade ("gostei só do detector e da lupa") e pediu uma passada geral no Detector ("tá meio burro"). DETE-02/03/05 revisados; DETE-08..10 novos. Verificação manual no Firefox pendente (`manual-check.md`).
 > **Branch:** `feature/content-raio-x` (andar "Raio-X" no Maestri), a partir de `develop` em `91e6134`.
 
 ## Problema
@@ -23,6 +23,8 @@ O PxA hoje depende do olho do dev: ele precisa *perceber* o problema para anotá
 | Auditoria de acessibilidade completa (WCAG) | Escopo de outra ferramenta; contraste fica como evolução |
 | Varrer elementos dentro de iframes e Shadow DOM da página | Mesma limitação do M1 |
 | Lupa ao vivo a cada movimento do mouse com print novo | `captureVisibleTab` tem limite de ~2 capturas/s (ver LUPA-03) |
+| Modo X-ray (XRAY-01..06) e Grade de 8px (GRAD-01..03) | Implementados na revisão 1 e **removidos pelo dev** em 2026-11-14 depois de testar. Código no histórico da branch (`17adb7b`) |
+| Marcar valores "órfãos" (usados 1–2×) como Achado | Revisão 2: virou ruído em páginas reais (hero de 96px, largura máxima de 600px). A contagem `N×` continua visível |
 
 ---
 
@@ -32,11 +34,9 @@ O PxA hoje depende do olho do dev: ele precisa *perceber* o problema para anotá
 |---|---|
 | Raio-X | Conjunto de ferramentas de inspeção do PxA, abertas por uma barra no Painel |
 | Detector | Ferramenta que varre estilos computados e lista inconsistências de design system |
-| Achado | Uma inconsistência listada pelo Detector ou pelo modo X-ray (ex: "cor `#7a7a7a` usada 2×") |
-| Escala | Múltiplos de espaçamento esperados (padrão 4px) e tamanhos de fonte |
+| Achado | Uma inconsistência listada pelo Detector (ex: "cor `#7a7a7a` parecida com `#777777`"), com botão Anotar |
+| Escala | Espaçamentos esperados: múltiplos de 4px (com os meios passos do Tailwind abaixo de 16px: 1, 2, 6, 10 e 14px) ou de 8px (com 1, 2 e 4px) |
 | Lupa | Zoom pixelado sob o cursor feito a partir de um print congelado da aba |
-| Grade | Sobreposição de linhas a cada N px (colunas de 8px e linha de base) |
-| Modo X-ray | Contorna os elementos visíveis e destaca em vermelho os que vazam do pai |
 
 ---
 
@@ -48,34 +48,20 @@ O PxA hoje depende do olho do dev: ele precisa *perceber* o problema para anotá
 
 **Critérios de Aceite**:
 
-1. QUANDO o dev aciona o Detector ENTÃO o sistema DEVE varrer os elementos **visíveis** do documento (excluindo a UI do PxA e elementos `display:none`/`visibility:hidden`/tamanho 0) e ler os estilos computados. (DETE-01)
-2. O relatório DEVE ter três seções com contagens: **Cores** (`color`, `background-color`, `border-*-color`, normalizadas para hex, ignorando `transparent`), **Fontes** (`font-size` + `font-family` + `font-weight`) e **Espaçamentos** (`margin-*`, `padding-*`, `gap`). Cabeçalho tipo "23 cores · 11 tamanhos de fonte · 3 espaçamentos fora da escala de 4px". (DETE-02)
-3. O sistema DEVE marcar como Achado: espaçamentos que não são múltiplos da Escala (padrão 4px, configurável para 8px); cores **quase iguais** (distância de cor pequena, limiar no Design) agrupadas como "parecidas"; valores usados 1 ou 2 vezes na página ("órfãos"). (DETE-03)
+1. QUANDO o dev aciona o Detector ENTÃO o sistema DEVE varrer os elementos **visíveis** do documento (excluindo a UI do PxA, elementos `display:none`/`visibility:hidden`/tamanho 0, elementos de até 1×1px como `sr-only` e o interior de `<svg>`) e ler os estilos computados. (DETE-01)
+2. O relatório DEVE ter quatro seções com contagens de elementos: **Cores** (`color` só em elemento com texto próprio, `background-color`, `border-*-color` só com borda > 0, normalizadas para hex, ignorando `transparent`), **Tamanhos de fonte**, **Famílias de fonte** e **Espaçamentos** (`margin-*`, `padding-*`, `gap`, ignorando `0`, `auto` e percentuais). Cabeçalho tipo "23 cores · 11 tamanhos de fonte · 2 famílias · 3 espaçamentos fora da escala de 4px". *(rev. 2: fontes separadas em tamanho e família; peso saiu; zeros saíram)* (DETE-02)
+3. O sistema DEVE marcar como Achado: *(rev. 2)* (DETE-03)
+   - espaçamento fora da Escala (4px padrão com os meios passos do Tailwind abaixo de 16px; 8px com 1, 2 e 4px), com tolerância de 0,5px para valores subpixel;
+   - cor **quase igual** a outra (ΔE76 ≤ 5, mesmo alfa) **e rara perto dela** (até 2 elementos ou até 10% dos usos da mais usada); duas cores parecidas e ambas bem usadas são tokens, não Achado;
+   - tamanho de fonte a até 1px de outro e raro perto dele (mesma regra);
+   - família de fonte padrão do navegador (Times, serif, system-ui, Arial…) em poucos elementos enquanto a página usa outra família: sinal de `button`/`input` que não herdou a fonte.
 4. QUANDO o dev passa o mouse num valor do relatório ENTÃO o sistema DEVE destacar no overlay todos os elementos visíveis que usam esse valor. (DETE-04)
-5. QUANDO o dev clica em "Anotar" num Achado ENTÃO o sistema DEVE criar Anotações para os elementos afetados (máximo 5; acima disso, uma Anotação no primeiro com a contagem na nota), com nota pré-preenchida editável, ex: `[Raio-X] espaçamento 13px fora da escala de 4px (3 elementos)`. (DETE-05)
+5. QUANDO o dev clica em "Anotar" num Achado ENTÃO o sistema DEVE criar Anotações para os elementos afetados (máximo 5; acima disso, uma Anotação no primeiro com a contagem na nota), com nota pré-preenchida editável que diz **o que trocar**, ex: `[Raio-X] espaçamento 13px (padding) fora da escala de 4px: usar 12px ou 14px (3 elementos)`. *(rev. 2: propriedade + sugestão)* (DETE-05)
 6. A varredura DEVE ser dividida em fatias (ex: `requestIdleCallback`/lotes de 500 elementos) para não travar a página, com limite de 10.000 elementos e aviso quando cortar. (DETE-06)
-7. A lógica de agrupamento (normalização de cor, distância, escala, órfãos) DEVE ficar em `lib/` como função pura testável. (DETE-07)
-
-### P1: Modo X-ray ⭐
-
-**User Story**: Como dev, quero ver a "caixa" de cada elemento e os que estão vazando, para achar bugs de layout na hora.
-
-**Critérios de Aceite**:
-
-1. QUANDO o dev liga o modo X-ray ENTÃO o sistema DEVE desenhar no overlay o contorno de cada elemento visível dentro do viewport, com cor por profundidade (paleta pixel de 4–6 cores). (XRAY-01)
-2. O sistema DEVE destacar em vermelho, com rótulo, os elementos que vazam: `scrollWidth > clientWidth` com `overflow` visível no eixo, ou retângulo do filho fora do retângulo do pai em mais de 1px quando o pai não corta o conteúdo. (XRAY-02)
-3. Rolar ou redimensionar DEVE redesenhar só o que está no viewport, usando o laço por frame existente (`tick.ts`, medir-depois-escrever). (XRAY-03)
-4. QUANDO o dev clica num elemento vermelho ENTÃO o sistema DEVE abrir o editor de nota normal, com nota pré-preenchida `[Raio-X] vaza do pai <seletor curto> em Npx`. (XRAY-04)
-5. Hover e clique para anotar continuam funcionando com o X-ray ligado. (XRAY-05)
-6. Com mais de 1.500 elementos no viewport, o sistema DEVE desenhar só os vazamentos e avisar. (XRAY-06)
-
-### P2: Grade de 8px e linha de base
-
-**Critérios de Aceite**:
-
-1. O sistema DEVE ter um botão que liga e desliga uma Grade sobre a página: colunas a cada 8px (configurável 4/8) e linha de base a cada 4px, alinhadas ao topo do documento e acompanhando a rolagem. (GRAD-01)
-2. A Grade DEVE ser desenhada no Shadow DOM com `repeating-linear-gradient`, translúcida, sem capturar eventos. (GRAD-02)
-3. Prints de Anotação feitos com a Grade ligada DEVEM sair sem ela (esconder durante a captura, como o resto da UI). (GRAD-03)
+7. A lógica de agrupamento (normalização de cor, distância, escala, raridade, sugestão) DEVE ficar em `lib/` como função pura testável. (DETE-07)
+8. Cores em formatos modernos (`lab()`, `lch()`, `oklab()`, `oklch()`, `color(srgb|srgb-linear|display-p3 …)`), que o navegador devolve para CSS feito com Tailwind 4 e afins, DEVEM ser convertidas para hex sRGB (fora do gamut: corta no limite) e entrar no agrupamento como qualquer outra. *(rev. 2)* (DETE-08)
+9. Cada seção DEVE mostrar primeiro os Achados; os demais valores ficam recolhidos em "outros N valores". *(rev. 2)* (DETE-09)
+10. QUANDO o dev clica num valor do relatório ENTÃO o sistema DEVE rolar até o próximo elemento que usa esse valor (cíclico), mantendo o destaque. *(rev. 2)* (DETE-10)
 
 ### P2: Lupa pixel
 
@@ -92,10 +78,10 @@ O PxA hoje depende do olho do dev: ele precisa *perceber* o problema para anotá
 
 ## Casos Limite
 
-- Página com milhares de elementos (tabelas, feeds): fatiamento e limites de DETE-06 e XRAY-06.
+- Página com milhares de elementos (tabelas, feeds): fatiamento e limite de DETE-06.
 - Cores com transparência: normalizar para `#rrggbbaa`; não comparar com cores opacas como "parecidas".
 - `font-size` com `rem` e zoom do navegador: usar o valor computado em px.
-- Spacing `auto` e negativos: ignorar `auto`; negativos contam pelo valor absoluto.
+- Spacing `auto`, percentual e negativos: ignorar `auto` e percentual (o navegador devolve em px; no Chrome o Typed OM diz a unidade, no Firefox margens laterais iguais contam como `auto`); negativos contam pelo valor absoluto.
 - SPA trocando de rota com o relatório aberto: marcar como desatualizado e oferecer "varrer de novo".
 - Lupa em páginas protegidas (sem permissão de captura): mesma mensagem do print do M1.
 - Achado com elemento que sumiu da página antes do clique em "Anotar": pular e avisar.
@@ -115,13 +101,13 @@ Três features rodam em paralelo a partir do mesmo `develop`: **Diversão**, **R
 
 | ID | Story | Status |
 |---|---|---|
-| DETE-01..07 | Detector de design system | Verified — unit (`design-audit`, `audit-scan`, `audit-report`, `controller-raio-x`) + E2E `raio-x.spec.ts` (3.014 elementos em 113–150 ms) |
-| XRAY-01..06 | Modo X-ray | Verified — unit (`leak`, `xray`, `raio-x`, `controller-raio-x`) + E2E (XRAY-01/02/04/05) |
-| GRAD-01..03 | Grade de 8px | Verified — unit (`grid`) + E2E (print sem a grade, por pixel) |
+| DETE-01..10 | Detector de design system | Pending (rev. 2) |
+| XRAY-01..06 | Modo X-ray | Removido pelo dev (rev. 2) |
+| GRAD-01..03 | Grade de 8px | Removido pelo dev (rev. 2) |
 | LUPA-01..04 | Lupa pixel | Verified — unit (`loupe`, `loupe-ui`) + E2E (LUPA-01/02). LUPA-04 com DPR 2 real e Firefox: pendente manual (`manual-check.md`) |
 
 ## Critérios de Sucesso
 
-- [x] Numa página de teste com 3 espaçamentos fora da escala, 2 cores quase iguais e 1 filho vazando, o Raio-X aponta todos (fixture E2E).
+- [ ] Numa página de teste com 3 espaçamentos fora da escala, 2 cores quase iguais, 1 tamanho de fonte quase igual e 1 botão sem herdar a fonte, o Detector aponta todos e **não** acusa tokens do Tailwind nem cores modernas (fixture E2E). *(rev. 2)*
 - [x] Nenhuma regressão nos 127 testes unitários e 27 E2E do M1 (agora 186 unit e 34 E2E).
 - [x] `check:manifest` continua passando sem permissões novas.

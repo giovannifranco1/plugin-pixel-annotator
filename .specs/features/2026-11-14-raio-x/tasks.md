@@ -134,3 +134,28 @@ T6..T9 → T10 (raio-x.ts + controller + painel) → T11 (E2E) → T12 (manual-c
 | LUPA-02 | T9, T10, T11 |
 | LUPA-03 | T9 |
 | LUPA-04 | T3 |
+
+---
+
+## Revisão 2 — 2026-11-14
+
+> Corte do X-ray e da Grade + passada geral no Detector (design.md § Revisão 2). Mesmas regras: TDD na lógica, 1 commit por fase.
+
+### R1: Remover X-ray e Grade
+- **Where:** apagar `ui/xray.ts`, `ui/grid.ts`, `lib/leak.ts`, `tests/unit/{xray,grid,leak}.test.ts`; `raio-x.ts` (2 botões), `controller.ts` (`onPick`), `styles.ts`, `page.ts` → `audit-scan.ts`, E2E e fixture.
+- **Done when:** compile + unit + E2E verdes sem referências a X-ray/Grade.
+
+### R2: `lib/color.ts` — cores modernas (DETE-08)
+- **Tests:** `DETE-08` lab/lch/oklab/oklch/`color(srgb|srgb-linear|display-p3)` de vermelho → `#ff0000`; cinza do GitHub `color(srgb 0.838902 0.90902 0.858824)` → `#d6e8db`; alfa (`/ 0.75`), `none`, fora do gamut cortado; `normalizeColor` usa o parser.
+
+### R3: `lib/design-audit.ts` — regras novas (DETE-02/03/05/07)
+- **Tests:** escala com meios passos e tolerância; zeros fora; parecida só quando rara perto da semente; tamanho de fonte quase igual; fonte padrão do navegador; propriedades agregadas; sugestões nas notas; cabeçalho com famílias.
+
+### R4: `audit-scan.ts` — ruído (DETE-01)
+- **Tests:** pula ≤ 1×1 e interior de SVG; amostra com propriedade; percentuais/auto fora quando há Typed OM (stub de `computedStyleMap`).
+
+### R5: `ui/audit-report.ts` — UX (DETE-09/10)
+- **Tests:** quatro seções; Achados fora do `<details>`, demais dentro com "outros N valores"; clique no valor rola até o próximo elemento (cíclico).
+
+### R6: E2E + fixture
+- **Tests:** fixture com tokens Tailwind (2/6/10/14px), cor `oklch()`, botão sem herdar a fonte, 13px vs 14px; critério de sucesso da spec rev. 2; Lupa intacta.

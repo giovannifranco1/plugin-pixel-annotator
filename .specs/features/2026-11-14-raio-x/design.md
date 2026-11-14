@@ -227,3 +227,54 @@ function annotateElements(targets: Element[], note: string) {
 | `lib/design-audit.ts`, `lib/leak.ts`, `lib/loupe.ts` | unit puro (Vitest), nomes com o ID |
 | `audit-scan.ts`, `ui/*` novos, `raio-x.ts`, `controller.ts` | unit no happy-dom com `createHost()` (retângulos simulados com `vi.spyOn(Element.prototype, 'getBoundingClientRect')` quando preciso) |
 | Integração | E2E `tests/e2e/raio-x.spec.ts` com a fixture `raio-x.html`: 3 espaçamentos fora da escala, 2 cores quase iguais, 1 filho vazando (critério de sucesso); Anotar cria anotação; X-ray marca o vazamento e o clique abre a nota; Grade some no print; Lupa copia hex |
+
+---
+
+## Revisão 2 — 2026-11-14 (dev: "gostei só do detector e da lupa; o detector tá meio burro")
+
+### Corte
+
+Saem `ui/xray.ts`, `ui/grid.ts`, `lib/leak.ts` e seus testes. `raio-x.pick()` volta a ser só da Lupa (`boolean`: clique consumido ou não); o `onPick` do controller volta quase ao original (`if (raioX.pick(el)) return`). `page.ts` volta para dentro de `audit-scan.ts` (único usuário). `ui/boxes.ts` fica (destaque do relatório).
+
+### Diagnóstico (Detector rodado em demo, GitHub, tailwindcss.com, Wikipédia e Hacker News)
+
+| Sintoma | Causa | Correção |
+|---|---|---|
+| 214 "cores" no site do Tailwind, quase todas `lab(...)`/`oklab(...)` órfãs | `normalizeColor` só entendia `rgb()`/hex | DETE-08: conversão pura de `lab/lch/oklab/oklch/color()` para sRGB (`lib/color.ts`) |
+| Fonte de 96px do hero, largura de 600px etc. viram Achado | marca "órfã" (≤ 2 usos) sozinha | órfã sai; raridade só conta **perto** de um valor popular |
+| Dois cinzas do design system (28× e 68×) acusados como "parecidos" | parecida = só distância | parecida = distância **e** rara perto da semente (≤ 2 ou ≤ 10% dos usos) |
+| 2, 6, 10 e 14px acusados em site Tailwind; `0px 1336×` no topo; `1px` de `sr-only` | escala só em múltiplos; zeros listados; 1×1 varrido | escala com meios passos do Tailwind < 16px; tolerância 0,5px; zeros, `%` e elementos ≤ 1×1 / interior de SVG fora |
+| Nota não diz o que mudar | — | DETE-05: propriedade + sugestão ("usar 12px ou 14px", "usar #777777", "usar 14px", "font-family: inherit") |
+| `button` que caiu em Times/system-ui passa batido | fonte agrupada por tamanho+família+peso, só órfã | seções separadas de tamanho e família + marca "fonte padrão do navegador" |
+| Valor raro longe da tela: hover destaca algo invisível | — | DETE-10: clicar no valor rola até o próximo elemento |
+| Relatório gigante | todos os valores abertos | DETE-09: Achados primeiro, resto em `<details>` "outros N valores" |
+
+### `lib/design-audit.ts` (rev. 2)
+
+```ts
+export type SpacingProp = 'margin-top' | 'margin-right' | … | 'row-gap' | 'column-gap'
+export interface AuditSample { colors: string[]; fontSize: string; fontFamily: string; spacings: Array<{ prop: SpacingProp; value: string }> }
+export type AuditFlag = 'off-scale' | 'similar' | 'default-font'
+export interface AuditEntry { value: string; count: number; elements: number[]; flags: AuditFlag[]; similarTo?: string; props?: string[]; suggestion?: string }
+export interface AuditReport { scale; colors; fontSizes; families; spacings: AuditEntry[]; offScale: number }
+export function allowedOnScale(px, scale): boolean       // múltiplo (±0,5) ou meio passo permitido
+export function scaleNeighbors(px, scale): [number, number] // sugestão: valor permitido abaixo e acima
+```
+
+- **Raridade perto da semente:** `count ≤ max(2, ⌊semente.count × 0,1⌋)`. Uma cor/tamanho parecido mas bem usado vira semente (é token).
+- **Fonte padrão:** famílias `times new roman, times, serif, system-ui, -apple-system, blinkmacsystemfont, sans-serif, arial, helvetica, segoe ui, roboto` contam como padrão do navegador só quando a família dominante (mais elementos) **não** é uma delas e a família tem até `max(2, 10%)` dos elementos da dominante.
+- **Propriedades:** cada valor guarda as propriedades onde aparece; os 4 lados juntam no nome base (`padding`), `row-gap`+`column-gap` viram `gap`.
+
+### `lib/color.ts` (rev. 2)
+
+`parseCssColor(css) → { r, g, b, a } | null` (0–255, alfa 0–1). Suporta hex, `rgb()/rgba()`, `lab()/lch()` (D50 → Bradford → D65), `oklab()/oklch()` (matrizes de Ottosson), `color(srgb|srgb-linear|display-p3 …)`, `none` = 0, `/ alfa`. Fora do gamut: corta em 0–255. `normalizeColor` passa a usar `parseCssColor`.
+
+### `audit-scan.ts` (rev. 2)
+
+- Pula elementos ≤ 1×1px e o interior de `<svg>` (o `<svg>` em si conta).
+- Um `computedStyleMap()` por elemento com espaçamento > 0 (só Chrome): descarta `auto` (margens) e percentuais. Sem Typed OM (Firefox): margens laterais iguais contam como `auto`; percentual não é detectável.
+- Amostra leva a propriedade de cada espaçamento.
+
+### `ui/audit-report.ts` (rev. 2)
+
+Quatro seções; Achados primeiro e `<details>` "outros N valores"; clique no valor rola até o próximo elemento (índice por linha, cíclico); a etiqueta mostra o motivo e as propriedades (espaçamentos).
