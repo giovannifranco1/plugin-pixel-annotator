@@ -65,7 +65,7 @@ A extensão temporária do Firefox some quando o navegador fecha. É só carrega
 4. Repita em quantos elementos quiser, inclusive em outras larguras. Abra o modo responsivo do DevTools (`Cmd+Shift+M` / `Ctrl+Shift+M`) e cada anotação guarda a largura em que foi feita.
 5. Exporte:
    - **Copiar markdown:** o resumo compacto vai para a área de transferência. É só colar no Claude Code.
-   - **Exportar .zip** (ícone ⤓ no cabeçalho do painel): `feedback.md` completo com os prints em `shots/`. Descompacte na pasta do projeto e peça *"resolve o feedback.md"*.
+   - **Exportar .zip** (ícone ⤓ no cabeçalho do painel): `feedback.md` completo com os prints em `shots/` e o `pxa.json`, que outro PxA consegue importar. Descompacte na pasta do projeto e peça *"resolve o feedback.md"*.
 6. Clique no ícone de novo para sair. As anotações ficam guardadas enquanto a aba estiver aberta.
 
 ### Raio-X: achar o que o olho não vê
@@ -104,6 +104,13 @@ A barra **Raio-X**, logo abaixo do cabeçalho do painel, traz duas ferramentas. 
   - **Temas:** Padrão (claro, rosa) e Noite (escuro), no seletor do painel. As cores dos marcadores (mobile/tablet/desktop) não mudam.
   - **Segredo:** com o modo ligado, tente o Konami code. 🎮
 - **Aviso antes de perder:** com anotações que ainda não foram para um `.zip`, recarregar ou fechar a aba mostra o aviso de saída do navegador.
+- **Erros do console junto da nota:** ao clicar para anotar, o PxA pega os erros de console e as falhas de rede do último minuto (`console.error`, exceções, promises rejeitadas, `fetch`/XHR com status ≥ 400 ou sem resposta). O editor mostra a lista e você remove o que não tem a ver antes de salvar. No painel o item ganha o selo `⚠ N`.
+- **Desenho no print:** o ícone de rabisco no item abre o print num editor com pincel, seta, círculo e X, em rosa, amarelo ou ciano. Ctrl/Cmd+Z desfaz e Esc fecha sem salvar. O traço é pixelado, em blocos de 2px.
+
+## Em equipe
+
+- **Apresentar:** o botão no rodapé do painel passa pelas anotações uma a uma, como slides, numa call de revisão. A página escurece em volta do elemento e um cartão mostra a nota. Use → ou Espaço para avançar, ← para voltar, Home/End para ir à primeira/última e Esc para sair. Anotações de outra rota aparecem com o print e a rota; se a largura da tela for de outra categoria, o cartão avisa (*anotada em 📱 390px, você está em 🖥️ 1440px*).
+- **Importar .zip:** abra o `.zip` que um colega exportou e os marcadores dele aparecem na sua página. As anotações importadas ganham números novos e guardam o original (`#3 de staging.app.com`). Se o `.zip` veio de outro site, o PxA avisa e importa mesmo assim. Importar o mesmo arquivo de novo não duplica nada. Elemento que o seletor não acha fica marcado como *elemento não encontrado* no painel, sem marcador. Só exports feitos a partir desta versão (com `pxa.json`) podem ser importados.
 
 ## O que o Claude Code recebe
 
@@ -118,7 +125,7 @@ A barra **Raio-X**, logo abaixo do cabeçalho do painel, traz duas ferramentas. 
   🖥️ 1440px `xl` · `/dashboard` · `h1.page-title`
 ```
 
-**Exportar .zip:** `pxa-feedback-AAAA-MM-DD-HHmm.zip`, com um `feedback.md` completo e os prints em `shots/01.png`, `shots/02.png`, ….
+**Exportar .zip:** `pxa-feedback-AAAA-MM-DD-HHmm.zip`, com um `feedback.md` completo, os prints em `shots/01.png`, `shots/02.png`, … e o `pxa.json` (os mesmos dados para máquina, com versão de esquema, usado pelo Importar). Anotação com desenho leva o print desenhado em `shots/NN.png` e o original em `shots/NN-original.png`.
 
 ````markdown
 ## #1 · 📱 mobile · 390px (`base`) · `/dashboard?tab=2`
@@ -144,12 +151,25 @@ padding: 8px;
 ```
 ````
 
+Com erros anexados, a anotação ganha uma seção **Erros no console** e o markdown compacto ganha `⚠ N erros` na linha de metadados:
+
+````markdown
+**Erros no console:**
+
+```text
+14:30:05 console.error: TypeError: cliente is undefined ×3
+14:30:08 rede: GET http://localhost:3000/api/clientes → 404
+```
+````
+
 ## Permissões e privacidade
 
 - Pede só **`activeTab`**, **`scripting`** e **`storage`**. O PxA não lê nenhum site até você clicar no ícone naquela aba. O `storage` guarda só o tema e o som que você escolheu, no próprio navegador, e não gera aviso na instalação.
 - Nada sai do seu navegador. Não há servidor, conta nem telemetria. O `.zip` é baixado direto e o markdown vai só para a sua área de transferência.
 - As anotações vivem **só na memória da aba**: recarregar a página apaga tudo. A persistência por site está planejada para o M2.
 - Em páginas onde extensões não podem rodar (`chrome://`, lojas de extensão, visualizador de PDF), o ícone mostra um **!**.
+- **Erros do console:** o registro começa quando você clica no ícone, não antes. Guarda no máximo 50 erros e, da rede, só método, URL e status, **nunca** corpo nem headers. A URL perde a query string e o fragmento, mas tokens que estejam **no caminho** da URL continuam lá: revise a lista no editor antes de salvar. Se a página bloquear o script (CSP, página especial), a anotação sai sem erros.
+- **Importar** lê o `.zip` no próprio navegador, com limite de 50 MB no arquivo e 100 MB descompactados.
 
 ## Como funciona
 
@@ -157,7 +177,7 @@ São três partes, todas injetadas sob demanda quando você clica no ícone:
 
 - **Background:** liga e desliga o modo e tira o print da aba (`tabs.captureVisibleTab`). As capturas entram numa fila, por causa do limite do navegador.
 - **Annotator** (content script, isolated world): a UI em Shadow DOM, o estado das anotações, a captura de contexto, o recorte do print e o export (com [fflate](https://github.com/101arrowz/fflate)).
-- **Probe** (main world): lê os internals do React (`__reactFiber$…`) e do Vue (`__vueParentComponent`, `__vue__`) que o content script não enxerga, e responde por `CustomEvent`. Se não houver framework ou a leitura falhar em 300ms, a anotação sai sem componente.
+- **Probe** (main world): lê os internals do React (`__reactFiber$…`) e do Vue (`__vueParentComponent`, `__vue__`) que o content script não enxerga, e responde por `CustomEvent`. Se não houver framework ou a leitura falhar em 300ms, a anotação sai sem componente. Ele também envolve `console.error`, `fetch` e `XMLHttpRequest` (sempre chamando o que já estava lá, como Sentry) para o registro de erros.
 
 Feito com [WXT](https://wxt.dev) e TypeScript, sem framework de UI.
 
@@ -179,7 +199,8 @@ A lógica pura fica em `lib/`, com testes em `tests/unit/`. A extensão fica em 
 ## Roadmap
 
 - **M1 — Modo Anotação** ✅ (este README)
-- **Raio-X** ✅ Detector de design system e Lupa pixel
+- **Raio-X** ✅: Detector de design system e Lupa pixel
+- **Equipe e Claude** ✅: apresentação, desenho no print, importar sessão e erros do console
 - **M2 — Ponte com o Claude Code:** servidor MCP local para o Claude Code ler as anotações sem download, e persistência por site
 
 ## Licença

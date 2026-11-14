@@ -45,7 +45,7 @@ beforeEach(() => {
   store = createStore()
   sound = { play: vi.fn<(name: SoundName) => void>() }
   undo = []
-  panel = createPanel(ui, store, { onFocus() {}, onEdit() {}, onDelete() {}, onExportZip() {}, onCopyMarkdown() {}, onClearAll() {} })
+  panel = createPanel(ui, store, { onFocus() {}, onEdit() {}, onDelete() {}, onExportZip() {}, onCopyMarkdown() {}, onClearAll() {}, onPresent() {}, onImport() {}, onDraw() {} })
   panel.show()
 })
 afterEach(() => {

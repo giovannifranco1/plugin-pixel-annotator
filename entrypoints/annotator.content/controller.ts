@@ -1,6 +1,13 @@
 import { createStore, type AnnotationDraft, type AnnotationStore } from '@/lib/store'
 import { resolveAnnotation } from '@/lib/resolve'
 import { categoryOf } from '@/lib/viewport'
+import { ERROR_WINDOW_MS } from '@/lib/messages'
+import { hostOf, plural } from '@/lib/format'
+import { readImportFile } from '@/lib/import'
+import type { PageError } from '@/lib/types'
+import { probeErrors } from './probe-client'
+import { openDrawEditor } from './ui/draw-editor'
+import { openPresentation } from './ui/presentation'
 import { captureContext } from './capture'
 import { createDefaultStyle } from './default-style'
 import { copyMarkdown, exportZip } from './exporter'
@@ -16,13 +23,15 @@ import { createPanel } from './ui/panel'
 import { createFun } from './ui/fun'
 import { showToast } from './ui/toast'
 
-export type ControllerState = 'inactive' | 'active' | 'editing' | 'capturing'
+export type ControllerState = 'inactive' | 'active' | 'editing' | 'capturing' | 'presenting'
 
 export interface ControllerDeps {
   ui?: UiHost
   store?: AnnotationStore
   capture?: (el: Element, note: string) => Promise<AnnotationDraft>
   raioX?: RaioXDeps
+  /** Erros de console/rede do momento (ERRO-03); padrão: pedido ao probe. */
+  errors?: () => Promise<PageError[]>
 }
 
 const FOCUS_HIGHLIGHT_MS = 1500
@@ -42,26 +51,33 @@ export function createController(deps: ControllerDeps = {}) {
   const capture = deps.capture ?? ((el: Element, note: string) => captureContext(el, note, { ui, defaultStyle }))
   const overlay = createOverlay(ui)
   const markers = createMarkers(ui, store)
+  const recentErrors = deps.errors ?? (() => probeErrors(ERROR_WINDOW_MS))
 
   let state: ControllerState = 'inactive'
   let teardown: Array<() => void> = []
-  let editor: { close(): void } | null = null
+  let editor: { close(): void } | null = null // editor de nota, de Desenho ou a Apresentação
   let focusTimer: ReturnType<typeof setTimeout> | undefined
 
-  /** Abre o editor de nota; `onSaved` decide o que fazer com a nota confirmada. */
-  function openEditor(anchor: DOMRect, initial: string | undefined, onSaved: (note: string) => void) {
+  /** Abre o editor de nota; `onSaved` decide o que fazer com a nota (e os erros que sobraram) confirmada. */
+  function openEditor(
+    anchor: DOMRect,
+    initial: string | undefined,
+    errors: PageError[] | Promise<PageError[]>,
+    onSaved: (note: string, errors: PageError[]) => void,
+  ) {
     editor?.close()
     state = 'editing'
     editor = openNoteEditor(ui, {
       anchor,
       initial,
+      errors,
       onCancel() {
         editor = null
         if (state === 'editing') state = 'active'
       },
-      onSave(note) {
+      onSave(note, kept) {
         editor = null
-        onSaved(note)
+        onSaved(note, kept ?? [])
       },
     })
   }
@@ -70,7 +86,8 @@ export function createController(deps: ControllerDeps = {}) {
     if (state !== 'active') return
     if (raioX.pick()) return
     overlay.highlight(el)
-    openEditor(el.getBoundingClientRect(), undefined, (note) => void save(el, note))
+    // Pedido no clique (não no Enter): o editor mostra os erros para o dev remover (ERRO-04).
+    openEditor(el.getBoundingClientRect(), undefined, recentErrors().catch(() => []), (note, errors) => void save(el, note, errors))
   }
 
   /** Uma nota pré-preenchida (editável) para vários elementos: um print por elemento ao salvar (Raio-X). */
@@ -79,19 +96,20 @@ export function createController(deps: ControllerDeps = {}) {
     if (state !== 'active' || !first) return
     first.scrollIntoView({ block: 'center', inline: 'nearest' })
     overlay.highlight(first)
-    openEditor(first.getBoundingClientRect(), note, async (final) => {
+    // Os erros do momento valem para o lote todo, como numa anotação comum (ERRO-03/ERRO-04).
+    openEditor(first.getBoundingClientRect(), note, recentErrors().catch(() => []), async (final, errors) => {
       for (const t of targets) {
         if (state === 'inactive') break
-        if (t.isConnected) await save(t, final)
+        if (t.isConnected) await save(t, final, errors)
       }
     })
   }
 
-  async function save(el: Element, note: string) {
+  async function save(el: Element, note: string, errors: PageError[]) {
     state = 'capturing'
     overlay.hide()
     try {
-      store.add(await capture(el, note), el)
+      store.add({ ...(await capture(el, note)), errors }, el)
     } catch {
       showToast(ui, 'Falha ao anotar')
     } finally {
@@ -115,11 +133,14 @@ export function createController(deps: ControllerDeps = {}) {
       const a = store.get(id)
       if (!a || state !== 'active') return
       const anchor = resolveAnnotation(store, id)?.getBoundingClientRect() ?? new DOMRect(Math.max(8, innerWidth - 680), 80, 0, 0)
-      openEditor(anchor, a.note, (note) => {
-        store.updateNote(id, note)
+      openEditor(anchor, a.note, a.errors ?? [], (note, errors) => {
+        store.update(id, { note, errors })
         if (state === 'editing') state = 'active'
       })
     },
+    onPresent,
+    onDraw,
+    onImport: (file) => void importZip(file),
     onDelete: (id) => store.remove(id),
     onExportZip: () => void exportZip(ui, store).then((ok) => ok && fun.exported('zip')),
     onCopyMarkdown: () => void copyMarkdown(ui, store).then((ok) => ok && fun.exported('markdown')),
@@ -128,6 +149,50 @@ export function createController(deps: ControllerDeps = {}) {
 
   const fun = createFun(ui, store, panel.mount)
   installUnloadGuard(store)
+
+  /** Modo Apresentação (APRE-01..06): hover/clique de anotar ignoram estados fora de `active`. */
+  function onPresent() {
+    if (state !== 'active' || store.list().length === 0) return
+    state = 'presenting'
+    overlay.hide()
+    editor = openPresentation(ui, store, {
+      onClose() {
+        editor = null
+        if (state === 'presenting') state = 'active'
+      },
+    })
+  }
+
+  /** Editor de Desenho sobre o print (DESE-01..05). */
+  function onDraw(id: string) {
+    const a = store.get(id)
+    if (!a?.shot || state !== 'active') return
+    const back = () => {
+      editor = null
+      if (state === 'editing') state = 'active'
+    }
+    state = 'editing'
+    editor = openDrawEditor(ui, {
+      shot: a.shot,
+      drawing: a.drawing,
+      dpr: a.viewport.dpr,
+      onCancel: back,
+      onSave(drawing) {
+        back()
+        store.update(id, { drawing })
+      },
+    })
+  }
+
+  /** Importar .zip de outro PxA (IMPO-02..07). */
+  async function importZip(file: File) {
+    const result = await readImportFile(file)
+    if (!result.ok) return showToast(ui, result.error, 5000)
+    const added = store.importAnnotations(result.annotations, result.origin)
+    if (added === 0) return showToast(ui, 'Nada novo: essas anotações já estão aqui.')
+    const foreign = result.origin !== location.origin ? ` · anotações de ${hostOf(result.origin)}` : '' // IMPO-04
+    showToast(ui, `${plural(added, 'anotação importada', 'anotações importadas')}${foreign}`, foreign ? 5000 : 2500)
+  }
 
   function activate() {
     state = 'active'

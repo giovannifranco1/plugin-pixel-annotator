@@ -180,3 +180,19 @@ export function pixelIcon(rows: readonly string[], scale = 1, palette: Record<st
   })
   return svg
 }
+
+/** Rabisco + pincel (Desenhar, DESE-01): distinto do lápis de "Editar nota". */
+export const BRUSH = [
+  '............',
+  '..PPPP......',
+  '.P....P.....',
+  'P......P....',
+  'P......P..KK',
+  '.P....P..KYK',
+  '..PPPP..KYK.',
+  '.......KYK..',
+  '......KLK...',
+  '.....KPPK...',
+  '....KPPK....',
+  '....KKK.....',
+]

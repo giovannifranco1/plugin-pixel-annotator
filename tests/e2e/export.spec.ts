@@ -8,10 +8,10 @@ test.beforeEach(async ({ page, toggle }) => {
   await annotate(page, '#card', 'card com `crases` e **markdown**')
 })
 
-test('EXPO-01/EXPO-02 zip com feedback.md e shots/01.png, 02.png', async ({ page }) => {
+test('EXPO-01/EXPO-02/IMPO-01 zip com feedback.md, pxa.json e shots/01.png, 02.png', async ({ page }) => {
   const { name, files, md } = await exportZip(page)
   expect(name).toMatch(/^pxa-feedback-\d{4}-\d{2}-\d{2}-\d{4}\.zip$/)
-  expect(Object.keys(files).sort()).toEqual(['feedback.md', 'shots/01.png', 'shots/02.png'])
+  expect(Object.keys(files).sort()).toEqual(['feedback.md', 'pxa.json', 'shots/01.png', 'shots/02.png'])
   expect(md).toContain(`# Feedback PxA — localhost:${PORT}`)
   expect(md).toContain('- **Anotações:** 2')
   expect(md).toContain('```text\ncard com `crases` e **markdown**\n```')

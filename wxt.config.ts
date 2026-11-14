@@ -13,7 +13,14 @@ export default defineConfig({
     ...(mode === 'e2e' ? { host_permissions: ['<all_urls>'] } : {}),
     action: { default_title: 'PixelAnnotator' },
     ...(browser === 'firefox'
-      ? { browser_specific_settings: { gecko: { id: 'pxa@nanoincub.dev', strict_min_version: '128.0' } } }
+      ? { browser_specific_settings: { gecko: {
+            id: 'pxa@nanoincub.dev',
+            strict_min_version: '128.0',
+            // Exigido pelo AMO para extensões novas; o PxA não coleta dados.
+            data_collection_permissions: { required: ['none'] },
+          },
+        },
+      }
       : { minimum_chrome_version: '95' }),
   }),
 })

@@ -13,4 +13,6 @@
   - React: `__reactFiber$*`/`__reactInternalInstance$*`, com `_debugSource` só até o React 18 em dev.
   - Vue 3: `__vueParentComponent`, com `type.__file` em dev.
   - Vue 2: `__vue__`, com `$options.__file`.
+- **APIs da página envolvidas pelo probe (main world):** `console.error`, `fetch`, `XMLHttpRequest.prototype.open/send` e os eventos `error`/`unhandledrejection` de `window`. O wrapper sempre chama o que encontrou (Sentry, Datadog) e devolve o mesmo resultado.
 - **Claude Code:** consumidor do export (`feedback.md` + `shots/`). Sem integração direta no MVP; ponte MCP planejada para M2.
+- **Outro PxA:** consome o `pxa.json` do export pelo "Importar .zip" (esquema versionado, `schemaVersion: 1`).

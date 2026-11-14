@@ -161,7 +161,7 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 .pxa-audit-ok svg { flex: none; }
 .pxa-audit details { margin: 2px 0 4px; }
 .pxa-audit summary { cursor: pointer; color: var(--pxa-muted); padding: 2px 0; }
-.pxa-swatch { width: 12px; height: 12px; border: 2px solid var(--pxa-ink); }
+.pxa-audit .pxa-swatch { width: 12px; height: 12px; border: 2px solid var(--pxa-ink); }
 .pxa-tag { padding: 0 4px; background: var(--pxa-head-bg); color: var(--pxa-head-fg); }
 .pxa-audit-annotate { margin-left: auto; padding: 0 6px; box-shadow: 1px 1px 0 var(--pxa-ink); }
 .pxa-audit-foot { padding: 6px 8px; color: var(--pxa-muted); border-top: 2px solid var(--pxa-ink); }
@@ -169,4 +169,58 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 .pxa-loupe { position: fixed; pointer-events: none; background: var(--pxa-paper); border: 2px solid var(--pxa-ink); box-shadow: 4px 4px 0 var(--pxa-ink); }
 .pxa-loupe canvas { display: block; width: 120px; height: 120px; image-rendering: pixelated; }
 .pxa-loupe-hex { padding: 2px 6px; text-align: center; font-weight: 700; background: var(--pxa-head-bg); color: var(--pxa-head-fg); }
+
+/* ── Equipe e Claude: erros, Desenho, importadas, Apresentação ── */
+.pxa-errors { grid-column: 1 / -1; display: grid; gap: 4px; }
+.pxa-errors-title { font-weight: 700; }
+.pxa-errors ul { list-style: none; margin: 0; padding: 0; max-height: 96px; overflow-y: auto; border: 2px dotted var(--pxa-rule); }
+.pxa-errors li { display: flex; align-items: center; gap: 4px; padding: 2px 4px; }
+.pxa-errors li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pxa-errors button.pxa-icon { padding: 0 4px; border: 0; box-shadow: none; background: transparent; }
+.pxa-errors button.pxa-icon:hover { background: var(--pxa-danger-hover); }
+.pxa-err { padding: 0 3px; background: var(--pxa-primary); color: var(--pxa-on-accent); font-weight: 700; }
+.pxa-imported { font-weight: 400; color: var(--pxa-muted); }
+.pxa-missing { font-weight: 400; color: var(--pxa-primary); }
+.pxa-thumb { display: block; max-width: 100%; max-height: 64px; margin-top: 4px; border: 2px solid var(--pxa-ink); image-rendering: pixelated; }
+
+.pxa-presenting .pxa-panel { display: none !important; }
+.pxa-spot {
+  position: fixed; z-index: 1; pointer-events: none; display: none;
+  border: 2px dashed var(--pxa-accent); box-shadow: 0 0 0 100vmax var(--pxa-scrim);
+}
+.pxa-present {
+  position: fixed; z-index: 2; left: 50%; bottom: 24px; transform: translateX(-50%); pointer-events: auto;
+  width: min(560px, calc(100vw - 32px)); max-height: 70vh; overflow-y: auto; padding: 12px;
+  display: grid; gap: 8px; font-size: 14px;
+  background: var(--pxa-paper); border: 2px solid var(--pxa-ink); box-shadow: 4px 4px 0 var(--pxa-ink);
+}
+.pxa-present header { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 16px; font-weight: 700; }
+.pxa-present-count { color: var(--pxa-muted); }
+.pxa-present-note { margin: 0; font-size: 18px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pxa-present-warn { margin: 0; padding: 4px 8px; background: var(--pxa-hover); border: 2px solid var(--pxa-accent); }
+.pxa-present-where { margin: 0; color: var(--pxa-muted); }
+.pxa-present-shot { display: block; max-width: 100%; max-height: 40vh; border: 2px solid var(--pxa-ink); image-rendering: pixelated; }
+.pxa-present footer { display: flex; justify-content: flex-end; gap: 6px; }
+
+.pxa-draw {
+  position: fixed; inset: 0; z-index: 4; pointer-events: auto;
+  display: flex; align-items: center; justify-content: center; background: var(--pxa-scrim);
+}
+.pxa-draw-box {
+  display: flex; flex-direction: column; gap: 8px; padding: 8px;
+  max-width: calc(100vw - 32px); max-height: calc(100vh - 32px);
+  background: var(--pxa-paper); border: 2px solid var(--pxa-ink); box-shadow: 4px 4px 0 var(--pxa-ink);
+}
+.pxa-draw-bar, .pxa-draw-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pxa-draw-actions { justify-content: flex-end; }
+.pxa-draw-group { display: flex; gap: 2px; }
+.pxa-draw-group button[aria-pressed="true"]:not(.pxa-swatch) { background: var(--pxa-primary); color: var(--pxa-on-accent); }
+.pxa-draw .pxa-swatch { width: 24px; height: 24px; padding: 0; }
+.pxa-draw .pxa-swatch[aria-pressed="true"] { outline: 2px solid var(--pxa-ink); outline-offset: 2px; }
+.pxa-draw-canvas { overflow: auto; min-height: 0; }
+.pxa-draw canvas {
+  display: block; border: 2px solid var(--pxa-ink);
+  image-rendering: pixelated; cursor: crosshair; touch-action: none;
+}
+.pxa-draw .pxa-primary { background: var(--pxa-primary); color: var(--pxa-on-accent); }
 `

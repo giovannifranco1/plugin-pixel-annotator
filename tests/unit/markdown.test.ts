@@ -72,4 +72,49 @@ describe('markdown', () => {
     expect(renderMarkdown([TWO[1]!], meta)).toContain('(truncado em 2.000 caracteres)')
     expect(renderMarkdown([TWO[0]!], meta)).not.toContain('truncado')
   })
+
+  const at = (h: number, m: number, sec: number) => new Date(2026, 10, 14, h, m, sec).toISOString()
+  const errors = [
+    { kind: 'console' as const, message: 'TypeError: x is undefined', at: at(14, 30, 5), count: 3 },
+    { kind: 'exception' as const, message: 'Uncaught ReferenceError: foo', at: at(14, 30, 6), count: 1, source: 'http://localhost:3000/main.js:42' },
+    { kind: 'rejection' as const, message: 'Error: timeout', at: at(14, 30, 7), count: 1 },
+    { kind: 'network' as const, message: 'GET http://localhost:3000/api/x → 404', at: at(14, 30, 8), count: 1, method: 'GET', url: 'http://localhost:3000/api/x', status: 404 },
+  ]
+
+  test('ERRO-05 seção "Erros no console" em bloco text, com horário, tipo, origem e ×N', () => {
+    const md = renderMarkdown([annotation(1, { errors })], meta)
+    expect(md).toContain([
+      '**Erros no console:**',
+      '',
+      '```text',
+      '14:30:05 console.error: TypeError: x is undefined ×3',
+      '14:30:06 erro: Uncaught ReferenceError: foo (http://localhost:3000/main.js:42)',
+      '14:30:07 promise rejeitada: Error: timeout',
+      '14:30:08 rede: GET http://localhost:3000/api/x → 404',
+      '```',
+    ].join('\n'))
+    expect(fencesBalanced(md)).toBe(true)
+  })
+
+  test('ERRO-05 sem erros, sem seção (export do M1 inalterado)', () => {
+    expect(renderMarkdown(TWO, meta)).not.toContain('Erros no console')
+  })
+
+  test('ERRO-05 compacto ganha só "⚠ N erros" na linha de metadados', () => {
+    const md = renderCompactMarkdown([annotation(1, { errors, component: null }), annotation(2, { errors: [errors[0]!], component: null })], meta)
+    expect(md).toContain('· `[data-testid="cliente-card"] > div.card-footer` · ⚠ 4 erros\n')
+    expect(md).toContain('· ⚠ 1 erro\n')
+    expect(md).not.toContain('TypeError')
+  })
+
+  test('DESE-03 print com Desenho aponta o composto e cita o original', () => {
+    const drawing = { strokes: [], block: 2, composite: new Blob() }
+    expect(renderMarkdown([annotation(3, { drawing })], meta)).toContain('- **Print:** ![#3](shots/03.png) (com desenho; original em `shots/03-original.png`)')
+  })
+
+  test('IMPO-03 anotação importada diz de onde veio', () => {
+    const md = renderMarkdown([annotation(4, { importedFrom: { origin: 'https://staging.app.com', number: 3 } })], meta)
+    expect(md).toContain('- **Importada de:** `staging.app.com` (#3)')
+  })
 })
+

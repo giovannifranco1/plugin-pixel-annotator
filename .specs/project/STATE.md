@@ -12,6 +12,12 @@
 - 2026-11-13 — Execute: painel recolhível (abre recolhido < 768px) para não cobrir a página no mobile; fonte pixel = `monospace` (default do design, sem fonte embutida).
 - 2026-11-13 — Execução sem esperar teste do dev: o agente roda as suítes; o dev testa só no final (Sentinel).
 - 2026-11-13 — Regras de execução (Sentinel): seguir o nano-spec fase a fase, 1 commit por fase, nunca push/merge/PR.
+- 2026-11-14 — Equipe e Claude: os erros são pedidos ao probe **no clique de anotar** (não no Enter), porque o editor precisa mostrá-los para o dev remover (ERRO-04). A janela de 60s conta desse clique.
+- 2026-11-14 — Equipe e Claude: "recolher o Painel" na Apresentação (APRE-01) foi lido como **tirar da frente**: a classe `pxa-presenting` esconde o Painel por CSS e ele volta exatamente como estava (APRE-06). A barra recolhida ficaria embaixo do cartão.
+- 2026-11-14 — Equipe e Claude: **dúvida registrada** — o Painel do M1 não tem miniatura, mas DESE-04 pede "a miniatura no Painel". Leitura conservadora diante da regra "só ícones novos por item": a miniatura aparece só em itens com Desenho.
+- 2026-11-14 — Equipe e Claude: o Desenho é guardado como vetores (`strokes`, camada separada) + PNG composto em cache; bloco de 2px **CSS** (`2 × DPR` em pixels do print) para o traço não sumir em print retina. Ícone novo de rabisco, porque o lápis já é "Editar nota".
+- 2026-11-14 — Equipe e Claude: anotação importada mantém o `id` original (é a chave do dedupe, IMPO-06) e os `createdAt/updatedAt` originais; reimportar algo que já era importado mantém a origem primeira. Toast de origem diferente fica 5s.
+- 2026-11-14 — Equipe e Claude: limites do Importar: 50 MB no arquivo, 100 MB descompactados (tamanho declarado no zip), 1000 arquivos, só `pxa.json` e `shots/*.png` descompactados.
 
 - 2026-11-14 — Diversão: permissão `storage` aprovada pelo dev só para o Perfil (Q-01); anotações continuam só na sessão. `check:manifest` exige `activeTab` + `scripting` + `storage`.
 - 2026-11-14 — Diversão (agente do andar, sem decisão do dev): fanfarra só no `.zip`, copiar markdown faz festa sem som (D14).
@@ -54,6 +60,10 @@
 - 2026-11-14 — **Teste de arraste antes da varredura terminar mede errado.** O cabeçalho do relatório muda de altura quando o resultado chega; medir antes dá deslocamentos "errados" (68px em vez de 300). Esperar o rodapé "… ms" antes de arrastar.
 - 2026-11-14 — **Relatório que não se explica parece bug.** O Detector estava certo (nada fora da escala), mas "8 outros valores" sob Espaçamentos foi lido como problema. Prevenção: toda seção diz explicitamente se está ok; todo Achado diz por que e o que fazer.
 - 2026-11-14 — **Heredoc com `$` no Bash é barrado pelo verificador de `rm`.** Edições com `$$`/`${}` em heredoc Python não passam pelo verificador de segurança; usar o Edit nesses casos.
+- 2026-11-14 — **Editores de teste abertos engolem o teclado.** Sintoma: Ctrl+Z e Esc não faziam nada em testes do editor de Desenho. Causa raiz: editores de testes anteriores continuavam com `keydown` na captura em `window` e `stopImmediatePropagation`. Correção e prevenção: os testes guardam os handles e fecham no `afterEach` (mesma lição dos controllers do M1, agora em TESTING.md).
+- 2026-11-14 — **Importar falhava no Zen/Firefox com "Não consegui ler este .zip."** Causa raiz (console: `Permission denied to access property "constructor"`): no Firefox o `File` do input é objeto da página; os bytes de `arrayBuffer()` e o `Uint8Array` sobre eles pertencem à página (Xray), e o `subarray` do fflate (`slc`) lê `constructor` para criar o resultado → acesso negado. No Chromium (testes) o isolamento é outro e não aparece. Correção: `ownBytes()` em `lib/import.ts` copia os bytes com `set` para um buffer da extensão antes do fflate. Prevenção: teste que simula o `constructor` negado; erro de leitura agora vai para o console com `[PxA]`; regra em CONVENTIONS/CONCERNS: bytes vindos de objetos da página passam por `ownBytes` antes de `subarray`/fflate.
+- 2026-11-14 — **Vite responde 200 para caminho inexistente** (fallback de SPA), inclusive para `.json` e `.js` com `Accept: */*`. Para simular 404 de API no E2E, mandar `Accept: application/json`.
+- 2026-11-14 — **Ponto flutuante na elipse do Desenho:** `sin(π/2)` amostrado dava 39,999… e a elipse não encostava na borda. Correção: passos múltiplos de 4 e arredondamento das amostras.
 
 ## Ideias adiadas
 
@@ -62,6 +72,9 @@
 - Pet do console, raio-X responsivo, marcar como resolvida
 - Raio-X: comparar com tokens do design system (Figma/`tailwind.config`), contraste/WCAG, helper único de clipboard (`copyText`) junto do `exporter.ts`
 - Detector: detectar "não herdou a fonte" pelo DOM (família do controle ≠ do pai) em vez da lista de famílias padrão; `computedStyleMap()` só para valores suspeitos (mais rápido, mas muda contagens); fatias da varredura por tempo (`IdleDeadline`); separar agrupamento e escala para alternar a escala sem refazer o relatório; peso de fonte de volta se fizer falta
+- Comentários em thread por anotação (depois do Importar, spec Equipe e Claude)
+- Miniatura do print em todos os itens do Painel (hoje só com Desenho); helper comum para a linha `#n + ícone + largura` do Painel e da Apresentação — adiados para não mexer em linhas do Painel que outros andares editam
+- `unzip` assíncrono (worker do fflate) se imports grandes ficarem comuns; `console.error` com `JSON.stringify` limitado por tamanho
 
 ## Preferences
 
