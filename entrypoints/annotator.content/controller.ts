@@ -12,6 +12,7 @@ import { createMarkers } from './ui/markers'
 import { openNoteEditor } from './ui/note-editor'
 import { createOverlay } from './ui/overlay'
 import { createPanel } from './ui/panel'
+import { createFun } from './ui/fun'
 import { showToast } from './ui/toast'
 
 export type ControllerState = 'inactive' | 'active' | 'editing' | 'capturing'
@@ -102,11 +103,12 @@ export function createController(deps: ControllerDeps = {}) {
       })
     },
     onDelete: (id) => store.remove(id),
-    onExportZip: () => void exportZip(ui, store),
-    onCopyMarkdown: () => void copyMarkdown(ui, store),
+    onExportZip: () => void exportZip(ui, store).then((ok) => ok && fun.exported('zip')),
+    onCopyMarkdown: () => void copyMarkdown(ui, store).then((ok) => ok && fun.exported('markdown')),
     onClearAll: () => store.clear(),
   })
 
+  const fun = createFun(ui, store, panel.mount)
   installUnloadGuard(store)
 
   function activate() {
@@ -114,6 +116,7 @@ export function createController(deps: ControllerDeps = {}) {
     panel.show()
     panel.autoCollapse(isMobile())
     teardown = [
+      fun.activate(), // antes do interceptor: ele interrompe os eventos na captura em window
       installInterceptor(ui, {
         onHover: (el) => { if (state === 'active') overlay.highlight(el) },
         onPick,

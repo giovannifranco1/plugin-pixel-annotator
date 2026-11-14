@@ -108,7 +108,7 @@ export const CATEGORY_PIXEL_ICON: Record<ScreenCategory, readonly string[]> = { 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
 /** SVG nítido (crispEdges) da grade em 1× (1 pixel da arte = 1px), juntando pixels vizinhos da mesma cor. */
-export function pixelIcon(rows: readonly string[], scale = 1): SVGSVGElement {
+export function pixelIcon(rows: readonly string[], scale = 1, palette: Record<string, string> = PALETTE): SVGSVGElement {
   const width = rows[0]?.length ?? 0
   const svg = document.createElementNS(SVG_NS, 'svg')
   svg.setAttribute('viewBox', `0 0 ${width} ${rows.length}`)
@@ -118,7 +118,7 @@ export function pixelIcon(rows: readonly string[], scale = 1): SVGSVGElement {
   svg.setAttribute('aria-hidden', 'true')
   rows.forEach((row, y) => {
     for (let x = 0; x < row.length; ) {
-      const color = PALETTE[row[x] ?? '.']
+      const color = palette[row[x] ?? '.']
       let end = x + 1
       while (end < row.length && row[end] === row[x]) end++
       if (color) {

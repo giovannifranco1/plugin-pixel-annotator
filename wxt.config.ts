@@ -7,7 +7,8 @@ export default defineConfig({
     name: 'PixelAnnotator',
     short_name: 'PxA',
     description: 'Anote elementos da página e exporte feedback para o Claude Code.',
-    permissions: ['activeTab', 'scripting'],
+    // storage: só para o Perfil da Diversão (Q-01, aprovada pelo dev em 2026-11-14). Anotações continuam só na sessão.
+    permissions: ['activeTab', 'scripting', 'storage'],
     // Só o build de E2E ganha host permission (Playwright não clica no ícone, então não há activeTab).
     ...(mode === 'e2e' ? { host_permissions: ['<all_urls>'] } : {}),
     action: { default_title: 'PixelAnnotator' },
