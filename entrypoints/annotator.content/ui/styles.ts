@@ -112,4 +112,8 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 .pxa-fun-bar select { font: inherit; color: var(--pxa-ink); background: var(--pxa-surface); border: 2px solid var(--pxa-ink); padding: 1px 2px; }
 .pxa-fun-bar .pxa-sound { display: grid; place-items: center; padding: 2px 6px; box-shadow: none; }
 .pxa-panel.pxa-collapsed .pxa-fun-bar { display: none; }
+/* Noite: botões do cabeçalho viram só o ícone, numa cor só (pedido do dev). */
+.pxa-layer[data-pxa-theme="noite"] .pxa-panel header .pxa-head-btn { background: transparent; border-color: transparent; color: var(--pxa-head-fg); }
+.pxa-layer[data-pxa-theme="noite"] .pxa-panel header .pxa-head-btn:hover:not(:disabled) { background: var(--pxa-hover); }
+.pxa-layer[data-pxa-theme="noite"] .pxa-panel header .pxa-head-btn svg rect { fill: currentColor; }
 `
