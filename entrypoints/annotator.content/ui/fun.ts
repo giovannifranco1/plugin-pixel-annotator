@@ -7,6 +7,7 @@ import { ACHIEVEMENT_ICON, TROPHY } from './achievement-icons'
 import { el } from './dom'
 import type { UiHost } from './host'
 import { pixelIcon } from './icons'
+import { showToast } from './toast'
 import { createMascot } from './mascot'
 import { createSound, type SoundName } from './sound'
 import { applyTheme, THEMES } from './themes'
@@ -41,7 +42,8 @@ export function createFun(ui: UiHost, store: AnnotationStore, mount: PanelMount,
   const mascot = createMascot()
   let profile = defaultProfile()
   let tab = createTabStats()
-  const known = new Set(store.list().map((a) => a.id))
+  // Numeração do store é monotônica: número acima da marca = anotação nova (editar/excluir não cria número).
+  let lastNumber = store.list().at(-1)?.number ?? 0
   const exportedIds = new Set<string>()
 
   // Cabeçalho: [mascote][título][Nv + barra][🏆][export][recolher] (MASC-01, CONQ-03, CONQ-06)
@@ -83,7 +85,7 @@ export function createFun(ui: UiHost, store: AnnotationStore, mount: PanelMount,
     levelText.textContent = `Nv ${n}`
     xpFill.style.width = `${Math.floor((into / span) * 100)}%`
     level.title = `${p.xp} XP · faltam ${span - into} para o Nv ${n + 1}`
-    applyTheme(ui.layer, p.theme)
+    if (ui.layer.dataset.pxaTheme !== p.theme) applyTheme(ui.layer, p.theme)
     theme.value = p.theme
     soundBtn.textContent = p.sound ? '🔈' : '🔇'
     soundBtn.setAttribute('aria-label', p.sound ? 'Desligar som' : 'Ligar som')
@@ -124,29 +126,28 @@ export function createFun(ui: UiHost, store: AnnotationStore, mount: PanelMount,
     const name = toasts.shift()
     toasting = name !== undefined
     if (name === undefined) return
-    const node = el('div', { className: 'pxa-trophy-toast', textContent: `🏆 ${name}` })
-    node.setAttribute('role', 'status')
-    ui.layer.append(node)
-    setTimeout(() => {
-      node.remove()
-      nextToast()
-    }, TROPHY_TOAST_MS)
+    showToast(ui, `🏆 ${name}`, TROPHY_TOAST_MS, 'pxa-trophy-toast')
+    setTimeout(nextToast, TROPHY_TOAST_MS)
   }
 
   const play = (name: SoundName) => { if (profile.sound) sound.play(name) }
 
-  function celebrate(unlocked: AchievementId[]) {
-    if (!unlocked.length) return
+  const party = () => {
     mascot.set('festa', PARTY_MS)
     play('jingle')
+  }
+
+  function celebrate(unlocked: AchievementId[]) {
+    if (!unlocked.length) return
+    party()
     toasts.push(...unlocked.map((id) => ACHIEVEMENTS.find((a) => a.id === id)!.name))
     if (!toasting) nextToast()
   }
 
   /** Aplica o evento ao Perfil na fila do storage e comemora o que desbloqueou (CONQ-01..04). */
-  function record(event: FunEvent) {
+  function record(event: FunEvent): Promise<AchievementId[]> {
     let unlocked: AchievementId[] = []
-    void storage
+    return storage
       .update((p) => {
         const r = applyEvent(p, tab, event, new Date().toISOString())
         tab = r.tab
@@ -156,18 +157,18 @@ export function createFun(ui: UiHost, store: AnnotationStore, mount: PanelMount,
       .then((p) => {
         render(p)
         celebrate(unlocked)
+        return unlocked
       })
-      .catch(() => {})
+      .catch(() => [])
   }
 
   store.subscribe(() => {
-    for (const a of store.list()) {
-      if (known.has(a.id)) continue
-      known.add(a.id)
+    for (const a of store.list().filter((x) => x.number > lastNumber)) {
+      lastNumber = a.number
       const category = a.viewport.category
       mascot.set(category === 'mobile' ? 'susto' : 'feliz', HAPPY_MS) // MASC-02
       play('blip')
-      record({ type: 'annotated', category, at: Date.now() })
+      void record({ type: 'annotated', category, at: Date.now() })
     }
   })
 
@@ -187,11 +188,8 @@ export function createFun(ui: UiHost, store: AnnotationStore, mount: PanelMount,
       const onKey = (e: KeyboardEvent) => {
         wake()
         const inEditor = e.composedPath().some((n) => n instanceof Element && n.classList.contains('pxa-editor'))
-        if (!inEditor && konami(e.key)) {
-          mascot.set('festa', PARTY_MS)
-          play('jingle')
-          record({ type: 'konami' })
-        }
+        // 1ª vez: a conquista comemora (celebrate); depois, só a dança e o jingle.
+        if (!inEditor && konami(e.key)) void record({ type: 'konami' }).then((u) => u.length || party())
       }
       const opts = { capture: true, passive: true }
       window.addEventListener('pointermove', wake, opts)
@@ -215,7 +213,7 @@ export function createFun(ui: UiHost, store: AnnotationStore, mount: PanelMount,
       play('fanfare')
       const fresh = store.list().filter((a) => !exportedIds.has(a.id))
       for (const a of fresh) exportedIds.add(a.id)
-      record({ type: 'exported', fresh: fresh.length })
+      void record({ type: 'exported', fresh: fresh.length })
     },
   }
 }

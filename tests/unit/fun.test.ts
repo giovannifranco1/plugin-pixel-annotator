@@ -249,7 +249,11 @@ describe('diversão', () => {
     await flush()
     expect((await profile()).achievements['codigo-secreto']).toBeTruthy()
     expect(mood()).toBe('festa')
-    expect(sound.play).toHaveBeenCalledWith('jingle')
+    expect(sound.play.mock.calls).toEqual([['jingle']]) // um jingle só, não um do Konami e outro da conquista
+    for (const key of KONAMI) document.body.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+    await flush()
+    expect(sound.play.mock.calls).toHaveLength(2) // repetir: dança e jingle de novo, sem toast novo
+    expect($$('.pxa-trophy-toast')).toHaveLength(1)
   })
 
   test('EGG-02 o listener não segura as teclas da página', async () => {

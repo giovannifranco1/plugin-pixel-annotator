@@ -1,12 +1,12 @@
+import { THEMES, themeVarsCss } from './themes'
+
 // CSS da UI do PxA. Vive só dentro do shadow root: o CSS da página não entra e o nosso não vaza.
 export const STYLES = `
 :host { all: initial; }
 * { box-sizing: border-box; }
 .pxa-layer {
   /* Tema Padrão (TEMA-03). ui/themes.ts troca estes valores no layer. */
-  --pxa-ink: #1a1226; --pxa-paper: #fffaf0; --pxa-surface: #ffffff; --pxa-hover: #ffe1ec; --pxa-danger-hover: #ffd0d8;
-  --pxa-accent: #ff3e7f; --pxa-on-accent: #1a1226; --pxa-tint: rgba(255, 62, 127, .08); --pxa-muted: #5b5266; --pxa-rule: #d8cfc0;
-  --pxa-head-bg: #1a1226; --pxa-head-fg: #ffffff; --pxa-scanlines: none; --pxa-silhouette: brightness(0) opacity(.35);
+  ${themeVarsCss(THEMES[0]!)}
   position: fixed; inset: 0; pointer-events: none;
   font: 12px/1.4 ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
   color: var(--pxa-ink); -webkit-font-smoothing: none; image-rendering: pixelated;
@@ -88,7 +88,8 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 .pxa-panel footer .pxa-primary { background: var(--pxa-accent); color: var(--pxa-on-accent); }
 .pxa-confirm { width: 100%; font-weight: 700; }
 
-.pxa-toast {
+/* .pxa-trophy-toast: conquista, em fila própria acima do toast normal (Diversão). */
+.pxa-toast, .pxa-trophy-toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); pointer-events: none;
   padding: 6px 12px; background: var(--pxa-head-bg); color: var(--pxa-head-fg); border: 2px solid var(--pxa-accent);
 }
@@ -99,10 +100,10 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 .pxa-panel header { gap: 6px; }
 .pxa-panel .pxa-title { min-width: 0; line-height: 1.2; }
 .pxa-mascot { display: block; flex: none; width: 32px; height: 32px; margin: -4px -4px -4px -6px; }
-.pxa-mood-feliz svg { animation: pxa-hop .5s steps(2) infinite; }
-.pxa-mood-susto svg { animation: pxa-shake .2s steps(2) infinite; }
-.pxa-mood-festa svg { animation: pxa-dance .4s steps(2) infinite; }
-.pxa-mood-dormindo svg { animation: pxa-breathe 2s steps(2) infinite; }
+.pxa-mascot[data-mood="feliz"] svg { animation: pxa-hop .5s steps(2) infinite; }
+.pxa-mascot[data-mood="susto"] svg { animation: pxa-shake .2s steps(2) infinite; }
+.pxa-mascot[data-mood="festa"] svg { animation: pxa-dance .4s steps(2) infinite; }
+.pxa-mascot[data-mood="dormindo"] svg { animation: pxa-breathe 2s steps(2) infinite; }
 @keyframes pxa-hop { 50% { transform: translateY(-3px); } }
 @keyframes pxa-shake { 50% { transform: translateX(2px); } }
 @keyframes pxa-dance { 0% { transform: rotate(-8deg); } 50% { transform: rotate(8deg) translateY(-2px); } }
@@ -123,8 +124,5 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 .pxa-achievement { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 2px dotted var(--pxa-rule); }
 .pxa-achievement strong, .pxa-achievement span span { display: block; }
 .pxa-achievement.pxa-locked .pxa-achievement-icon { filter: var(--pxa-silhouette); }
-.pxa-trophy-toast {
-  position: fixed; left: 50%; bottom: 64px; transform: translateX(-50%); pointer-events: none; font-weight: 700;
-  padding: 6px 12px; background: var(--pxa-head-bg); color: var(--pxa-head-fg); border: 2px solid var(--pxa-accent);
-}
+.pxa-trophy-toast { bottom: 64px; font-weight: 700; }
 `

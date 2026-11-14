@@ -87,21 +87,20 @@ export const MASCOT: Record<Mood, readonly string[]> = {
 
 /**
  * Mascote do cabeçalho (MASC-01..06). `set(mood, ms)` com duração volta sozinho para `idle`.
- * A animação é só CSS (`pxa-mood-<humor>`), desligada por `prefers-reduced-motion` (MASC-05).
+ * A animação é só CSS (`[data-mood]`), desligada por `prefers-reduced-motion` (MASC-05).
  */
 export function createMascot() {
   const node = el('span', { className: 'pxa-mascot', title: 'PxA' })
   node.setAttribute('role', 'img')
+  const frames = Object.fromEntries(MOODS.map((m) => [m, pixelIcon(MASCOT[m], 2, MASCOT_PALETTE)])) as Record<Mood, SVGSVGElement>
   let current: Mood = 'idle'
   let timer: ReturnType<typeof setTimeout> | undefined
 
   function draw(mood: Mood) {
-    node.classList.remove(`pxa-mood-${current}`)
     current = mood
     node.dataset.mood = mood
-    node.classList.add(`pxa-mood-${mood}`)
     node.setAttribute('aria-label', `Mascote do PxA: ${mood}`)
-    node.replaceChildren(pixelIcon(MASCOT[mood], 2, MASCOT_PALETTE))
+    node.replaceChildren(frames[mood])
   }
   draw('idle')
 

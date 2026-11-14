@@ -27,12 +27,11 @@ describe('mascote', () => {
     expect(m.mood()).toBe('idle')
     m.set('feliz', 1500)
     expect(m.el.dataset.mood).toBe('feliz')
-    expect(m.el.classList.contains('pxa-mood-feliz')).toBe(true)
     vi.advanceTimersByTime(1499)
     expect(m.mood()).toBe('feliz')
     vi.advanceTimersByTime(1)
     expect(m.mood()).toBe('idle')
-    expect(m.el.classList.contains('pxa-mood-feliz')).toBe(false)
+    expect(m.el.dataset.mood).toBe('idle')
   })
 
   test('MASC-02 humor novo substitui o anterior e seu timer', () => {

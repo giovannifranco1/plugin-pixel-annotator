@@ -25,8 +25,8 @@ export type FunEvent =
   | { type: 'exported'; fresh: number }
   | { type: 'konami' }
 
-export const XP_PER_ANNOTATION = 10
-export const XP_PER_EXPORTED = 5
+const XP_PER_ANNOTATION = 10
+const XP_PER_EXPORTED = 5
 const SPEEDRUN_COUNT = 5
 const SPEEDRUN_MS = 60_000
 
@@ -37,7 +37,7 @@ interface Rule extends Achievement {
 const RULES: readonly Rule[] = [
   { id: 'primeiro-pixel', name: 'Primeiro Pixel', description: 'Fez a primeira anotação.', secret: false, done: (p) => p.stats.annotations >= 1 },
   { id: 'cacador-mobile', name: 'Caçador Mobile', description: '10 anotações em tela mobile.', secret: false, done: (p) => p.stats.mobile >= 10 },
-  { id: 'pixel-perfect', name: 'Pixel Perfect', description: 'Anotou em mobile, tablet e desktop na mesma aba.', secret: false, done: (_, t) => new Set(t.categories).size === 3 },
+  { id: 'pixel-perfect', name: 'Pixel Perfect', description: 'Anotou em mobile, tablet e desktop na mesma aba.', secret: false, done: (_, t) => t.categories.length === 3 },
   {
     id: 'speedrun', name: 'Speedrun', description: '5 anotações em menos de 60s.', secret: false,
     done: (_, t) => t.recent.length >= SPEEDRUN_COUNT && t.recent.at(-1)! - t.recent.at(-SPEEDRUN_COUNT)! < SPEEDRUN_MS,
