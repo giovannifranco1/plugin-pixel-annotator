@@ -48,7 +48,7 @@ button:focus-visible, .pxa-item-main:focus-visible { outline: 2px dashed var(--p
 }
 .pxa-editor textarea:focus { border-color: var(--pxa-accent); }
 .pxa-editor .pxa-hint { align-self: center; color: var(--pxa-muted); }
-.pxa-editor button[type="submit"] { background: var(--pxa-accent); color: var(--pxa-on-accent); }
+.pxa-editor button[type="submit"] { background: var(--pxa-primary); color: var(--pxa-on-accent); }
 
 .pxa-panel {
   position: fixed; top: 12px; right: 12px; bottom: 12px; width: 320px; pointer-events: auto;
@@ -85,7 +85,7 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 .pxa-cat svg { display: inline-block; }
 .pxa-empty { margin: 0; padding: 16px 12px; color: var(--pxa-muted); }
 .pxa-panel footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; padding: 8px; border-top: 2px solid var(--pxa-ink); }
-.pxa-panel footer .pxa-primary { background: var(--pxa-accent); color: var(--pxa-on-accent); }
+.pxa-panel footer .pxa-primary { background: var(--pxa-primary); color: var(--pxa-on-accent); }
 .pxa-confirm { width: 100%; font-weight: 700; }
 
 .pxa-toast {

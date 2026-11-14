@@ -43,7 +43,7 @@ describe('temas', () => {
   test('TEMA-05 contraste ≥ 4.5 entre texto e fundo no painel e no editor', () => {
     const pairs: Array<[string, string]> = [
       ['ink', 'paper'], ['ink', 'surface'], ['ink', 'hover'], ['ink', 'danger-hover'],
-      ['on-accent', 'accent'], ['muted', 'paper'], ['head-fg', 'head-bg'],
+      ['on-accent', 'primary'], ['muted', 'paper'], ['head-fg', 'head-bg'],
     ]
     for (const t of THEMES) {
       for (const [fg, bg] of pairs) {
@@ -51,6 +51,12 @@ describe('temas', () => {
         expect.soft(ratio, `${t.id}: ${fg}/${bg}`).toBeGreaterThanOrEqual(4.5)
       }
     }
+  })
+
+  test('TEMA-05 Padrão: botão principal com texto branco sobre rosa escuro (pedido do dev)', () => {
+    expect(THEMES[0]!.vars['on-accent']).toBe('#ffffff')
+    expect(THEMES[0]!.vars.primary).toBe('#e0266b')
+    expect(THEMES[0]!.vars.accent).toBe('#ff3e7f') // destaque e contornos continuam no rosa da marca
   })
 
   test('TEMA-02 applyTheme troca as variáveis no layer, na hora', () => {
