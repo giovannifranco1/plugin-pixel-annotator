@@ -19,6 +19,13 @@ O PxA já funciona, mas é uma ferramenta "séria" com cara de pixel art e nada 
 | Konami (perguntado ao dev) | Mantido só como dança + jingle, sem conquista (EGG-01). |
 | "O som eu amei" | SOM-02..04 sem mudança (o jingle de conquista deixa de existir; o jingle fica no Konami). |
 
+## Revisão 2 (dev, 2026-11-14)
+
+| Pedido do dev | Efeito na spec |
+|---|---|
+| "O mascote não precisa mudar por tema, pode deixar o padrão para os dois temas" | MASC-07 **removido**: uma paleta só (rosa da marca) nos dois temas. |
+| "Ele tá muito gordo e fofo até demais, melhore" | MASC-06: cabeça mais estreita (10 px, era 12), sem bochecha rosada, rosa da marca (`#ff3e7f`) em vez do rosa pastel. |
+
 ## Objetivos
 
 - [ ] O PxA tem personalidade visível: um mascote que reage ao que o dev faz.
@@ -65,8 +72,8 @@ O PxA já funciona, mas é uma ferramenta "séria" com cara de pixel art e nada 
 3. QUANDO um `.zip` é exportado ou o markdown é copiado ENTÃO o Mascote DEVE ficar em `festa` por ~2s. (MASC-03)
 4. QUANDO não há interação com o PxA (hover, clique, tecla no editor) por 60s ENTÃO o Mascote DEVE ir para `dormindo`, e voltar a `idle` na próxima interação. (MASC-04)
 5. QUANDO o sistema tem `prefers-reduced-motion: reduce` ENTÃO os humores DEVEM trocar de quadro sem animação contínua. (MASC-05)
-6. O Mascote DEVE ser SVG com `shape-rendering="crispEdges"` gerado a partir de grades de pixel, no mesmo padrão de `ui/icons.ts` (sem PNG). Arte: alfinete fofo (cabeça redonda, olhos com brilho, bochecha rosada, **sem boca**, agulha curta). (MASC-06)
-7. QUANDO o Tema muda ENTÃO o Mascote DEVE trocar para a paleta daquele Tema (rosa no `Padrão`, lilás no `Noite`), na hora. (MASC-07)
+6. O Mascote DEVE ser SVG com `shape-rendering="crispEdges"` gerado a partir de grades de pixel, no mesmo padrão de `ui/icons.ts` (sem PNG). Arte (Revisão 2): alfinete de cabeça estreita (10 px), olhos de 1 px, brilho no topo, **sem boca e sem bochecha**, no rosa da marca. (MASC-06)
+7. ~~QUANDO o Tema muda ENTÃO o Mascote DEVE trocar para a paleta daquele Tema.~~ Removido na Revisão 2: o Mascote tem a mesma cor nos dois Temas. (MASC-07)
 
 ### ~~P1: XP, nível e conquistas~~ — REMOVIDO na Revisão 1
 
@@ -151,7 +158,8 @@ Três features rodam em paralelo a partir do mesmo `develop`: **Diversão**, **R
 
 | ID | Story | Status |
 |---|---|---|
-| MASC-01..07 | Mascote no painel | Verified (unit `mascot`/`fun`, E2E `fun.spec`; MASC-05 com `emulateMedia`, MASC-07 troca de cor no Noite) |
+| MASC-01..06 | Mascote no painel | Pending (Revisão 2: arte) |
+| MASC-07 | Mascote por tema | Removido (Revisão 2) |
 | CONQ-01..07 | XP, nível e conquistas | Removido (Revisão 1) |
 | SOM-01..04 | Sons 8-bit | Verified (unit `sound`/`fun`; E2E ícone pixel + CSP). Ouvir os sons: checklist manual |
 | TEMA-01..05 | Temas de paleta | Verified (unit `themes` com contraste WCAG, E2E troca/persistência/marcador) |
