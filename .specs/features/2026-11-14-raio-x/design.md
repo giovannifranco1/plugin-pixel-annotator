@@ -288,3 +288,13 @@ Quatro seções; Achados primeiro e `<details>` "outros N valores"; clique no va
 - Memo de cor e de px por varredura dentro de `buildAuditReport`; o `Rgba` de cada cor fica num mapa (sem reparsear o hex).
 - `intersectsViewport` voltou a ser privado do relatório: `lib/crop.ts` igual ao `develop`.
 - Pulados (registrados no STATE.md): `computedStyleMap()` só para valores "suspeitos" (muda contagens), fatias por tempo no `requestIdleCallback`, separar agrupamento e escala para alternar a escala sem refazer o relatório, `Record<AuditKind, …>` no relatório, detectar fonte não herdada pelo DOM (pai × filho) em vez da lista de famílias padrão.
+
+## Revisão 3 — 2026-11-14 (dev: "não entendi se isso é erro"; `#7c7760` parecida com `#7c775f`)
+
+| Sintoma | Causa | Correção |
+|---|---|---|
+| `#7c7760` "parecida com" `#7c775f` (ΔE 0,58) | diferença invisível (arredondamento de `oklch()`/`color-mix()`) tratada como Achado | `markSimilar` ganhou o limiar `same` (ΔE < 1): a variante junta na semente (`variants`), soma os elementos e não vira Achado nem conta como cor |
+| "8 outros valores" em Espaçamentos parecia problema | o relatório não dizia o que estava ok | cabeçalho começa por "N achados"/"Nenhum achado"; seção sem Achado mostra "✓ tudo certo"; recolhido vira "N valores sem problema" |
+| Achado sem contexto | etiqueta só dizia "parecida com X" | etiqueta mostra os usos da referência ("parecida com #777777 (30×)") e uma linha "→ usar …" com a sugestão |
+
+`markSimilar` agora recebe `{ key, distance, near, same?, canStray? }`: um só agrupamento por semente decide "mesmo valor", "parecido e raro" e "token". `isFinding(e)` no lib é a definição única de Achado.

@@ -24,6 +24,7 @@
   - nova marca "fonte padrão do navegador" (família de controle/serif/sans padrão rara numa página com outra família);
   - nota com propriedade e sugestão ("usar 12px ou 14px"); Achados primeiro, resto em `<details>`; clique no valor rola até o elemento; aviso quando menos de 50% dos espaçamentos seguem a escala.
   - Fonte agora é tamanho e família separados; o peso saiu do relatório (sem uso para achar inconsistência).
+- 2026-11-14 — **Raio-X rev. 3** (dev viu `#7c7760` "parecida com" `#7c775f` e não entendeu se "8 outros valores" em Espaçamentos era problema): ΔE < 1 é a mesma cor (junta como variante, sem Achado); relatório diz "N achados"/"Nenhum achado", "✓ tudo certo", "N valores sem problema", a referência com os usos e "→ usar …".
 
 ## Blockers
 
@@ -38,6 +39,7 @@
 - 2026-11-14 — **Heurística testada só em fixture engana.** O Detector da rev. 1 passava em todos os testes e era "burro" na prática (214 "cores" `lab()` no site do Tailwind, tokens acusados, fundo da página como "cor perdida"). Prevenção: rodar o Detector em páginas reais (GitHub, Tailwind, Wikipédia, HN) antes e depois de mexer nas regras, e transformar cada falso positivo em teste (`design-audit.test.ts`).
 - 2026-11-14 — **Fixture irreal.** Um `sr-only` com `padding: 3px` e `border-box` tem 6×6px de verdade; o `sr-only` real tem `padding: 0`. E o `<button>` sem `font: inherit` cai em Arial no Chromium, não em `system-ui`. Prevenção: copiar o CSS real (Tailwind/Bootstrap) na fixture e conferir no navegador antes de afirmar no teste.
 - 2026-11-14 — **Revisor de /simplify com premissa errada.** Um achado mandou tirar o `sync()` do `reset()` do Raio-X dizendo que `loupe.setOn(false)` chama `onOff`, mas só Esc/falha chamam. Conferido no código e mantido. Prevenção: verificar a premissa de cada achado antes de aplicar.
+- 2026-11-14 — **Relatório que não se explica parece bug.** O Detector estava certo (nada fora da escala), mas "8 outros valores" sob Espaçamentos foi lido como problema. Prevenção: toda seção diz explicitamente se está ok; todo Achado diz por que e o que fazer.
 - 2026-11-14 — **Heredoc com `$` no Bash é barrado pelo verificador de `rm`.** Edições com `$$`/`${}` em heredoc Python não passam pelo verificador de segurança; usar o Edit nesses casos.
 
 ## Ideias adiadas

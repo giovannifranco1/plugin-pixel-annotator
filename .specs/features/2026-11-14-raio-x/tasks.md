@@ -2,7 +2,7 @@
 
 **Spec**: `.specs/features/2026-11-14-raio-x/spec.md`
 **Design**: `.specs/features/2026-11-14-raio-x/design.md`
-**Status**: Done (rev. 2) — 2026-11-14. Gate full: compile ok · 185 unit · builds Chrome/Firefox MV3 · check:manifest ok · 33 E2E (`PXA_E2E_PORT=5176`). Checklist manual do dev em `manual-check.md`.
+**Status**: Done (rev. 3) — 2026-11-14. Gate full: compile ok · 189 unit · builds Chrome/Firefox MV3 · check:manifest ok · 33 E2E (`PXA_E2E_PORT=5176`). Checklist manual do dev em `manual-check.md`.
 
 > T1–T12 são a revisão 1 (histórico; T2, T7 e T8 foram desfeitas pela R1). O trabalho atual está em **Revisão 2**, no fim.
 
@@ -162,3 +162,11 @@ T6..T9 → T10 (raio-x.ts + controller + painel) → T11 (E2E) → T12 (manual-c
 
 ### R6: E2E + fixture ✅
 - **Tests:** fixture com tokens Tailwind (2/6/10/14px), cor `oklch()`, botão sem herdar a fonte, 13px vs 14px; critério de sucesso da spec rev. 2; Lupa intacta.
+
+---
+
+## Revisão 3 — 2026-11-14 ✅
+
+- **R7** `lib/design-audit.ts`: ΔE < 1 é a mesma cor (variante na semente); `similarCount`; cabeçalho com nº de Achados; `isFinding`. Testes `DETE-03`/`DETE-02`/`DETE-05` atualizados.
+- **R8** `ui/audit-report.ts`: "✓ tudo certo", "N valores sem problema", "→ usar …", "também #…". Testes `DETE-09`/`DETE-03`.
+- **R9** E2E: fixture com `#777778` (imperceptível de `#777777`) → junta, sem Achado; cabeçalho "6 achados · …".

@@ -77,7 +77,7 @@ A barra **Raio-X**, logo abaixo do cabeçalho do painel, traz duas ferramentas. 
   - cor ou tamanho de fonte **quase igual** a um valor bem mais usado, e raro: `#7a7a7a` perto de `#777777`, `13px` perto de `14px`;
   - **fonte padrão do navegador** em poucos elementos numa página que usa outra fonte: o clássico `button`/`input` sem `font: inherit`.
 
-  Entende cores modernas (`oklch()`, `lab()`, `color()` do Tailwind 4) e ignora `0`, `auto`, percentuais, `sr-only` e o interior de SVGs. Passe o mouse num valor para destacar onde ele está, clique no valor para rolar até o próximo elemento e clique em **Anotar** para virar anotação com a nota pronta para o Claude Code, ex: `[Raio-X] espaçamento 13px (padding) fora da escala de 4px: usar 12px ou 14px (3 elementos)`.
+  Entende cores modernas (`oklch()`, `lab()`, `color()` do Tailwind 4), junta cores que diferem só no arredondamento (ninguém vê a diferença) e ignora `0`, `auto`, percentuais, `sr-only` e o interior de SVGs. O cabeçalho começa pelo número de Achados; seção sem problema mostra **✓ tudo certo**, e cada Achado diz a referência e o que usar. Passe o mouse num valor para destacar onde ele está, clique no valor para rolar até o próximo elemento e clique em **Anotar** para virar anotação com a nota pronta para o Claude Code, ex: `[Raio-X] espaçamento 13px (padding) fora da escala de 4px: usar 12px ou 14px (3 elementos)`.
 - **Lupa:** zoom 8× dos pixels sob o cursor, com a cor em hex. Clique para copiar o hex e aperte Esc para sair.
 
 ## Recursos
