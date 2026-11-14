@@ -15,10 +15,15 @@
 
 - 2026-11-14 — Raio-X (andar próprio, em paralelo com Diversão e Equipe e Claude): spec aprovada pelo dev; design/tasks seguiram sem parar para aprovação, por instrução do dev.
 - 2026-11-14 — Raio-X: relatório do Detector numa janela própria (`.pxa-audit`, à esquerda); o Painel ganha só a barra. "Usado N×" = elementos distintos. Cor/fonte do texto só contam em elemento com texto próprio; cor de borda só com borda > 0.
-- 2026-11-14 — Raio-X: cores "parecidas" = ΔE76 ≤ 5 em Lab, agrupadas pela semente mais usada, só entre cores com o mesmo alfa. Um Achado por valor (linha), com a nota juntando os motivos.
-- 2026-11-14 — Raio-X: margem `auto` detectada pelo Typed OM no Chrome; no Firefox, margens laterais iguais e > 0 contam como `auto` (heurística conservadora para não acusar centralização como espaçamento fora da escala).
-- 2026-11-14 — Raio-X: X-ray ignora `position: fixed`, usa o `offsetParent` para `absolute` e não pinta o pai que só transborda por causa de um filho vermelho. Nota do caso "conteúdo maior que a caixa": `[Raio-X] conteúdo vaza de <seletor> em Npx` (a spec só define o texto de "vaza do pai").
-- 2026-11-14 — Raio-X: Grade cicla desligada → 8px → 4px; Lupa com hover normal por baixo (o print é congelado, a UI não aparece nele); falha de captura na Lupa → "Print indisponível nesta página".
+- 2026-11-14 — Raio-X: margem `auto` e `%` detectadas pelo Typed OM no Chrome; no Firefox, margens laterais iguais e > 0 contam como `auto` (heurística conservadora para não acusar centralização como espaçamento fora da escala).
+- 2026-11-14 — Raio-X: Lupa com hover normal por baixo (o print é congelado, a UI não aparece nele); falha de captura na Lupa → "Print indisponível nesta página".
+- 2026-11-14 — **Raio-X rev. 2 (dev: "gostei só do detector e da lupa; o detector tá meio burro"):** X-ray e Grade removidos (código no histórico, `17adb7b`). Detector revisto depois de rodar em GitHub, tailwindcss.com, Wikipédia e Hacker News:
+  - cores de qualquer formato CSS (`lab/lch/oklab/oklch/color()`) viram sRGB;
+  - "órfã" saiu (virava ruído); "parecido" (cor ΔE76 ≤ 5 com mesmo alfa, ou tamanho de fonte a ≤ 1px) só quando a referência tem 3× os usos e o valor tem até 5 usos; fundo que pinta 10%+ da página nunca é "perdido";
+  - escala de 4px aceita os meios passos do Tailwind (1, 2, 6, 10, 14px), folga 0,5px; zeros, `auto`, `%`, `sr-only` (≤ 1×1) e interior de SVG fora;
+  - nova marca "fonte padrão do navegador" (família de controle/serif/sans padrão rara numa página com outra família);
+  - nota com propriedade e sugestão ("usar 12px ou 14px"); Achados primeiro, resto em `<details>`; clique no valor rola até o elemento; aviso quando menos de 50% dos espaçamentos seguem a escala.
+  - Fonte agora é tamanho e família separados; o peso saiu do relatório (sem uso para achar inconsistência).
 
 ## Blockers
 
@@ -30,15 +35,18 @@
 - 2026-11-13 — **Listeners em `window` vazam entre testes.** Controllers ativos de um teste interceptavam cliques do seguinte (`stopImmediatePropagation` na captura). Teardown desativa todo controller criado.
 - 2026-11-13 — **WXT 0.21:** Firefox sai em MV2 sem `manifestVersion: 3`; `matches` de content script `runtime` vira `host_permissions`; `--mode e2e` gera `.output/chrome-mv3-e2e`; `fakeBrowser` em `wxt/testing/fake-browser`. Chrome sem polyfill: listener de `onMessage` responde com `sendResponse` + `return true`.
 
-- 2026-11-14 — **Overflow vazio no happy-dom.** Sintoma: X-ray não marcava nenhum vazamento no unit. Causa raiz: o happy-dom devolve `overflowX` vazio e `clips(v)` era `v !== 'visible'`. Correção: `clips` só aceita `hidden|clip|auto|scroll` (também mais correto para valores desconhecidos). Prevenção: teste `clips('')`.
-- 2026-11-14 — **Pai vermelho em dobro.** O filho que vaza também faz o pai ter `scrollWidth > clientWidth`. Correção: o pai de um vazamento "fora do pai" não é marcado pela regra de conteúdo. Teste XRAY-02 dedicado.
+- 2026-11-14 — **Heurística testada só em fixture engana.** O Detector da rev. 1 passava em todos os testes e era "burro" na prática (214 "cores" `lab()` no site do Tailwind, tokens acusados, fundo da página como "cor perdida"). Prevenção: rodar o Detector em páginas reais (GitHub, Tailwind, Wikipédia, HN) antes e depois de mexer nas regras, e transformar cada falso positivo em teste (`design-audit.test.ts`).
+- 2026-11-14 — **Fixture irreal.** Um `sr-only` com `padding: 3px` e `border-box` tem 6×6px de verdade; o `sr-only` real tem `padding: 0`. E o `<button>` sem `font: inherit` cai em Arial no Chromium, não em `system-ui`. Prevenção: copiar o CSS real (Tailwind/Bootstrap) na fixture e conferir no navegador antes de afirmar no teste.
+- 2026-11-14 — **Revisor de /simplify com premissa errada.** Um achado mandou tirar o `sync()` do `reset()` do Raio-X dizendo que `loupe.setOn(false)` chama `onOff`, mas só Esc/falha chamam. Conferido no código e mantido. Prevenção: verificar a premissa de cada achado antes de aplicar.
+- 2026-11-14 — **Heredoc com `$` no Bash é barrado pelo verificador de `rm`.** Edições com `$$`/`${}` em heredoc Python não passam pelo verificador de segurança; usar o Edit nesses casos.
 
 ## Ideias adiadas
 
 - Ponte MCP com Claude Code (M2)
 - Persistência por origem (M2)
 - Pet do console, raio-X responsivo, marcar como resolvida
-- Raio-X: comparar com tokens do design system (Figma/`tailwind.config`), contraste/WCAG, X-ray com throttle ou `IntersectionObserver` em páginas enormes, helper único de clipboard (`copyText`) junto do `exporter.ts`
+- Raio-X: comparar com tokens do design system (Figma/`tailwind.config`), contraste/WCAG, helper único de clipboard (`copyText`) junto do `exporter.ts`
+- Detector: detectar "não herdou a fonte" pelo DOM (família do controle ≠ do pai) em vez da lista de famílias padrão; `computedStyleMap()` só para valores suspeitos (mais rápido, mas muda contagens); fatias da varredura por tempo (`IdleDeadline`); separar agrupamento e escala para alternar a escala sem refazer o relatório; peso de fonte de volta se fizer falta
 
 ## Preferences
 

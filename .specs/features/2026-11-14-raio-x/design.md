@@ -4,6 +4,8 @@
 **Contexto**: `.specs/features/2026-11-14-raio-x/context.md`
 **Status**: Approved — 2026-11-14 (spec aprovada pelo dev; agente do andar segue sem parar para aprovação de design, por instrução do dev)
 
+> **Revisão 2 (2026-11-14):** o dev cortou o X-ray e a Grade e pediu uma passada geral no Detector. As seções abaixo até "Revisão 2" são o desenho da revisão 1, mantido como histórico; X-ray, Grade, `lib/leak.ts` e `page.ts` não existem mais. O que vale hoje está em **Revisão 2**, no fim.
+
 ---
 
 ## Visão Geral
@@ -261,13 +263,14 @@ export function allowedOnScale(px, scale): boolean       // múltiplo (±0,5) ou
 export function scaleNeighbors(px, scale): [number, number] // sugestão: valor permitido abaixo e acima
 ```
 
-- **Raridade perto da semente:** `count ≤ max(2, ⌊semente.count × 0,1⌋)`. Uma cor/tamanho parecido mas bem usado vira semente (é token).
+- **Raridade perto da semente** (`RARITY` em `lib/design-audit.ts`, ajustado depois de rodar em GitHub, tailwindcss.com, Wikipédia e Hacker News): a semente tem ao menos **3×** os usos do valor, e o valor tem até `min(5, max(2, ⌊semente × 10%⌋))` usos. Dois parecidos e bem usados são tokens; dois raros entre si não têm referência clara (ex: amostras de paleta). Uma cor de fundo que pinta **10%+ da página** (maior área de elemento) é superfície e nunca vira Achado (ex: o bege do Hacker News).
+- **Escala que não serve:** `scaleFit` = fração dos usos de espaçamento na escala; abaixo de 0,5 o relatório avisa (`scaleNotice`).
 - **Fonte padrão:** famílias `times new roman, times, serif, system-ui, -apple-system, blinkmacsystemfont, sans-serif, arial, helvetica, segoe ui, roboto` contam como padrão do navegador só quando a família dominante (mais elementos) **não** é uma delas e a família tem até `max(2, 10%)` dos elementos da dominante.
 - **Propriedades:** cada valor guarda as propriedades onde aparece; os 4 lados juntam no nome base (`padding`), `row-gap`+`column-gap` viram `gap`.
 
 ### `lib/color.ts` (rev. 2)
 
-`parseCssColor(css) → { r, g, b, a } | null` (0–255, alfa 0–1). Suporta hex, `rgb()/rgba()`, `lab()/lch()` (D50 → Bradford → D65), `oklab()/oklch()` (matrizes de Ottosson), `color(srgb|srgb-linear|display-p3 …)`, `none` = 0, `/ alfa`. Fora do gamut: corta em 0–255. `normalizeColor` passa a usar `parseCssColor`.
+`parseCssColor(css) → { r, g, b, a } | null` (0–255, alfa 0–1) e `deltaE(a, b)` (ΔE76 em Lab D65; único lugar com a matemática de Lab). Suporta hex, `rgb()/rgba()`, `lab()/lch()` (D50 → Bradford → D65), `oklab()/oklch()` (matrizes de Ottosson), `color(srgb|srgb-linear|display-p3 …)`, `none` = 0, `/ alfa`. Fora do gamut: corta em 0–255. `normalizeColor` passa a usar `parseCssColor`.
 
 ### `audit-scan.ts` (rev. 2)
 
@@ -278,3 +281,10 @@ export function scaleNeighbors(px, scale): [number, number] // sugestão: valor 
 ### `ui/audit-report.ts` (rev. 2)
 
 Quatro seções; Achados primeiro e `<details>` "outros N valores"; clique no valor rola até o próximo elemento (índice por linha, cíclico); a etiqueta mostra o motivo e as propriedades (espaçamentos).
+
+### Pós-/simplify (rev. 2)
+
+- `AUDIT_KINDS` (lib) concentra título da seção, palavras da nota/cabeçalho e o acesso às entradas; o relatório itera essa tabela.
+- Memo de cor e de px por varredura dentro de `buildAuditReport`; o `Rgba` de cada cor fica num mapa (sem reparsear o hex).
+- `intersectsViewport` voltou a ser privado do relatório: `lib/crop.ts` igual ao `develop`.
+- Pulados (registrados no STATE.md): `computedStyleMap()` só para valores "suspeitos" (muda contagens), fatias por tempo no `requestIdleCallback`, separar agrupamento e escala para alternar a escala sem refazer o relatório, `Record<AuditKind, …>` no relatório, detectar fonte não herdada pelo DOM (pai × filho) em vez da lista de famílias padrão.

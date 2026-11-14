@@ -2,7 +2,9 @@
 
 **Spec**: `.specs/features/2026-11-14-raio-x/spec.md`
 **Design**: `.specs/features/2026-11-14-raio-x/design.md`
-**Status**: Done — 2026-11-14. Gate full: compile ok · 186 unit · builds Chrome/Firefox MV3 · check:manifest ok · 34 E2E (`PXA_E2E_PORT=5176`). Checklist manual do dev em `manual-check.md`.
+**Status**: Done (rev. 2) — 2026-11-14. Gate full: compile ok · 185 unit · builds Chrome/Firefox MV3 · check:manifest ok · 33 E2E (`PXA_E2E_PORT=5176`). Checklist manual do dev em `manual-check.md`.
+
+> T1–T12 são a revisão 1 (histórico; T2, T7 e T8 foram desfeitas pela R1). O trabalho atual está em **Revisão 2**, no fim.
 
 > **Breakdown:** horizontal. Lógica pura em `lib/` primeiro (TDD), depois a UI de cada ferramenta (unit no happy-dom), depois a composição, a integração no controller/painel e o E2E.
 > **Commits:** 1 por fase do nano-spec; não por task.
@@ -141,21 +143,22 @@ T6..T9 → T10 (raio-x.ts + controller + painel) → T11 (E2E) → T12 (manual-c
 
 > Corte do X-ray e da Grade + passada geral no Detector (design.md § Revisão 2). Mesmas regras: TDD na lógica, 1 commit por fase.
 
-### R1: Remover X-ray e Grade
+### R1: Remover X-ray e Grade ✅
 - **Where:** apagar `ui/xray.ts`, `ui/grid.ts`, `lib/leak.ts`, `tests/unit/{xray,grid,leak}.test.ts`; `raio-x.ts` (2 botões), `controller.ts` (`onPick`), `styles.ts`, `page.ts` → `audit-scan.ts`, E2E e fixture.
 - **Done when:** compile + unit + E2E verdes sem referências a X-ray/Grade.
 
-### R2: `lib/color.ts` — cores modernas (DETE-08)
+### R2: `lib/color.ts` — cores modernas (DETE-08) ✅
 - **Tests:** `DETE-08` lab/lch/oklab/oklch/`color(srgb|srgb-linear|display-p3)` de vermelho → `#ff0000`; cinza do GitHub `color(srgb 0.838902 0.90902 0.858824)` → `#d6e8db`; alfa (`/ 0.75`), `none`, fora do gamut cortado; `normalizeColor` usa o parser.
 
-### R3: `lib/design-audit.ts` — regras novas (DETE-02/03/05/07)
+### R3: `lib/design-audit.ts` — regras novas (DETE-02/03/05/07) ✅
+- **Ajuste depois de rodar em páginas reais:** referência 3× mais usada, teto de 5 usos, fundo de 10%+ da página nunca é "perdido", aviso de escala (`scaleFit`).
 - **Tests:** escala com meios passos e tolerância; zeros fora; parecida só quando rara perto da semente; tamanho de fonte quase igual; fonte padrão do navegador; propriedades agregadas; sugestões nas notas; cabeçalho com famílias.
 
-### R4: `audit-scan.ts` — ruído (DETE-01)
+### R4: `audit-scan.ts` — ruído (DETE-01) ✅
 - **Tests:** pula ≤ 1×1 e interior de SVG; amostra com propriedade; percentuais/auto fora quando há Typed OM (stub de `computedStyleMap`).
 
-### R5: `ui/audit-report.ts` — UX (DETE-09/10)
+### R5: `ui/audit-report.ts` — UX (DETE-09/10) ✅
 - **Tests:** quatro seções; Achados fora do `<details>`, demais dentro com "outros N valores"; clique no valor rola até o próximo elemento (cíclico).
 
-### R6: E2E + fixture
+### R6: E2E + fixture ✅
 - **Tests:** fixture com tokens Tailwind (2/6/10/14px), cor `oklch()`, botão sem herdar a fonte, 13px vs 14px; critério de sucesso da spec rev. 2; Lupa intacta.

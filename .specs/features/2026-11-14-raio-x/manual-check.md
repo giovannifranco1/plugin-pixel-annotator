@@ -17,9 +17,9 @@ Página de teste: `npx vite tests/e2e/fixtures --port 5176` e abrir `http://loca
 - [ ] Instalar `.output/chrome-mv3` e conferir que **não** aparece permissão nova (só `activeTab` + `scripting`).
 - [ ] Numa app real com bastante conteúdo, clicar em **Detector**: o relatório aparece em menos de 1s e a página não trava ao rolar durante a varredura.
 - [ ] Passar o mouse nas linhas do relatório: os elementos destacados batem com o valor.
-- [ ] **X-ray**: rolar e redimensionar a janela; os contornos acompanham sem tremer. Clicar num vermelho e conferir a nota "vaza do pai…".
+- [ ] **Detector numa app Tailwind sua:** os Achados fazem sentido? Tokens (2, 6, 10, 14px, `gray-50` × `gray-100` bem usados) **não** devem aparecer; cores `oklch()` aparecem como hex.
+- [ ] Clicar num valor do relatório rola até o elemento; "Anotar" traz a propriedade e o que usar.
 - [ ] **Lupa** num monitor Retina (DPR 2): a grade da lupa mostra 15×15 pixels físicos; uma borda de 1px CSS aparece com 2 pixels de largura.
-- [ ] **Grade**: alternar 8px → 4px → desligada; com a grade ligada, anotar e conferir que o print no `.zip` sai sem a grade.
 
 ## Firefox ≥ 128
 
@@ -29,14 +29,11 @@ Página de teste: `npx vite tests/e2e/fixtures --port 5176` e abrir `http://loca
 - [ ] **LUPA-01/04:** a Lupa mostra a cor certa (`#12ab34` no quadrado verde da fixture). Confirma `captureVisibleTab` + `createImageBitmap` + `getImageData` no Firefox.
 - [ ] **LUPA-02:** clicar com a Lupa copia o hex (área de transferência no content script do Firefox) e mostra o toast.
 - [ ] **LUPA:** em `about:addons` ou página sem captura, a Lupa avisa "Print indisponível nesta página" e desliga.
-- [ ] **XRAY-01..04:** contornos, vermelho no `#vazando` e nota pré-preenchida ao clicar.
-- [ ] **GRAD-03:** print com a Grade ligada sai sem a grade.
+- [ ] **DETE-03:** na fixture, o botão aparece como "fonte padrão do navegador" (no Firefox a família do botão pode ter outro nome; o Achado tem que aparecer igual).
 
 ## Resultado
 
 | Item | Chrome | Firefox | Observação |
 |---|---|---|---|
 | Detector | | | |
-| X-ray | | | |
-| Grade | | | |
 | Lupa | | | |

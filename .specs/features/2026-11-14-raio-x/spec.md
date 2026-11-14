@@ -101,13 +101,13 @@ Três features rodam em paralelo a partir do mesmo `develop`: **Diversão**, **R
 
 | ID | Story | Status |
 |---|---|---|
-| DETE-01..10 | Detector de design system | Pending (rev. 2) |
+| DETE-01..10 | Detector de design system | Verified (rev. 2) — unit (`color`, `design-audit`, `audit-scan`, `audit-report`, `controller-raio-x`) + E2E `raio-x.spec.ts` (critério de sucesso, desempenho, hover, ir até, Anotar). Conferido também em GitHub, tailwindcss.com, Wikipédia e Hacker News |
 | XRAY-01..06 | Modo X-ray | Removido pelo dev (rev. 2) |
 | GRAD-01..03 | Grade de 8px | Removido pelo dev (rev. 2) |
 | LUPA-01..04 | Lupa pixel | Verified — unit (`loupe`, `loupe-ui`) + E2E (LUPA-01/02). LUPA-04 com DPR 2 real e Firefox: pendente manual (`manual-check.md`) |
 
 ## Critérios de Sucesso
 
-- [ ] Numa página de teste com 3 espaçamentos fora da escala, 2 cores quase iguais, 1 tamanho de fonte quase igual e 1 botão sem herdar a fonte, o Detector aponta todos e **não** acusa tokens do Tailwind nem cores modernas (fixture E2E). *(rev. 2)*
-- [x] Nenhuma regressão nos 127 testes unitários e 27 E2E do M1 (agora 186 unit e 34 E2E).
+- [x] Numa página de teste com 3 espaçamentos fora da escala, 2 cores quase iguais, 1 tamanho de fonte quase igual e 1 botão sem herdar a fonte, o Detector aponta todos e **não** acusa tokens do Tailwind nem cores modernas (fixture E2E). *(rev. 2)*
+- [x] Nenhuma regressão nos 127 testes unitários e 27 E2E do M1 (rev. 2: 185 unit e 33 E2E).
 - [x] `check:manifest` continua passando sem permissões novas.

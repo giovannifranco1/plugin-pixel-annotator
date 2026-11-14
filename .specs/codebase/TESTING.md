@@ -2,8 +2,8 @@
 
 | Comando | O que roda |
 |---|---|
-| `npm test` | Unit (Vitest + happy-dom): 34 arquivos, 186 testes |
-| `npm run test:e2e` | `wxt build --mode e2e` + Playwright no Chromium: 34 testes |
+| `npm test` | Unit (Vitest + happy-dom): 32 arquivos, 185 testes |
+| `npm run test:e2e` | `wxt build --mode e2e` + Playwright no Chromium: 33 testes |
 | `npm run compile` | `tsc --noEmit` (inclui os testes) |
 | `npm run screenshots` | Regera os prints do README (`media/`) com a página `demo.html`; não é teste |
 | `npm run check:manifest` | Builds de produção: MV3, só `activeTab` + `scripting`, sem host permissions nem content scripts (PLAT-01) |
@@ -14,10 +14,10 @@
 
 - **Nome do teste começa pelo ID do requisito** (ex: `CAPT-03 breakpoint nas fronteiras`, `PAIN-06 SPA: ...`).
 - **Unit:** toda lógica pura em `lib/`. Os módulos de UI são testados no happy-dom com o host real (`createHost()`). O background usa o `fakeBrowser` (`wxt/testing/fake-browser`) e `spy()` com tipo livre, porque as assinaturas do `@wxt-dev/browser` não descrevem os retornos.
-- **Layout no happy-dom:** não há layout. Testes de X-ray, relatório e varredura simulam retângulos com `vi.spyOn(Element.prototype, 'getBoundingClientRect')` e `scrollWidth`/`clientWidth` com `Object.defineProperties`. O happy-dom devolve `overflow` vazio e não tem `computedStyleMap` (cai no caminho do Firefox).
+- **Layout no happy-dom:** não há layout. Testes do relatório e da varredura simulam retângulos com `vi.spyOn(Element.prototype, 'getBoundingClientRect')` e `scrollWidth`/`clientWidth` com `Object.defineProperties`. O happy-dom devolve `overflow` vazio e não tem `computedStyleMap` (cai no caminho do Firefox).
 - **Listeners em `window`:** todo controller criado num teste é desativado no teardown. Senão o interceptor de um teste bloqueia os cliques do seguinte.
 - **E2E:** o build `--mode e2e` (`.output/chrome-mv3-e2e`) recebe `host_permissions: <all_urls>` e expõe `__pxaToggle` no service worker, porque o Playwright não clica no ícone da extensão. O build de produção nunca recebe isso. O harness (`tests/e2e/harness.ts`) traz os helpers `toggle`, `annotate`, `exportZip` (expande o painel se estiver recolhido), `pngSize`, `activeTabId` e os locators `pxa/panel/items/markers/editor/toast`, que atravessam o shadow root aberto.
-- **Fixtures E2E** (`tests/e2e/fixtures/`, servidas pelo Vite na porta 5174, ou na `PXA_E2E_PORT` quando definida): HTML estático com CSS hostil e z-index alto, React 19 sem JSX, Vue 3 com `__file`, SPA com `pushState`, `raio-x.html` (3 espaçamentos fora da escala, 2 cores quase iguais, 1 filho vazando; `?n=3000` gera a página média do teste de desempenho) e `demo.html`, um painel de clientes em React usado só nos prints do README.
+- **Fixtures E2E** (`tests/e2e/fixtures/`, servidas pelo Vite na porta 5174, ou na `PXA_E2E_PORT` quando definida): HTML estático com CSS hostil e z-index alto, React 19 sem JSX, Vue 3 com `__file`, SPA com `pushState`, `raio-x.html` (o que o Detector tem que achar e o que não pode acusar: tokens Tailwind, `oklch()`, `sr-only`; `?n=3000` gera a página média do teste de desempenho) e `demo.html`, um painel de clientes em React usado só nos prints do README.
 
 ## Parallel-safe
 
