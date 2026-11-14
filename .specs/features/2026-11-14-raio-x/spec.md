@@ -1,6 +1,6 @@
 # Raio-X — Especificação
 
-> **Status:** Revisão 2 em 2026-11-14. Depois de ver a primeira versão, o dev cortou o X-ray e a Grade ("gostei só do detector e da lupa") e pediu uma passada geral no Detector ("tá meio burro"). DETE-02/03/05 revisados; DETE-08..10 novos. Verificação manual no Firefox pendente (`manual-check.md`).
+> **Status:** Revisão 2 em 2026-11-14. Depois de ver a primeira versão, o dev cortou o X-ray e a Grade ("gostei só do detector e da lupa") e pediu uma passada geral no Detector ("tá meio burro"). DETE-02/03/05 revisados; DETE-08..10 novos. **Revisão 3** (mesmo dia): diferenças imperceptíveis de cor viram a mesma cor; relatório explica o que está ok e o porquê de cada Achado (DETE-03/09). Verificação manual no Firefox pendente (`manual-check.md`).
 > **Branch:** `feature/content-raio-x` (andar "Raio-X" no Maestri), a partir de `develop` em `91e6134`.
 
 ## Problema
@@ -53,6 +53,7 @@ O PxA hoje depende do olho do dev: ele precisa *perceber* o problema para anotá
 3. O sistema DEVE marcar como Achado: *(rev. 2)* (DETE-03)
    - espaçamento fora da Escala (4px padrão com os meios passos do Tailwind abaixo de 16px; 8px com 1, 2 e 4px), com tolerância de 0,5px para valores subpixel;
    - cor **quase igual** a outra (ΔE76 ≤ 5, mesmo alfa) **e rara perto dela** (até 2 elementos ou até 10% dos usos da mais usada); duas cores parecidas e ambas bem usadas são tokens, não Achado;
+   - *(rev. 3)* diferença **imperceptível** (ΔE76 < 1, ex: `#7c7760` × `#7c775f`, arredondamento de `oklch()`/`color-mix()`) não é Achado: as duas contam como a mesma cor e aparecem numa linha só, com a variante indicada.
    - tamanho de fonte a até 1px de outro e raro perto dele (mesma regra);
    - família de fonte padrão do navegador (Times, serif, system-ui, Arial…) em poucos elementos enquanto a página usa outra família: sinal de `button`/`input` que não herdou a fonte.
 4. QUANDO o dev passa o mouse num valor do relatório ENTÃO o sistema DEVE destacar no overlay todos os elementos visíveis que usam esse valor. (DETE-04)
@@ -60,7 +61,7 @@ O PxA hoje depende do olho do dev: ele precisa *perceber* o problema para anotá
 6. A varredura DEVE ser dividida em fatias (ex: `requestIdleCallback`/lotes de 500 elementos) para não travar a página, com limite de 10.000 elementos e aviso quando cortar. (DETE-06)
 7. A lógica de agrupamento (normalização de cor, distância, escala, raridade, sugestão) DEVE ficar em `lib/` como função pura testável. (DETE-07)
 8. Cores em formatos modernos (`lab()`, `lch()`, `oklab()`, `oklch()`, `color(srgb|srgb-linear|display-p3 …)`), que o navegador devolve para CSS feito com Tailwind 4 e afins, DEVEM ser convertidas para hex sRGB (fora do gamut: corta no limite) e entrar no agrupamento como qualquer outra. *(rev. 2)* (DETE-08)
-9. Cada seção DEVE mostrar primeiro os Achados; os demais valores ficam recolhidos em "outros N valores". *(rev. 2)* (DETE-09)
+9. Cada seção DEVE mostrar primeiro os Achados; os demais valores ficam recolhidos em "N valores sem problema". Seção sem Achado mostra "✓ tudo certo". O cabeçalho começa pelo número de Achados ("3 achados · 23 cores · …"), e cada Achado diz a referência com os usos dela e o que usar (ex: "parecida com #777777 (30×) → usar #777777"). *(rev. 3: o dev não entendeu se "8 outros valores" em Espaçamentos era problema)* (DETE-09)
 10. QUANDO o dev clica num valor do relatório ENTÃO o sistema DEVE rolar até o próximo elemento que usa esse valor (cíclico), mantendo o destaque. *(rev. 2)* (DETE-10)
 
 ### P2: Lupa pixel
