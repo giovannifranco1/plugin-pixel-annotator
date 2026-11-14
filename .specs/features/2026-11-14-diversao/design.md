@@ -154,3 +154,18 @@ Monta no cabeçalho (mascote, `Nv`, 🏆), na barra (tema, som) e a visão Conqu
 
 - `ui/styles.ts` muda em muitas linhas (cores → variáveis): conflito certo com os outros andares que mexerem nele. Mitigação: os seletores não mudam, só os valores; quem fizer merge troca hex por `var(--pxa-…)`.
 - `storage.onChanged` no Firefox MV3: mesma API; verificação manual pendente com o dev.
+
+---
+
+## Revisão 1 (2026-11-14, feedback do dev)
+
+Remoções valem por cima das decisões acima: D3, D4, D5, D6, D10 e D16 (só o par de silhueta) saem com as conquistas.
+
+| # | Decisão |
+|---|---|
+| R1 | **Sem XP/nível/conquistas:** apagar `lib/achievements.ts`, `ui/achievement-icons.ts`, o `Nv`, o 🏆, a visão Conquistas e o toast de conquista (CSS e o parâmetro `className` do `showToast` voltam ao original). `exported()` só faz festa (+ fanfarra no `.zip`). |
+| R2 | **Perfil = `{ version, theme, sound }`.** `normalizeProfile` ignora campos de versões antigas (`xp`, `achievements`, `stats`) e tema desconhecido (`crt`, `nes`, `gameboy`) cai para `padrao`. `profile-storage.ts` não muda. |
+| R3 | **Temas:** só `padrao` e `noite`. Saem as variáveis `--pxa-scanlines` e `--pxa-silhouette` (só serviam ao CRT e às conquistas); o painel volta a `background: var(--pxa-paper)`. |
+| R4 | **Mascote (MASC-06/07):** grades novas (alfinete fofo sem boca; feliz = olhos `^^`, susto = gota de suor, festa = confete, dormindo = olhos fechados + `z`). Paleta por tema em `MASCOT_PALETTES: Record<ThemeId, …>`; `createMascot(theme)` monta os 5 quadros da paleta e `mascot.setTheme(id)` remonta. `fun.ts` chama `setTheme` junto com `applyTheme`. O `z` usa cor clara própria para aparecer no cabeçalho escuro. |
+| R5 | **Ícone de som (SOM-01):** `SPEAKER_ON`/`SPEAKER_OFF` 12×12 em `ui/icons.ts` (alto-falante com ondas / com X), no botão via `pixelIcon`; `aria-label` continua "Ligar som"/"Desligar som". |
+| R6 | **Konami (EGG-01):** só `mascot.set('festa')` + jingle; `lib/konami.ts` fica. |
