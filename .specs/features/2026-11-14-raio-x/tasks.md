@@ -2,7 +2,7 @@
 
 **Spec**: `.specs/features/2026-11-14-raio-x/spec.md`
 **Design**: `.specs/features/2026-11-14-raio-x/design.md`
-**Status**: Done (rev. 3) — 2026-11-14. Gate full: compile ok · 189 unit · builds Chrome/Firefox MV3 · check:manifest ok · 33 E2E (`PXA_E2E_PORT=5176`). Checklist manual do dev em `manual-check.md`.
+**Status**: Done (rev. 4) — 2026-11-14. Gate full: compile ok · 195 unit · builds Chrome/Firefox MV3 · check:manifest ok · 34 E2E (`PXA_E2E_PORT=5176`). Checklist manual do dev em `manual-check.md`.
 
 > T1–T12 são a revisão 1 (histórico; T2, T7 e T8 foram desfeitas pela R1). O trabalho atual está em **Revisão 2**, no fim.
 
@@ -170,3 +170,8 @@ T6..T9 → T10 (raio-x.ts + controller + painel) → T11 (E2E) → T12 (manual-c
 - **R7** `lib/design-audit.ts`: ΔE < 1 é a mesma cor (variante na semente); `similarCount`; cabeçalho com nº de Achados; `isFinding`. Testes `DETE-03`/`DETE-02`/`DETE-05` atualizados.
 - **R8** `ui/audit-report.ts`: "✓ tudo certo", "N valores sem problema", "→ usar …", "também #…". Testes `DETE-09`/`DETE-03`.
 - **R9** E2E: fixture com `#777778` (imperceptível de `#777777`) → junta, sem Achado; cabeçalho "6 achados · …".
+
+## Revisão 4 — 2026-11-14 ✅
+
+- **R10** `ui/draggable.ts` + testes `DETE-11` (arrastar, limite da tela, botão do cabeçalho, setas, resize); E2E com mouse real (desloca 300×40, limite, sem abrir editor).
+- **R11** Ícone check em círculo do phren no "tudo certo".

@@ -19,7 +19,7 @@ pixel-annotator/
 │       ├── raio-x.ts             # barra Raio-X: Detector e Lupa
 │       ├── audit-scan.ts         # varredura fatiada dos elementos visíveis (Detector)
 │       └── ui/                   # host (Shadow DOM), dom (el()), styles, overlay, note-editor, markers, panel, toast,
-│                                 # boxes (pool do destaque), audit-report, loupe
+│                                 # boxes (pool do destaque), audit-report, draggable (arrastar janela), loupe
 ├── lib/                          # lógica pura testável
 │   ├── types.ts  store.ts  messages.ts  format.ts
 │   ├── selector.ts  viewport.ts  css-filter.ts  outer-html.ts  crop.ts  resolve.ts

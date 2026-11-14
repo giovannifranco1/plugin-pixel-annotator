@@ -19,6 +19,7 @@ Página de teste: `npx vite tests/e2e/fixtures --port 5176` e abrir `http://loca
 - [ ] Passar o mouse nas linhas do relatório: os elementos destacados batem com o valor.
 - [ ] **Detector numa app Tailwind sua:** os Achados fazem sentido? Tokens (2, 6, 10, 14px, `gray-50` × `gray-100` bem usados) **não** devem aparecer; cores `oklch()` aparecem como hex.
 - [ ] Clicar num valor do relatório rola até o elemento; "Anotar" traz a propriedade e o que usar.
+- [ ] **DETE-11:** arrastar o relatório pelo cabeçalho até sair de cima do card; soltar fora da janela **não** abre o editor de nota; fechar e reabrir mantém a posição.
 - [ ] **Lupa** num monitor Retina (DPR 2): a grade da lupa mostra 15×15 pixels físicos; uma borda de 1px CSS aparece com 2 pixels de largura.
 
 ## Firefox ≥ 128
@@ -29,6 +30,7 @@ Página de teste: `npx vite tests/e2e/fixtures --port 5176` e abrir `http://loca
 - [ ] **LUPA-01/04:** a Lupa mostra a cor certa (`#12ab34` no quadrado verde da fixture). Confirma `captureVisibleTab` + `createImageBitmap` + `getImageData` no Firefox.
 - [ ] **LUPA-02:** clicar com a Lupa copia o hex (área de transferência no content script do Firefox) e mostra o toast.
 - [ ] **LUPA:** em `about:addons` ou página sem captura, a Lupa avisa "Print indisponível nesta página" e desliga.
+- [ ] **DETE-11:** arrastar o relatório e soltar fora dele não abre o editor (no Firefox, conferir que o `click` do fim do arraste vai para a alça capturada).
 - [ ] **DETE-03:** na fixture, o botão aparece como "fonte padrão do navegador" (no Firefox a família do botão pode ter outro nome; o Achado tem que aparecer igual).
 
 ## Resultado

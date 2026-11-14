@@ -61,7 +61,7 @@ O PxA hoje depende do olho do dev: ele precisa *perceber* o problema para anotá
 6. A varredura DEVE ser dividida em fatias (ex: `requestIdleCallback`/lotes de 500 elementos) para não travar a página, com limite de 10.000 elementos e aviso quando cortar. (DETE-06)
 7. A lógica de agrupamento (normalização de cor, distância, escala, raridade, sugestão) DEVE ficar em `lib/` como função pura testável. (DETE-07)
 8. Cores em formatos modernos (`lab()`, `lch()`, `oklab()`, `oklch()`, `color(srgb|srgb-linear|display-p3 …)`), que o navegador devolve para CSS feito com Tailwind 4 e afins, DEVEM ser convertidas para hex sRGB (fora do gamut: corta no limite) e entrar no agrupamento como qualquer outra. *(rev. 2)* (DETE-08)
-9. Cada seção DEVE mostrar primeiro os Achados; os demais valores ficam recolhidos em "N valores sem problema". Seção sem Achado mostra "✓ tudo certo". O cabeçalho começa pelo número de Achados ("3 achados · 23 cores · …"), e cada Achado diz a referência com os usos dela e o que usar (ex: "parecida com #777777 (30×) → usar #777777"). *(rev. 3: o dev não entendeu se "8 outros valores" em Espaçamentos era problema)* (DETE-09)
+9. Cada seção DEVE mostrar primeiro os Achados; os demais valores ficam recolhidos em "N valores sem problema". Seção sem Achado mostra "tudo certo" com o ícone de check em círculo do phren (lucide `circle-check`). O cabeçalho começa pelo número de Achados ("3 achados · 23 cores · …"), e cada Achado diz a referência com os usos dela e o que usar (ex: "parecida com #777777 (30×) → usar #777777"). *(rev. 3: o dev não entendeu se "8 outros valores" em Espaçamentos era problema)* (DETE-09)
 10. QUANDO o dev clica num valor do relatório ENTÃO o sistema DEVE rolar até o próximo elemento que usa esse valor (cíclico), mantendo o destaque. *(rev. 2)* (DETE-10)
 11. A janela do relatório DEVE poder ser arrastada pelo cabeçalho (mouse/toque e setas do teclado, 16px por toque) para não cobrir o conteúdo que o dev está olhando; ela nunca sai da tela, e a posição é mantida ao fechar e reabrir enquanto a aba estiver aberta. *(rev. 4: o dev notou que o card cai em cima de cards da página)* (DETE-11)
 
@@ -103,7 +103,7 @@ Três features rodam em paralelo a partir do mesmo `develop`: **Diversão**, **R
 
 | ID | Story | Status |
 |---|---|---|
-| DETE-01..11 | Detector de design system | Verified (rev. 2; DETE-03/09 rev. 3) — unit (`color`, `design-audit`, `audit-scan`, `audit-report`, `controller-raio-x`) + E2E `raio-x.spec.ts` (critério de sucesso, desempenho, hover, ir até, Anotar). Conferido também em GitHub, tailwindcss.com, Wikipédia e Hacker News |
+| DETE-01..11 | Detector de design system | Verified (rev. 2; DETE-03/09 rev. 3; DETE-11 rev. 4) — unit (`color`, `design-audit`, `audit-scan`, `audit-report`, `controller-raio-x`) + E2E `raio-x.spec.ts` (critério de sucesso, desempenho, hover, ir até, Anotar). Conferido também em GitHub, tailwindcss.com, Wikipédia e Hacker News |
 | XRAY-01..06 | Modo X-ray | Removido pelo dev (rev. 2) |
 | GRAD-01..03 | Grade de 8px | Removido pelo dev (rev. 2) |
 | LUPA-01..04 | Lupa pixel | Verified — unit (`loupe`, `loupe-ui`) + E2E (LUPA-01/02). LUPA-04 com DPR 2 real e Firefox: pendente manual (`manual-check.md`) |
@@ -111,5 +111,5 @@ Três features rodam em paralelo a partir do mesmo `develop`: **Diversão**, **R
 ## Critérios de Sucesso
 
 - [x] Numa página de teste com 3 espaçamentos fora da escala, 2 cores quase iguais, 1 tamanho de fonte quase igual e 1 botão sem herdar a fonte, o Detector aponta todos e **não** acusa tokens do Tailwind nem cores modernas (fixture E2E). *(rev. 2)*
-- [x] Nenhuma regressão nos 127 testes unitários e 27 E2E do M1 (rev. 3: 189 unit e 33 E2E).
+- [x] Nenhuma regressão nos 127 testes unitários e 27 E2E do M1 (rev. 4: 195 unit e 34 E2E).
 - [x] `check:manifest` continua passando sem permissões novas.

@@ -298,3 +298,10 @@ Quatro seções; Achados primeiro e `<details>` "outros N valores"; clique no va
 | Achado sem contexto | etiqueta só dizia "parecida com X" | etiqueta mostra os usos da referência ("parecida com #777777 (30×)") e uma linha "→ usar …" com a sugestão |
 
 `markSimilar` agora recebe `{ key, distance, near, same?, canStray? }`: um só agrupamento por semente decide "mesmo valor", "parecido e raro" e "token". `isFinding(e)` no lib é a definição única de Achado.
+
+## Revisão 4 — 2026-11-14 (dev: "o card do Raio-X pode cair bem em cima de um card"; "o check poderia ser o do phren")
+
+- `ui/draggable.ts` (novo, genérico): `makeDraggable(box, handle)`. O ponteiro no cabeçalho arrasta, e as setas movem 16px. A janela fica sempre dentro da tela, inclusive no `resize`.
+- **Captura de ponteiro é obrigatória, não detalhe.** Sem ela, soltar o arraste fora da janela gera um `click` no ancestral comum (`<html>`), e o Modo Anotação abre o editor na página (pego pelo E2E).
+- A posição fica no `style` da janela, que vive enquanto a aba estiver aberta: fechar e reabrir mantém.
+- Ícone "tudo certo": SVG inline do `circle-check` do lucide (o `CheckCircle2Icon` do phren), em `#059669` (emerald-600). Fica no `audit-report.ts`, não no `icons.ts`: é o único ícone vetorial, e o `icons.ts` é compartilhado com os outros andares.
