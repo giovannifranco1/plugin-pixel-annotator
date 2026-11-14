@@ -41,6 +41,21 @@ describe('draggable', () => {
     expect(pos()).toEqual(['0px', '0px'])
   })
 
+  test('DETE-11 se a tela encolher, a janela arrastada volta para dentro dela', () => {
+    makeDraggable(box, handle)
+    pointer(handle, 'pointerdown', 20, 20)
+    pointer(handle, 'pointermove', 5000, 5000)
+    pointer(handle, 'pointerup', 5000, 5000)
+    const width = innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: width - 100 })
+    try {
+      window.dispatchEvent(new Event('resize'))
+      expect(box.style.left).toBe(`${width - 100 - 300}px`)
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: width })
+    }
+  })
+
   test('DETE-11 botões do cabeçalho continuam sendo botões (não começam arraste)', () => {
     makeDraggable(box, handle)
     pointer(close, 'pointerdown', 20, 20)
