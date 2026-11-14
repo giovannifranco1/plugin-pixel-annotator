@@ -7,6 +7,7 @@ import { copyMarkdown, exportZip } from './exporter'
 import { installInterceptor } from './interceptor'
 import { startTick } from './tick'
 import { installUnloadGuard } from './unload-guard'
+import { createRaioX, type RaioXDeps } from './raio-x'
 import { createHost, type UiHost } from './ui/host'
 import { createMarkers } from './ui/markers'
 import { openNoteEditor } from './ui/note-editor'
@@ -20,9 +21,12 @@ export interface ControllerDeps {
   ui?: UiHost
   store?: AnnotationStore
   capture?: (el: Element, note: string) => Promise<AnnotationDraft>
+  raioX?: RaioXDeps
 }
 
 const FOCUS_HIGHLIGHT_MS = 1500
+/** DETE-05: acima disso, uma anotação só no primeiro elemento (a nota já traz a contagem). */
+const MAX_FINDING_ANNOTATIONS = 5
 /** Painel aberto cobriria a página no mobile: recolhe sozinho nessa categoria de tela. */
 const isMobile = () => categoryOf(innerWidth) === 'mobile'
 
@@ -65,8 +69,30 @@ export function createController(deps: ControllerDeps = {}) {
 
   function onPick(el: Element) {
     if (state !== 'active') return
-    overlay.highlight(el)
-    openEditor(el.getBoundingClientRect(), undefined, (note) => void save(el, note))
+    const rx = raioX.pick(el)
+    if (rx && 'handled' in rx) return
+    const target = rx?.target ?? el
+    overlay.highlight(target)
+    openEditor(target.getBoundingClientRect(), rx?.note, (note) => void save(target, note))
+  }
+
+  /** Anotar um Achado do Raio-X: nota pré-preenchida editável, um print por elemento (DETE-05). */
+  function annotateElements(elements: Element[], note: string) {
+    if (state !== 'active') return
+    const alive = elements.filter((e) => e.isConnected)
+    const gone = elements.length - alive.length
+    if (gone) showToast(ui, gone === 1 ? '1 elemento sumiu da página' : `${gone} elementos sumiram da página`)
+    const targets = alive.length > MAX_FINDING_ANNOTATIONS ? alive.slice(0, 1) : alive
+    const first = targets[0]
+    if (!first) return
+    first.scrollIntoView({ block: 'center', inline: 'nearest' })
+    overlay.highlight(first)
+    openEditor(first.getBoundingClientRect(), note, async (final) => {
+      for (const t of targets) {
+        if (state === 'inactive') break
+        if (t.isConnected) await save(t, final)
+      }
+    })
   }
 
   async function save(el: Element, note: string) {
@@ -81,6 +107,7 @@ export function createController(deps: ControllerDeps = {}) {
     }
   }
 
+  const raioX = createRaioX(ui, { annotate: annotateElements }, deps.raioX)
   const panel = createPanel(ui, store, {
     onFocus(id) {
       const el = resolveAnnotation(store, id)
@@ -105,7 +132,7 @@ export function createController(deps: ControllerDeps = {}) {
     onExportZip: () => void exportZip(ui, store),
     onCopyMarkdown: () => void copyMarkdown(ui, store),
     onClearAll: () => store.clear(),
-  })
+  }, raioX.toolbar)
 
   installUnloadGuard(store)
 
@@ -121,7 +148,7 @@ export function createController(deps: ControllerDeps = {}) {
       startTick(() => {
         panel.autoCollapse(isMobile())
         // Todas as leituras de layout primeiro, depois todas as escritas: no máximo um layout por frame.
-        const writes = [overlay.measure(), markers.measure()]
+        const writes = [overlay.measure(), markers.measure(), raioX.measure()]
         for (const write of writes) write()
       }),
       () => clearTimeout(focusTimer),
@@ -133,6 +160,7 @@ export function createController(deps: ControllerDeps = {}) {
     editor?.close()
     editor = null
     for (const undo of teardown.splice(0)) undo()
+    raioX.reset()
     overlay.hide()
     markers.hideAll()
     panel.hide()

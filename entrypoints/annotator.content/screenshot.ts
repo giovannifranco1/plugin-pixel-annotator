@@ -14,6 +14,17 @@ export const captureTab: CaptureTab = async () => {
   return res.dataUrl
 }
 
+/** Foto da aba sem a UI do PxA: esconde, espera 2 frames, fotografa e mostra de novo (também na falha). */
+export async function captureWithoutUi(ui: UiHost, capture: CaptureTab = captureTab): Promise<string> {
+  ui.setHidden(true)
+  try {
+    await twoFrames()
+    return await capture()
+  } finally {
+    ui.setHidden(false)
+  }
+}
+
 /** Recorta o elemento (com margem) da foto da aba e desenha o contorno. */
 async function cropShot(dataUrl: string, rect: DOMRect): Promise<Shot> {
   // createImageBitmap a partir do Blob: não depende do img-src da CSP da página.
@@ -49,14 +60,10 @@ export async function shootElement(el: Element, ui: UiHost, capture: CaptureTab 
   }
   const partial = !isFullyVisible(rect, innerWidth, innerHeight)
   let dataUrl: string
-  ui.setHidden(true)
   try {
-    await twoFrames()
-    dataUrl = await capture()
+    dataUrl = await captureWithoutUi(ui, capture)
   } catch {
     return { shot: null, partial }
-  } finally {
-    ui.setHidden(false)
   }
   try {
     return await cropShot(dataUrl, rect)

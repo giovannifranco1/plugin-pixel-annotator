@@ -15,7 +15,8 @@ export interface PanelActions {
 const NOTE_PREVIEW = 60
 
 /** Painel estilo quest log (PAIN-01..05, EXPO-05). */
-export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelActions) {
+/** `toolbar`: barra opcional logo abaixo do cabeçalho (Raio-X). */
+export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelActions, toolbar?: HTMLElement) {
   const title = el('span', { className: 'pxa-title' })
   const collapse = el('button', {
     type: 'button',
@@ -30,7 +31,7 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
   exportZip.setAttribute('aria-label', 'Exportar .zip')
   const list = el('ol')
   const footer = el('footer')
-  const panel = el('aside', { className: 'pxa-panel' }, el('header', {}, title, exportZip, collapse), list, footer)
+  const panel = el('aside', { className: 'pxa-panel' }, el('header', {}, title, exportZip, collapse), ...(toolbar ? [toolbar] : []), list, footer)
   panel.setAttribute('aria-label', 'Anotações do PxA')
   panel.style.display = 'none'
   ui.layer.append(panel)

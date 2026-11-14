@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fixture Raio-X</title>
+  <style>
+    /* Tudo na escala de 4px, menos os 3 espaçamentos de propósito: 13px, 7px e 10px. */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { background: #ffffff; }
+    /* padding-left 400px: o conteúdo fica entre o relatório (esquerda) e o painel (direita). */
+    body { padding: 24px 24px 24px 400px; font: 16px/1.5 Arial, sans-serif; color: #111111; background: #ffffff; }
+    .cinza { color: #777777; }
+    .quase { color: #7a7a7a; }          /* quase igual a #777777 */
+    .p13 { padding: 13px; }             /* fora da escala */
+    .m7 { margin-top: 7px; }            /* fora da escala */
+    .g10 { display: flex; gap: 10px; }  /* fora da escala */
+    .box { width: 200px; height: 60px; background: #eeeeee; }
+    .wide { width: 260px; height: 20px; background: #3366cc; } /* vaza 60px do pai */
+    #alvo-branco { width: 200px; height: 120px; margin-top: 16px; background: #ffffff; }
+    #lupa { width: 120px; height: 120px; margin-top: 16px; background: #12ab34; }
+    .massa div { width: 8px; height: 8px; background: #eeeeee; }
+  </style>
+</head>
+<body>
+  <p class="cinza">Texto cinza 1</p>
+  <p class="cinza">Texto cinza 2</p>
+  <p class="cinza">Texto cinza 3</p>
+  <p class="quase p13">Quase igual</p>
+  <p class="m7">Margem 7px</p>
+  <div class="g10"><span>a</span><span>b</span></div>
+  <div class="box" id="caixa"><div class="wide" id="vazando"></div></div>
+  <div id="alvo-branco"></div>
+  <div id="lupa"></div>
+  <script>
+    // ?n=3000 → página "média" para o objetivo de desempenho do Detector (< 1s).
+    const n = Number(new URLSearchParams(location.search).get('n') ?? 0)
+    if (n) {
+      const massa = document.createElement('div')
+      massa.className = 'massa'
+      for (let i = 0; i < n; i++) massa.append(document.createElement('div'))
+      document.body.append(massa)
+    }
+  </script>
+</body>
+</html>
