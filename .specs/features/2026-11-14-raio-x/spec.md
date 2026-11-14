@@ -1,6 +1,6 @@
 # Raio-X — Especificação
 
-> **Status:** Rascunho, aguardando aprovação do dev. Próximas fases neste andar: Design → Tasks → Execute.
+> **Status:** Aprovada pelo dev em 2026-11-14. Próximas fases neste andar: Design → Tasks → Execute.
 > **Branch:** `feature/content-raio-x` (andar "Raio-X" no Maestri), a partir de `develop` em `91e6134`.
 
 ## Problema
