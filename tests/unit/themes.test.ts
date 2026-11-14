@@ -13,8 +13,8 @@ describe('contraste', () => {
 })
 
 describe('temas', () => {
-  test('TEMA-01 Padrão, Game Boy, NES, CRT e Noite', () => {
-    expect(THEMES.map((t) => t.label)).toEqual(['Padrão', 'Game Boy', 'NES', 'CRT', 'Noite'])
+  test('TEMA-01 só Padrão e Noite', () => {
+    expect(THEMES.map((t) => t.label)).toEqual(['Padrão', 'Noite'])
     expect(THEMES.map((t) => t.id)).toEqual([...THEME_IDS])
   })
 
@@ -55,9 +55,9 @@ describe('temas', () => {
 
   test('TEMA-02 applyTheme troca as variáveis no layer, na hora', () => {
     const layer = document.createElement('div')
-    applyTheme(layer, 'gameboy')
+    applyTheme(layer, 'noite')
     expect(layer.style.getPropertyValue('--pxa-paper')).toBe(THEMES[1]!.vars.paper)
-    expect(layer.dataset.pxaTheme).toBe('gameboy')
+    expect(layer.dataset.pxaTheme).toBe('noite')
     applyTheme(layer, 'padrao')
     expect(layer.style.getPropertyValue('--pxa-paper')).toBe(THEMES[0]!.vars.paper)
   })

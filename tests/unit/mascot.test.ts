@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { createMascot, MASCOT, MOODS } from '@/entrypoints/annotator.content/ui/mascot'
+import { createMascot, MASCOT, MASCOT_PALETTES, MOODS } from '@/entrypoints/annotator.content/ui/mascot'
+import { THEME_IDS } from '@/lib/profile'
 
 beforeEach(() => vi.useFakeTimers())
 afterEach(() => vi.useRealTimers())
+
+const fills = (el: Element) => new Set(Array.from(el.querySelectorAll('rect')).map((r) => r.getAttribute('fill')))
 
 describe('mascote', () => {
   test('MASC-06 cada humor é uma grade 16×16 desenhada em SVG crispEdges 2×', () => {
@@ -18,8 +21,23 @@ describe('mascote', () => {
     expect(m.el.querySelector('img')).toBeNull()
   })
 
-  test('MASC-06 humores têm quadros diferentes', () => {
+  test('MASC-06 humores têm quadros diferentes e todo pixel tem cor em toda paleta', () => {
     expect(new Set(MOODS.map((m) => MASCOT[m].join(''))).size).toBe(MOODS.length)
+    const used = new Set(MOODS.flatMap((m) => MASCOT[m].join('').replaceAll('.', '').split('')))
+    for (const id of THEME_IDS) for (const c of used) expect(MASCOT_PALETTES[id][c], `${id}: ${c}`).toBeTruthy()
+  })
+
+  test('MASC-07 cada tema tem sua paleta e setTheme troca as cores na hora', () => {
+    const m = createMascot('padrao')
+    expect(fills(m.el)).toContain(MASCOT_PALETTES.padrao.P)
+    m.set('feliz')
+    m.setTheme('noite')
+    expect(m.mood()).toBe('feliz')
+    expect(fills(m.el)).toContain(MASCOT_PALETTES.noite.P)
+    const fresh = createMascot('noite')
+    fresh.set('feliz')
+    expect(fills(m.el)).toEqual(fills(fresh.el)) // igual a nascer no tema Noite
+    expect(MASCOT_PALETTES.noite.P).not.toBe(MASCOT_PALETTES.padrao.P)
   })
 
   test('MASC-02 humor transitório volta para idle', () => {

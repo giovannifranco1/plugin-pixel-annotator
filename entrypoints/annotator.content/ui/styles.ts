@@ -53,7 +53,7 @@ button:focus-visible, .pxa-item-main:focus-visible { outline: 2px dashed var(--p
 .pxa-panel {
   position: fixed; top: 12px; right: 12px; bottom: 12px; width: 320px; pointer-events: auto;
   display: flex; flex-direction: column;
-  background: var(--pxa-scanlines), var(--pxa-paper); border: 2px solid var(--pxa-ink); box-shadow: 4px 4px 0 var(--pxa-ink);
+  background: var(--pxa-paper); border: 2px solid var(--pxa-ink); box-shadow: 4px 4px 0 var(--pxa-ink);
 }
 .pxa-panel header {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -88,15 +88,14 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 .pxa-panel footer .pxa-primary { background: var(--pxa-accent); color: var(--pxa-on-accent); }
 .pxa-confirm { width: 100%; font-weight: 700; }
 
-/* .pxa-trophy-toast: conquista, em fila própria acima do toast normal (Diversão). */
-.pxa-toast, .pxa-trophy-toast {
+.pxa-toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); pointer-events: none;
   padding: 6px 12px; background: var(--pxa-head-bg); color: var(--pxa-head-fg); border: 2px solid var(--pxa-accent);
 }
 
-/* Diversão: mascote, nível, tema/som e conquistas (feature 2026-11-14-diversao) */
+/* Diversão: mascote, tema e som (feature 2026-11-14-diversao) */
 .pxa-head-slot { display: contents; }
-/* Cabeçalho com mascote e nível: o título quebra linha em vez de esconder o contador. */
+/* Cabeçalho com mascote: o título quebra linha em vez de esconder o contador. */
 .pxa-panel header { gap: 6px; }
 .pxa-panel .pxa-title { min-width: 0; line-height: 1.2; }
 .pxa-mascot { display: block; flex: none; width: 32px; height: 32px; margin: -4px -4px -4px -6px; }
@@ -109,20 +108,8 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 @keyframes pxa-dance { 0% { transform: rotate(-8deg); } 50% { transform: rotate(8deg) translateY(-2px); } }
 @keyframes pxa-breathe { 50% { transform: translateY(1px); } }
 @media (prefers-reduced-motion: reduce) { .pxa-mascot svg { animation: none; } }
-.pxa-level { display: flex; flex: none; align-items: center; gap: 4px; font-size: 11px; }
-.pxa-xp { display: block; width: 28px; height: 6px; border: 1px solid var(--pxa-head-fg); }
-.pxa-xp-fill { display: block; height: 100%; background: var(--pxa-accent); }
 .pxa-fun-bar { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 8px; border-bottom: 2px solid var(--pxa-ink); }
 .pxa-fun-bar select { font: inherit; color: var(--pxa-ink); background: var(--pxa-surface); border: 2px solid var(--pxa-ink); padding: 1px 2px; }
-.pxa-fun-bar .pxa-sound { padding: 1px 6px; box-shadow: none; }
-.pxa-achievements { display: none; flex: 1; overflow-y: auto; padding: 6px 10px; }
-.pxa-panel.pxa-show-achievements .pxa-achievements { display: block; }
-.pxa-panel.pxa-show-achievements ol, .pxa-panel.pxa-show-achievements footer,
-.pxa-panel.pxa-collapsed .pxa-fun-bar, .pxa-panel.pxa-collapsed .pxa-achievements { display: none; }
-.pxa-achievements-count { margin: 0 0 6px; font-weight: 700; }
-.pxa-achievements ul { list-style: none; margin: 0; padding: 0; }
-.pxa-achievement { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 2px dotted var(--pxa-rule); }
-.pxa-achievement strong, .pxa-achievement span span { display: block; }
-.pxa-achievement.pxa-locked .pxa-achievement-icon { filter: var(--pxa-silhouette); }
-.pxa-trophy-toast { bottom: 64px; font-weight: 700; }
+.pxa-fun-bar .pxa-sound { display: grid; place-items: center; padding: 2px 6px; box-shadow: none; }
+.pxa-panel.pxa-collapsed .pxa-fun-bar { display: none; }
 `

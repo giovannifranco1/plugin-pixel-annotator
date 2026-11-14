@@ -103,6 +103,37 @@ export const DOWNLOAD = [
   '............',
 ]
 
+// Botão de som (SOM-01): alto-falante claro e ondas cinza aparecem nos temas claro e escuro.
+export const SPEAKER_ON = [
+  '............',
+  '.....K......',
+  '....KK...G..',
+  '.KKKLK.G..G.',
+  '.KLLLK..G.G.',
+  '.KLLLK..G..G',
+  '.KLLLK..G..G',
+  '.KLLLK..G.G.',
+  '.KKKLK.G..G.',
+  '....KK...G..',
+  '.....K......',
+  '............',
+]
+
+export const SPEAKER_OFF = [
+  '............',
+  '.....K......',
+  '....KK......',
+  '.KKKLK......',
+  '.KLLLK.P...P',
+  '.KLLLK..P.P.',
+  '.KLLLK...P..',
+  '.KLLLK..P.P.',
+  '.KKKLK.P...P',
+  '....KK......',
+  '.....K......',
+  '............',
+]
+
 export const CATEGORY_PIXEL_ICON: Record<ScreenCategory, readonly string[]> = { mobile: PHONE, tablet: TABLET, desktop: MONITOR }
 
 const SVG_NS = 'http://www.w3.org/2000/svg'

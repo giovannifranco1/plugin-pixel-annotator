@@ -2,10 +2,11 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { createHost, type UiHost } from '@/entrypoints/annotator.content/ui/host'
 import { createPanel } from '@/entrypoints/annotator.content/ui/panel'
 import { createFun } from '@/entrypoints/annotator.content/ui/fun'
+import { MASCOT_PALETTES } from '@/entrypoints/annotator.content/ui/mascot'
 import type { SoundName } from '@/entrypoints/annotator.content/ui/sound'
 import { createProfileStorage, type ProfileStorage } from '@/entrypoints/annotator.content/profile-storage'
 import { KONAMI } from '@/lib/konami'
-import { defaultProfile } from '@/lib/profile'
+import { defaultProfile, type Profile } from '@/lib/profile'
 import { createStore, type AnnotationStore } from '@/lib/store'
 import type { ScreenCategory } from '@/lib/types'
 import { draft } from './fixtures/annotations'
@@ -24,12 +25,13 @@ const flush = async () => {
   for (let i = 0; i < 5; i++) await Promise.resolve()
 }
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) => ui.root.querySelector<T>(sel)!
-const $$ = (sel: string) => Array.from(ui.root.querySelectorAll<HTMLElement>(sel))
 const mood = () => $('.pxa-mascot').dataset.mood
+const mascotFills = () => new Set(Array.from(ui.root.querySelectorAll('.pxa-mascot rect')).map((r) => r.getAttribute('fill')))
 const add = (category: ScreenCategory = 'desktop') => store.add(draft({ viewport: { ...draft().viewport, category } }))
 const profile = () => storage.load()
+const pressKonami = () => { for (const key of KONAMI) document.body.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true })) }
 
-async function setup(start = defaultProfile()) {
+async function setup(start: Profile = defaultProfile()) {
   storage = createProfileStorage(undefined)
   await storage.update(() => start)
   fun = createFun(ui, store, panel.mount, { storage, sound })
@@ -64,88 +66,34 @@ describe('diversão', () => {
     expect(header.contains(mascot)).toBe(true)
   })
 
-  test('MASC-02 anotação salva: feliz por 1,5s; mobile faz susto', async () => {
-    await setup({ ...defaultProfile(), achievements: { 'primeiro-pixel': 'x' } })
-    add('desktop')
+  test('Revisão 1: sem nível, XP nem conquistas na UI', async () => {
+    await setup()
+    add()
+    await flush()
+    expect(ui.root.querySelector('.pxa-level, .pxa-achievements, .pxa-trophy-toast')).toBeNull()
+    expect(ui.root.querySelector('button[aria-label="Conquistas"]')).toBeNull()
+  })
+
+  test('MASC-02 anotação salva: feliz por 1,5s; mobile faz susto; editar não reage', async () => {
+    await setup()
+    const a = add('desktop')
     expect(mood()).toBe('feliz')
     vi.advanceTimersByTime(1500)
+    expect(mood()).toBe('idle')
+    store.updateNote(a.id, 'outra')
     expect(mood()).toBe('idle')
     add('mobile')
     expect(mood()).toBe('susto')
   })
 
-  test('CONQ-01 anotação nova dá 10 XP; editar e excluir não', async () => {
-    await setup()
-    const a = add()
-    await flush()
-    expect((await profile()).xp).toBe(10)
-    store.updateNote(a.id, 'outra')
-    store.remove(a.id)
-    await flush()
-    expect((await profile()).xp).toBe(10)
-  })
-
-  test('CONQ-03 cabeçalho mostra Nv n e barra de progresso', async () => {
-    await setup({ ...defaultProfile(), xp: 75 })
-    expect($('.pxa-level').textContent).toContain('Nv 2')
-    expect($('.pxa-xp-fill').style.width).toBe('25%')
-    for (let i = 0; i < 8; i++) add()
-    await flush()
-    expect($('.pxa-level').textContent).toContain('Nv 3') // 155 XP
-  })
-
-  test('CONQ-04 conquista nova: toast 🏆, mascote em festa e persistência', async () => {
-    await setup()
-    add()
-    await flush()
-    expect($('.pxa-trophy-toast').textContent).toBe('🏆 Primeiro Pixel')
-    expect(mood()).toBe('festa')
-    expect((await profile()).achievements['primeiro-pixel']).toBeTruthy()
-    expect(ui.root.querySelector('.pxa-toast')).toBeNull() // não briga com o toast normal
-  })
-
-  test('CONQ-04 várias conquistas de uma vez: toasts em fila, um por vez', async () => {
-    await setup({ ...defaultProfile(), stats: { annotations: 0, mobile: 9, zips: 0 } })
-    add('mobile')
-    await flush()
-    expect($$('.pxa-trophy-toast')).toHaveLength(1)
-    expect($('.pxa-trophy-toast').textContent).toBe('🏆 Primeiro Pixel')
-    vi.advanceTimersByTime(2500)
-    expect($$('.pxa-trophy-toast')).toHaveLength(1)
-    expect($('.pxa-trophy-toast').textContent).toBe('🏆 Caçador Mobile')
-    vi.advanceTimersByTime(2500)
-    expect($$('.pxa-trophy-toast')).toHaveLength(0)
-  })
-
   test('MASC-03 export .zip e cópia de markdown fazem festa por ~2s', async () => {
-    await setup({ ...defaultProfile(), achievements: { 'quest-completa': 'x' } })
+    await setup()
     fun.exported('markdown')
     expect(mood()).toBe('festa')
     vi.advanceTimersByTime(2000)
     expect(mood()).toBe('idle')
     fun.exported('zip')
     expect(mood()).toBe('festa')
-  })
-
-  test('CONQ-02 export .zip dá 5×N só pelas anotações ainda não exportadas; markdown não dá XP', async () => {
-    await setup()
-    add(); add(); add()
-    await flush()
-    fun.exported('markdown')
-    await flush()
-    expect((await profile()).xp).toBe(30)
-    fun.exported('zip')
-    await flush()
-    expect((await profile()).xp).toBe(45)
-    fun.exported('zip')
-    await flush()
-    expect((await profile()).xp).toBe(45)
-    const a = add()
-    add()
-    store.remove(a.id)
-    fun.exported('zip')
-    await flush()
-    expect((await profile()).xp).toBe(45 + 20 + 5)
   })
 
   test('MASC-04 60s sem interação: dormindo; próxima interação volta a idle', async () => {
@@ -169,91 +117,81 @@ describe('diversão', () => {
     expect(mood()).toBe('idle')
   })
 
-  test('SOM-01 som começa desligado; o botão liga e a escolha persiste', async () => {
+  test('SOM-01 som começa desligado; botão com ícone pixel liga e a escolha persiste', async () => {
     await setup()
     const btn = $('button[aria-label="Ligar som"]')
     expect(btn.getAttribute('aria-pressed')).toBe('false')
-    expect(btn.textContent).toBe('🔇')
+    expect(btn.textContent).toBe('') // sem emoji
+    expect(btn.querySelector('svg[shape-rendering="crispEdges"]')).not.toBeNull()
+    const off = btn.innerHTML
     add()
     expect(sound.play).not.toHaveBeenCalled()
     btn.click()
     await flush()
     expect((await profile()).sound).toBe(true)
-    expect($('button[aria-label="Desligar som"]').textContent).toBe('🔈')
+    const on = $('button[aria-label="Desligar som"]')
+    expect(on.getAttribute('aria-pressed')).toBe('true')
+    expect(on.innerHTML).not.toBe(off) // ícone muda entre ligado e desligado
   })
 
-  test('SOM-02 com som: blip ao salvar, fanfarra no .zip, jingle na conquista', async () => {
+  test('SOM-02 com som: blip ao salvar, fanfarra no .zip, nada ao copiar markdown', async () => {
     await setup({ ...defaultProfile(), sound: true })
     add()
-    expect(sound.play).toHaveBeenNthCalledWith(1, 'blip')
-    await flush()
-    expect(sound.play).toHaveBeenNthCalledWith(2, 'jingle') // Primeiro Pixel
     fun.exported('zip')
-    expect(sound.play).toHaveBeenNthCalledWith(3, 'fanfare')
     fun.exported('markdown')
-    await flush()
-    expect(sound.play.mock.calls.map((c) => c[0])).toEqual(['blip', 'jingle', 'fanfare', 'jingle']) // Quest Completa
+    expect(sound.play.mock.calls).toEqual([['blip'], ['fanfare']])
   })
 
   test('TEMA-02 seletor troca o tema na hora e persiste', async () => {
     await setup()
     const select = $<HTMLSelectElement>('select[aria-label="Tema"]')
     expect(select.value).toBe('padrao')
-    expect(Array.from(select.options).map((o) => o.textContent)).toEqual(['Padrão', 'Game Boy', 'NES', 'CRT', 'Noite'])
-    select.value = 'crt'
+    expect(Array.from(select.options).map((o) => o.textContent)).toEqual(['Padrão', 'Noite'])
+    select.value = 'noite'
     select.dispatchEvent(new Event('change'))
-    expect(ui.layer.dataset.pxaTheme).toBe('crt')
+    expect(ui.layer.dataset.pxaTheme).toBe('noite')
     await flush()
-    expect((await profile()).theme).toBe('crt')
+    expect((await profile()).theme).toBe('noite')
   })
 
-  test('TEMA-02 tema e som salvos voltam ao abrir', async () => {
+  test('MASC-07 o mascote usa a paleta do tema e troca junto', async () => {
+    await setup()
+    expect(mascotFills()).toContain(MASCOT_PALETTES.padrao.P)
+    const select = $<HTMLSelectElement>('select[aria-label="Tema"]')
+    select.value = 'noite'
+    select.dispatchEvent(new Event('change'))
+    expect(mascotFills()).toContain(MASCOT_PALETTES.noite.P)
+    expect(mascotFills()).not.toContain(MASCOT_PALETTES.padrao.K) // contorno também troca
+  })
+
+  test('TEMA-02/MASC-07 tema e som salvos voltam ao abrir', async () => {
     await setup({ ...defaultProfile(), theme: 'noite', sound: true })
     expect(ui.layer.dataset.pxaTheme).toBe('noite')
     expect($<HTMLSelectElement>('select[aria-label="Tema"]').value).toBe('noite')
     expect($('button[aria-label="Desligar som"]')).not.toBeNull()
+    expect(mascotFills()).toContain(MASCOT_PALETTES.noite.P)
   })
 
-  test('CONQ-06 visão Conquistas: todas listadas, bloqueadas em silhueta, secreta com ???', async () => {
-    await setup({ ...defaultProfile(), achievements: { 'primeiro-pixel': '2026-11-14T10:00:00.000Z' } })
-    const trophy = $('button[aria-label="Conquistas"]')
-    trophy.click()
-    expect($('.pxa-panel').classList.contains('pxa-show-achievements')).toBe(true)
-    expect(trophy.getAttribute('aria-pressed')).toBe('true')
-    const rows = $$('.pxa-achievement')
-    expect(rows).toHaveLength(7)
-    expect(rows[0]!.classList.contains('pxa-locked')).toBe(false)
-    expect(rows[0]!.textContent).toContain('Fez a primeira anotação.')
-    expect(rows[1]!.classList.contains('pxa-locked')).toBe(true)
-    const secret = rows[6]!
-    expect(secret.textContent).toContain('Código Secreto')
-    expect(secret.textContent).toContain('???')
-    expect(secret.textContent).not.toContain('↑')
-    expect($('.pxa-achievements').textContent).toContain('1/7')
-    trophy.click()
-    expect($('.pxa-panel').classList.contains('pxa-show-achievements')).toBe(false)
+  test('TEMA-02 mudança de outra aba aplica tema e mascote', async () => {
+    let emit: (p: Profile) => void = () => {}
+    const base = createProfileStorage(undefined)
+    storage = { ...base, onChange: (cb) => { emit = cb; return () => {} } }
+    fun = createFun(ui, store, panel.mount, { storage, sound })
+    await flush()
+    emit({ ...defaultProfile(), theme: 'noite' })
+    expect(ui.layer.dataset.pxaTheme).toBe('noite')
+    expect(mascotFills()).toContain(MASCOT_PALETTES.noite.P)
   })
 
-  test('CONQ-06 com o painel recolhido, abrir Conquistas expande o painel', async () => {
-    await setup()
-    $('.pxa-panel header button[aria-label="Recolher painel"]').click()
-    $('button[aria-label="Conquistas"]').click()
-    expect($('.pxa-panel').classList.contains('pxa-collapsed')).toBe(false)
-    expect($('.pxa-panel').classList.contains('pxa-show-achievements')).toBe(true)
-  })
-
-  test('EGG-01 Konami com o modo ativo desbloqueia Código Secreto e faz o mascote dançar', async () => {
+  test('EGG-01 Konami com o modo ativo: mascote dança e toca o jingle (com som), sem toast', async () => {
     await setup({ ...defaultProfile(), sound: true })
     activate()
-    for (const key of KONAMI) document.body.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
-    await flush()
-    expect((await profile()).achievements['codigo-secreto']).toBeTruthy()
+    pressKonami()
     expect(mood()).toBe('festa')
-    expect(sound.play.mock.calls).toEqual([['jingle']]) // um jingle só, não um do Konami e outro da conquista
-    for (const key of KONAMI) document.body.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
-    await flush()
-    expect(sound.play.mock.calls).toHaveLength(2) // repetir: dança e jingle de novo, sem toast novo
-    expect($$('.pxa-trophy-toast')).toHaveLength(1)
+    expect(sound.play.mock.calls).toEqual([['jingle']])
+    expect(ui.root.querySelector('.pxa-toast, .pxa-trophy-toast')).toBeNull()
+    pressKonami()
+    expect(sound.play.mock.calls).toHaveLength(2)
   })
 
   test('EGG-02 o listener não segura as teclas da página', async () => {
@@ -277,24 +215,12 @@ describe('diversão', () => {
     form.append(ta)
     ui.layer.append(form)
     for (const key of KONAMI) ta.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, composed: true }))
-    await flush()
-    expect((await profile()).achievements['codigo-secreto']).toBeUndefined()
+    expect(mood()).toBe('idle')
   })
 
   test('EGG-01 com o modo inativo o Konami não faz nada', async () => {
     await setup()
-    for (const key of KONAMI) document.body.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
-    await flush()
-    expect((await profile()).achievements['codigo-secreto']).toBeUndefined()
-  })
-
-  test('CONQ-07 mudança de outra aba atualiza o Nv', async () => {
-    let emit: (p: unknown) => void = () => {}
-    const base = createProfileStorage(undefined)
-    storage = { ...base, onChange: (cb) => { emit = cb as never; return () => {} } }
-    fun = createFun(ui, store, panel.mount, { storage, sound })
-    await flush()
-    emit({ ...defaultProfile(), xp: 300 })
-    expect($('.pxa-level').textContent).toContain('Nv 4')
+    pressKonami()
+    expect(mood()).toBe('idle')
   })
 })
