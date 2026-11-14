@@ -16,11 +16,14 @@ pixel-annotator/
 │       ├── exporter.ts           # .zip e copiar markdown
 │       ├── unload-guard.ts       # aviso de saída (AVIS-01)
 │       ├── tick.ts               # laço requestAnimationFrame
+│       ├── profile-storage.ts    # Perfil em storage.local (fila por aba, fallback em memória)
 │       └── ui/                   # host (Shadow DOM), dom (el()), styles, overlay, note-editor, markers, panel, toast
+│                                 # + Diversão: fun (orquestrador), mascot, sound, themes
 ├── lib/                          # lógica pura testável
 │   ├── types.ts  store.ts  messages.ts  format.ts
 │   ├── selector.ts  viewport.ts  css-filter.ts  outer-html.ts  crop.ts  resolve.ts
 │   ├── markdown.ts  export-names.ts  capture-queue.ts  component-detect.ts
+│   ├── profile.ts  konami.ts  contrast.ts   # Diversão
 ├── public/icon/                  # ícones pixel 16/32/48/128 (gerados por scripts/gen-icons.mjs)
 ├── media/                        # imagens do README: icon.png (256) e prints (npm run screenshots)
 ├── scripts/                      # check-manifest.mjs (PLAT-01), gen-icons.mjs, screenshots/ (prints do README)

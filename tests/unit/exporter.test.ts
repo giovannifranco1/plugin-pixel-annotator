@@ -40,7 +40,7 @@ describe('exporter', () => {
     let clicked: HTMLAnchorElement | null = null
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) { clicked = this })
     expect(store.isDirty()).toBe(true)
-    await exportZip(ui, store, new Date(2026, 10, 13, 9, 5))
+    expect(await exportZip(ui, store, new Date(2026, 10, 13, 9, 5))).toBe(true) // MASC-03: o controller comemora só no sucesso
     expect(clicked!.download).toBe('pxa-feedback-2026-11-13-0905.zip')
     expect(store.list()).toHaveLength(3)
     expect(store.isDirty()).toBe(false)
@@ -50,7 +50,7 @@ describe('exporter', () => {
   test('EXPO-03 copyMarkdown escreve a versão compacta, mostra confirmação e não limpa dirty', async () => {
     const writeText = vi.fn(async (_text: string) => {})
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
-    await copyMarkdown(ui, store)
+    expect(await copyMarkdown(ui, store)).toBe(true)
     const md = writeText.mock.calls[0]![0]
     expect(md).toContain('# PxA · localhost')
     expect(md).toContain('- **#1** botões saindo pra fora do card')
@@ -61,7 +61,7 @@ describe('exporter', () => {
 
   test('caso limite: clipboard ausente/negado → toast sugerindo o .zip', async () => {
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('NotAllowedError') } } })
-    await copyMarkdown(ui, store)
+    expect(await copyMarkdown(ui, store)).toBe(false)
     expect(toast()).toBe('Não consegui copiar. Use Exportar .zip.')
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined })
     await copyMarkdown(ui, store)
@@ -70,7 +70,7 @@ describe('exporter', () => {
 
   test('erro ao gerar o zip → toast de falha e dirty mantido', async () => {
     vi.spyOn(URL, 'createObjectURL').mockImplementation(() => { throw new Error('boom') })
-    await exportZip(ui, store)
+    expect(await exportZip(ui, store)).toBe(false)
     expect(toast()).toBe('Falha ao exportar')
     expect(store.isDirty()).toBe(true)
   })

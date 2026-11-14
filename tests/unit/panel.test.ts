@@ -119,6 +119,16 @@ describe('panel', () => {
     expect($('.pxa-panel')!.classList.contains('pxa-collapsed')).toBe(false)
   })
 
+  test('PAIN-01 botão de recolher é seta pixel 12px (não glifo de texto) e inverte ao recolher', () => {
+    const collapse = button('Recolher painel')
+    expect(collapse.textContent).toBe('')
+    const svg = collapse.querySelector('svg[shape-rendering="crispEdges"]')!
+    expect(svg.getAttribute('width')).toBe('12')
+    const down = collapse.innerHTML
+    collapse.click()
+    expect(button('Expandir painel').innerHTML).not.toBe(down)
+  })
+
   test('ANOT-04 autoCollapse segue a largura até o dev recolher/expandir à mão', () => {
     const ui2 = createHost()
     const p = createPanel(ui2, store, actions)

@@ -2,7 +2,7 @@ import type { ScreenCategory } from '@/lib/types'
 
 // Ícones pixel art desenhados como grade: cada caractere é um pixel ('.' = transparente).
 const PALETTE: Record<string, string> = {
-  K: '#1a1226', // contorno
+  K: 'currentColor', // contorno: cor do texto do botão, acompanha o tema (TEMA-05)
   P: '#ff3e7f', // borracha
   Y: '#f2c94c', // corpo do lápis
   W: '#f5d7a1', // madeira apontada
@@ -103,12 +103,61 @@ export const DOWNLOAD = [
   '............',
 ]
 
+// Botão de som (SOM-01): alto-falante claro e ondas cinza aparecem nos temas claro e escuro.
+export const SPEAKER_ON = [
+  '............',
+  '.....K......',
+  '....KK...G..',
+  '.KKKLK.G..G.',
+  '.KLLLK..G.G.',
+  '.KLLLK..G..G',
+  '.KLLLK..G..G',
+  '.KLLLK..G.G.',
+  '.KKKLK.G..G.',
+  '....KK...G..',
+  '.....K......',
+  '............',
+]
+
+export const SPEAKER_OFF = [
+  '............',
+  '.....K......',
+  '....KK......',
+  '.KKKLK......',
+  '.KLLLK.P...P',
+  '.KLLLK..P.P.',
+  '.KLLLK...P..',
+  '.KLLLK..P.P.',
+  '.KKKLK.P...P',
+  '....KK......',
+  '.....K......',
+  '............',
+]
+
+// Recolher/expandir o painel (seta grossa, mesmo tamanho do ícone de exportar).
+export const CHEVRON_DOWN = [
+  '............',
+  '............',
+  '............',
+  '.KK......KK.',
+  '.KKK....KKK.',
+  '..KKK..KKK..',
+  '...KKKKKK...',
+  '....KKKK....',
+  '.....KK.....',
+  '............',
+  '............',
+  '............',
+]
+
+export const CHEVRON_UP = [...CHEVRON_DOWN].reverse()
+
 export const CATEGORY_PIXEL_ICON: Record<ScreenCategory, readonly string[]> = { mobile: PHONE, tablet: TABLET, desktop: MONITOR }
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
 /** SVG nítido (crispEdges) da grade em 1× (1 pixel da arte = 1px), juntando pixels vizinhos da mesma cor. */
-export function pixelIcon(rows: readonly string[], scale = 1): SVGSVGElement {
+export function pixelIcon(rows: readonly string[], scale = 1, palette: Record<string, string> = PALETTE): SVGSVGElement {
   const width = rows[0]?.length ?? 0
   const svg = document.createElementNS(SVG_NS, 'svg')
   svg.setAttribute('viewBox', `0 0 ${width} ${rows.length}`)
@@ -118,7 +167,7 @@ export function pixelIcon(rows: readonly string[], scale = 1): SVGSVGElement {
   svg.setAttribute('aria-hidden', 'true')
   rows.forEach((row, y) => {
     for (let x = 0; x < row.length; ) {
-      const color = PALETTE[row[x] ?? '.']
+      const color = palette[row[x] ?? '.']
       let end = x + 1
       while (end < row.length && row[end] === row[x]) end++
       if (color) {

@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Firefox-%E2%89%A5_128-FF7139?logo=firefoxbrowser&logoColor=fff" alt="Firefox 128 ou mais novo">
   <img src="https://img.shields.io/badge/Manifest-V3-1a1226" alt="Manifest V3">
   <img src="https://img.shields.io/badge/version-0.1.0-blue" alt="Versão 0.1.0">
-  <img src="https://img.shields.io/badge/permissões-activeTab_%2B_scripting-ff3e7f" alt="Permissões: activeTab e scripting">
+  <img src="https://img.shields.io/badge/permissões-activeTab_%2B_scripting_%2B_storage-ff3e7f" alt="Permissões: activeTab, scripting e storage">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="Licença: MIT">
 </p>
 
@@ -86,6 +86,11 @@ A extensão temporária do Firefox some quando o navegador fecha. É só carrega
 
 - **Funciona em SPA:** ao trocar de rota sem reload, os marcadores mostram só as anotações da rota atual e o painel mantém todas.
 - **UI isolada:** tudo roda em Shadow DOM, acima de qualquer `z-index`. O CSS da página não afeta o PxA e o CSS do PxA não afeta a página.
+- **Diversão (tudo opcional, nada bloqueia o fluxo):**
+  - **Mascote:** um alfinete pixel no cabeçalho do painel que fica feliz quando você anota, leva susto em anotação mobile, faz festa ao exportar e dorme depois de 60s parado. Com *reduzir movimento* ligado no sistema, ele só troca de quadro.
+  - **Sons 8-bit:** desligados por padrão; ligue no alto-falante do painel. Gerados na hora com Web Audio, sem arquivos.
+  - **Temas:** Padrão (claro, rosa) e Noite (escuro), no seletor do painel. As cores dos marcadores (mobile/tablet/desktop) não mudam.
+  - **Segredo:** com o modo ligado, tente o Konami code. 🎮
 - **Aviso antes de perder:** com anotações que ainda não foram para um `.zip`, recarregar ou fechar a aba mostra o aviso de saída do navegador.
 
 ## O que o Claude Code recebe
@@ -129,7 +134,7 @@ padding: 8px;
 
 ## Permissões e privacidade
 
-- Pede só **`activeTab`** e **`scripting`**. O PxA não lê nenhum site até você clicar no ícone naquela aba.
+- Pede só **`activeTab`**, **`scripting`** e **`storage`**. O PxA não lê nenhum site até você clicar no ícone naquela aba. O `storage` guarda só o tema e o som que você escolheu, no próprio navegador, e não gera aviso na instalação.
 - Nada sai do seu navegador. Não há servidor, conta nem telemetria. O `.zip` é baixado direto e o markdown vai só para a sua área de transferência.
 - As anotações vivem **só na memória da aba**: recarregar a página apaga tudo. A persistência por site está planejada para o M2.
 - Em páginas onde extensões não podem rodar (`chrome://`, lojas de extensão, visualizador de PDF), o ícone mostra um **!**.
@@ -152,7 +157,7 @@ npm run dev:firefox      # Firefox com recarga automática
 npm test                 # testes unitários (Vitest)
 npm run test:e2e         # E2E no Chromium com a extensão carregada (Playwright)
 npm run compile          # checagem de tipos
-npm run check:manifest   # confere que os builds pedem só activeTab + scripting
+npm run check:manifest   # confere que os builds pedem só activeTab + scripting + storage
 npm run screenshots      # regenera os prints deste README (media/)
 npm run icons            # regenera os ícones pixel art
 ```

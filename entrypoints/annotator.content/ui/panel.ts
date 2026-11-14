@@ -1,6 +1,6 @@
 import type { UiHost } from './host'
 import { el } from './dom'
-import { CATEGORY_PIXEL_ICON, DOWNLOAD, PENCIL, pixelIcon, TRASH } from './icons'
+import { CATEGORY_PIXEL_ICON, CHEVRON_DOWN, CHEVRON_UP, DOWNLOAD, PENCIL, pixelIcon, TRASH } from './icons'
 import type { AnnotationStore } from '@/lib/store'
 
 export interface PanelActions {
@@ -30,7 +30,10 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
   exportZip.setAttribute('aria-label', 'Exportar .zip')
   const list = el('ol')
   const footer = el('footer')
-  const panel = el('aside', { className: 'pxa-panel' }, el('header', {}, title, exportZip, collapse), list, footer)
+  // Ponto de inserção no cabeçalho para outras features (mascote): o painel não conhece o conteúdo.
+  const headStart = el('span', { className: 'pxa-head-slot' })
+  const header = el('header', {}, headStart, title, exportZip, collapse)
+  const panel = el('aside', { className: 'pxa-panel' }, header, list, footer)
   panel.setAttribute('aria-label', 'Anotações do PxA')
   panel.style.display = 'none'
   ui.layer.append(panel)
@@ -43,7 +46,7 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
   function setCollapsed(value: boolean) {
     collapsed = value
     panel.classList.toggle('pxa-collapsed', value)
-    collapse.textContent = value ? '▴' : '▾'
+    collapse.replaceChildren(pixelIcon(value ? CHEVRON_UP : CHEVRON_DOWN))
     collapse.setAttribute('aria-label', value ? 'Expandir painel' : 'Recolher painel')
     collapse.setAttribute('aria-expanded', String(!value))
   }
@@ -105,6 +108,7 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
 
   store.subscribe(render)
   return {
+    mount: { header, headStart },
     show() {
       visible = true
       manual = false
