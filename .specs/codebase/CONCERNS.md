@@ -9,4 +9,8 @@
 - **Ordem dos listeners:** um listener da página registrado em `window`/captura **antes** da injeção do PxA ainda roda antes do interceptor. É uma limitação aceita.
 - **Top layer:** `<dialog>` modal e `popover` da página podem cobrir a UI do PxA. É uma limitação aceita.
 - **Atributo temporário `data-pxa-probe`:** o probe marca o elemento por alguns milissegundos, e isso pode acordar um `MutationObserver` da página.
+- **Hooks de `fetch`/XHR no main world:** observar a promise do `fetch` marca a rejeição como tratada; se a página chamar `fetch()` sem encadear nada, deixa de sair o `unhandledrejection` dela (o erro de rede continua registrado). `console.error` com objeto grande paga um `JSON.stringify` inteiro antes do corte em 500 caracteres.
+- **Privacidade do Registro de erros:** só query e fragmento saem da URL; tokens no caminho continuam. Documentado no README; o dev revisa a lista no editor antes de salvar.
+- **Import:** `unzipSync` roda na thread da página; um `.zip` perto do limite (50 MB) pode travar a página por um instante. O limite de 100 MB descompactados usa o tamanho declarado no cabeçalho do zip.
+- **Firefox ainda não verificado** para o Registro de erros, a Apresentação, o Desenho e o Importar: checklist em `.specs/features/2026-11-14-equipe-claude/manual-check.md`.
 - **Painel em telas estreitas:** abaixo de 768px o painel se recolhe sozinho para não cobrir a página, até o dev recolher ou expandir à mão.

@@ -2,7 +2,7 @@
 
 **Spec**: `.specs/features/2026-11-14-equipe-claude/spec.md`
 **Design**: `.specs/features/2026-11-14-equipe-claude/design.md`
-**Status**: Em execução.
+**Status**: Done — 2026-11-14. Gate full: compile ok · 233 unit · builds Chrome/Firefox MV3 · check:manifest ok · 34 E2E (`PXA_E2E_PORT=5177`). Checklist manual do dev (Firefox) em `manual-check.md`.
 
 > **Breakdown:** horizontal, como no M1. Lógica pura em `lib/` primeiro (TDD), depois probe e UI, depois o controller e o E2E.
 > **Commits:** 1 por fase do nano-spec. A coluna "Commit" não existe aqui de propósito.

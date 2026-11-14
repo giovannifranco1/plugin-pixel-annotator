@@ -1,6 +1,6 @@
 # Equipe e Claude — Especificação
 
-> **Status:** Aprovada pelo dev em 2026-11-14. Próximas fases neste andar: Design → Tasks → Execute.
+> **Status:** Implementada em 2026-11-14 (andar "Equipe e Claude"). Verificação no Firefox pendente com o dev (`manual-check.md`).
 > **Branch:** `feature/content-equipe-claude` (andar "Equipe e Claude" no Maestri), a partir de `develop` em `91e6134`.
 
 ## Problema
@@ -9,10 +9,10 @@ O PxA hoje é de uma pessoa para o Claude Code. Em equipe faltam peças: apresen
 
 ## Objetivos
 
-- [ ] Revisar 10 anotações numa call sem sair da página, navegando só pelo teclado.
-- [ ] Um colega abre o `.zip` de outro dev e vê os mesmos marcadores na própria página.
-- [ ] Cada anotação pode levar desenho por cima do print e os erros de console/rede do momento.
-- [ ] Nenhuma permissão nova, nenhum servidor: tudo continua local.
+- [x] Revisar 10 anotações numa call sem sair da página, navegando só pelo teclado.
+- [x] Um colega abre o `.zip` de outro dev e vê os mesmos marcadores na própria página.
+- [x] Cada anotação pode levar desenho por cima do print e os erros de console/rede do momento.
+- [x] Nenhuma permissão nova, nenhum servidor: tudo continua local.
 
 ## Fora do Escopo
 
@@ -119,16 +119,18 @@ Três features rodam em paralelo a partir do mesmo `develop`: **Diversão**, **R
 
 ## Rastreabilidade de Requisitos
 
-| ID | Story | Status |
-|---|---|---|
-| APRE-01..06 | Modo Apresentação | Pending |
-| ERRO-01..06 | Erros do console | Pending |
-| DESE-01..05 | Desenho no print | Pending |
-| IMPO-01..07 | Importar sessão | Pending |
+| ID | Story | Status | Evidência |
+|---|---|---|---|
+| APRE-01..06 | Modo Apresentação | Verified (Chromium) | `presentation.test.ts`, `controller.test.ts` (APRE-01/06), `panel.test.ts` (APRE-01), E2E `team.spec.ts` "APRE-01..06" |
+| ERRO-01..05 | Erros do console | Verified (Chromium) | `error-log.test.ts`, `error-hooks.test.ts`, `probe-client.test.ts`, `note-editor.test.ts`, `markdown.test.ts`, E2E "ERRO-01/ERRO-04/ERRO-05" e "ERRO-01 a página continua…" |
+| ERRO-06 | Probe não injetado → sem erros, sem aviso | Verified (unit) | `probe-client.test.ts` "ERRO-06 …", `controller.test.ts` "ERRO-03/ERRO-06 …" |
+| DESE-01..05 | Desenho no print | Verified (Chromium) | `drawing.test.ts`, `draw-editor.test.ts`, `panel.test.ts`, `exporter.test.ts`, `markdown.test.ts`, E2E "DESE-01..04" e "DESE-05" |
+| IMPO-01..07 | Importar sessão | Verified (Chromium) | `manifest.test.ts`, `import.test.ts`, `store.test.ts`, `controller.test.ts`, `panel.test.ts`, E2E "IMPO-01..05" e "IMPO-05 …" |
+| Todos | Firefox ≥ 128 | Pending (manual, dev) | `manual-check.md` |
 
 ## Critérios de Sucesso
 
-- [ ] E2E: exportar numa aba e importar em outra aba da mesma fixture recria todos os marcadores nas mesmas posições.
-- [ ] E2E: fixture que dispara `console.error` e um `fetch` 404 gera Anotação com os dois erros no `feedback.md`.
-- [ ] Nenhuma regressão nos 127 testes unitários e 27 E2E do M1.
-- [ ] `check:manifest` continua passando sem permissões novas.
+- [x] E2E: exportar numa aba e importar em outra aba da mesma fixture recria todos os marcadores nas mesmas posições (`team.spec.ts` "IMPO-01..05").
+- [x] E2E: fixture que dispara `console.error` e um `fetch` 404 gera Anotação com os dois erros no `feedback.md` (`team.spec.ts` "ERRO-01/ERRO-04/ERRO-05").
+- [x] Nenhuma regressão nos 127 testes unitários e 27 E2E do M1 (agora 233 unit e 34 E2E; dois testes do M1 ajustados porque o zip e o rodapé do Painel ganharam itens: EXPO-01 unit/E2E e o teste do rodapé do Painel).
+- [x] `check:manifest` continua passando sem permissões novas.

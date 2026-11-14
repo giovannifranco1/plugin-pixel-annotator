@@ -67,6 +67,7 @@ interface Annotation { /* … campos atuais … */ errors?: PageError[]; drawing
 - `fetch`: wrapper devolve **a mesma promise** do fetch anterior e observa em paralelo: `status ≥ 400` → entrada de rede; rejeição → `status 0` ("falha de rede"). Método de `init.method` ou do `Request`.
 - `XMLHttpRequest`: `open` anota método/URL num `WeakMap`; `send` liga `loadend` uma vez: `status ≥ 400` → rede; `status 0` sem `abort` → falha de rede.
 - Todo registro é envolvido em `try/catch`: o hook nunca quebra a página.
+- Os hooks entregam URLs e `file`/`line` crus; **o log é o único que limpa** (resolve relativa pela página, tira query e fragmento). Fronteira de privacidade num lugar só.
 
 **Probe (`component-probe.ts`)**: na injeção, cria o log e instala os hooks; responde a `pxa:errors-request` com `since(windowMs)`. Nomes novos em `lib/messages.ts`: `ERRORS_REQUEST`, `ERRORS_RESPONSE`, `ERROR_WINDOW_MS = 60_000`.
 
@@ -109,7 +110,8 @@ interface Annotation { /* … campos atuais … */ errors?: PageError[]; drawing
 - Ponteiro: `pointerdown/move/up` no canvas, coordenadas convertidas para pixels do print. Pincel acumula pontos; formas usam início + ponto atual (prévia ao arrastar).
 - Redesenho = `drawImage(print)` + `fillRect` dos blocos (`imageSmoothingEnabled = false`).
 - `Ctrl/Cmd+Z` desfaz, `Esc` cancela (DESE-05). Teclas param no modal (`stopPropagation`) para atalhos da página não dispararem.
-- Salvar: `compose(shot, strokes, block)` gera o PNG composto (canvas → `toBlob`) e devolve `Drawing`. Sem traços → remove o Desenho (`drawing: undefined`). `compose` é injetável para o teste unitário (happy-dom não tem canvas 2D).
+- Desenho em duas camadas de canvas: base (print + traços salvos), refeita só ao fechar traço, desfazer ou limpar; no arrasto, no máximo uma pintura por frame (base + traço em andamento).
+- Salvar: o PNG composto sai do próprio canvas do editor (`toBlob`) e volta como `Drawing`. Sem traços → remove o Desenho (`drawing: undefined`). `compose` é injetável para o teste unitário (happy-dom não tem canvas 2D).
 - Controller: estado `editing` durante o editor; `onDraw(id)` só em `active`; salva com `store.update(id, { drawing })`.
 - **Painel:** ícone pixel novo `BRUSH` (o lápis já é "Editar nota") com `title="Desenhar"`, só em itens com print (DESE-05). Itens com Desenho mostram uma miniatura do composto (DESE-04). **Dúvida registrada:** o Painel do M1 não tem miniatura; mostrar só quando há Desenho foi a leitura mais conservadora diante da regra "só ícones novos por item".
 
@@ -129,7 +131,7 @@ export type ManifestAnnotation = Omit<Annotation, 'shot' | 'drawing'> & { shot: 
 buildManifest(list, { origin, exportedAt }): PxaManifest
 parseManifest(text): { ok: true; manifest } | { ok: false; error }   // JSON inválido, versão desconhecida, forma inválida
 ```
-- `shotName(n)` existente continua sendo o print exibido; `originalShotName(n)` = `shots/NN-original.png`.
+- `shotName(n)` existente continua sendo o print exibido; `originalShotName(n)` = `shots/NN-original.png`. A regra "com Desenho, NN.png é o composto" vive só em `shotFiles(a)` (`lib/export-names.ts`), usada pelo export e pelo manifesto; `displayShot(a)` dá o print exibido.
 
 **`lib/import.ts`**: `readImportZip(bytes)` → `{ ok: true; origin; drafts: ImportedAnnotation[] } | { ok: false; error }`.
 - Limites contra zip bomb: arquivo ≤ 50 MB; no `unzipSync({ filter })` aceita só `pxa.json` e `shots/*.png`, no máximo 1000 arquivos e 100 MB descompactados somados (pelo tamanho declarado no cabeçalho, checado antes de descompactar).
@@ -140,7 +142,7 @@ parseManifest(text): { ok: true; manifest } | { ok: false; error }   // JSON inv
 
 **Controller `onImport(file)`**: lê, importa, toast "N anotações importadas" (+ " · anotações de `host`" quando `origin ≠ location.origin`, IMPO-04) ou a mensagem de erro; "Nada novo: essas anotações já estão aqui." quando tudo era duplicado.
 
-**Painel**: botão "Importar .zip" no rodapé com `<input type="file" accept=".zip,application/zip">` escondido; item importado mostra `#3 de host`; com `isMissing(id)` (opcional em `PanelActions`) mostra "elemento não encontrado" (IMPO-05). Marcador some sozinho (`resolveAnnotation` já devolve `null`).
+**Painel**: botão "Importar .zip" no rodapé com `<input type="file" accept=".zip,application/zip">` escondido; item importado mostra `#3 de host`; quando `locate(store, id)` (`lib/resolve.ts`) devolve `'missing'`, mostra "elemento não encontrado" (IMPO-05). Marcador some sozinho (`resolveAnnotation` já devolve `null`). A leitura do arquivo (limite de tamanho antes de carregar) fica em `readImportFile` (`lib/import.ts`).
 
 **Export**: `buildZip` grava `pxa.json` (manifesto) junto do `feedback.md`.
 
@@ -148,7 +150,7 @@ parseManifest(text): { ok: true; manifest } | { ok: false; error }   // JSON inv
 
 - Rodapé: `Apresentar` (desabilitado sem Anotações) e `Importar .zip` antes dos botões atuais.
 - Por item: botão `BRUSH` (Desenhar), selo `⚠ N`, `#n de host`, "elemento não encontrado", miniatura quando há Desenho.
-- `PanelActions` ganha `onPresent`, `onImport(file)`, `onDraw(id)` e `isMissing?(id)`.
+- `PanelActions` ganha `onPresent`, `onImport(file)` e `onDraw(id)`.
 
 ## Testes (TESTING.md: nome começa pelo ID)
 
