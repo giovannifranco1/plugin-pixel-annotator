@@ -15,7 +15,7 @@
 
 - 2026-11-14 — Diversão: permissão `storage` aprovada pelo dev só para o Perfil (Q-01); anotações continuam só na sessão. `check:manifest` exige `activeTab` + `scripting` + `storage`.
 - 2026-11-14 — Diversão (agente do andar, sem decisão do dev): fanfarra só no `.zip`, copiar markdown faz festa sem som (D14).
-- 2026-11-14 — Diversão: botão primário do tema Padrão passou de texto branco para tinta escura sobre o rosa (3,36:1 → 5,39:1) para cumprir TEMA-05.
+- 2026-11-14 — Diversão: botão primário do tema Padrão com texto branco sobre `#e0266b` (4,51:1), variável `--pxa-primary`. A 1ª tentativa (tinta escura sobre o rosa) foi recusada pelo dev; ele escolheu escurecer o rosa do botão.
 - 2026-11-14 — **Diversão, Revisão 1 (dev, após testar):** o 1º mascote "dava medo" → alfinete fofo sem boca (opção C de 3), com cores por tema (MASC-07); XP, nível e conquistas removidos; só os temas Padrão e Noite; ícone de som em pixel art no lugar do emoji; Konami mantido só como dança + jingle (dev escolheu). O som foi aprovado como estava.
 - 2026-11-14 — **Diversão, Revisão 2 (dev):** mascote com a mesma cor nos dois temas (MASC-07 removido) e mais magro/menos fofo: cabeça de 10 px, sem bochecha, rosa da marca.
 
@@ -30,6 +30,7 @@
 - 2026-11-13 — **WXT 0.21:** Firefox sai em MV2 sem `manifestVersion: 3`; `matches` de content script `runtime` vira `host_permissions`; `--mode e2e` gera `.output/chrome-mv3-e2e`; `fakeBrowser` em `wxt/testing/fake-browser`. Chrome sem polyfill: listener de `onMessage` responde com `sendResponse` + `return true`.
 
 - 2026-11-14 — **Contador do painel sumia com o mascote no cabeçalho.** Sintoma: com Nv + 🏆 no cabeçalho, o título virava "PxA · Anota…" e o `(3)` sumia; os testes passavam porque checam `textContent`. Causa: título com `ellipsis` disputando 300px com 5 itens fixos. Correção: título quebra linha (2 linhas cabem na altura do mascote) e gaps menores. Prevenção: conferir o cabeçalho num print de 320px sempre que entrar item novo nele.
+- 2026-11-14 — **Ícones pixel com contorno fixo somem no tema escuro.** O `K` era `#1a1226` fixo: no Noite, o ícone de exportar virava uma mancha rosa. Correção: `K` = `currentColor` (segue `--pxa-ink`). Prevenção: ícone novo usa `K` para contorno e é conferido nos dois temas.
 - 2026-11-14 — **Mascote em cabeçalho escuro:** o contorno escuro some no fundo do cabeçalho, então olho colado na borda vira listra e o "z" de 3×3 parece um `I`. Olhos ficam a 2 px do contorno e o "z" é 4×4 com diagonal. Prevenção: conferir a arte num print sobre a cor do cabeçalho, não só em fundo claro.
 - 2026-11-14 — **Interceptor engole `pointerdown` da página** (`stopImmediatePropagation` na captura em `window`). Listener novo em `window` que precise ver gestos na página tem de ser registrado antes do `installInterceptor` (ordem do array de teardown no controller).
 - 2026-11-14 — **Anotar em página servida por `context.route` falha** ("Falha ao anotar") já no commit base; descoberto ao testar CSP. Não investigado (fora do escopo); o E2E da Diversão usa essas páginas só para o que não depende da captura.

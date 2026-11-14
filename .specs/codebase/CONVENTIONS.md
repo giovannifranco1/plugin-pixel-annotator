@@ -6,7 +6,7 @@
 - UI injetada: elementos criados com `el()` (`ui/dom.ts`) dentro do host do Shadow DOM; CSS só em `ui/styles.ts`.
 - Módulos de UI com desenho por frame expõem `measure()`, que lê o layout e devolve a escrita. O tick junta todas as leituras antes das escritas.
 - Lógica pura vai em `lib/` (sem `browser.*`), testável no Vitest.
-- Cores da UI só por `var(--pxa-*)` em `ui/styles.ts`; valor novo de cor vira variável em `THEME_VARS` com valor em todos os temas (o teste de contraste cobre texto/fundo). Exceção: marcadores (cor da categoria).
+- Cores da UI só por `var(--pxa-*)` em `ui/styles.ts`; valor novo de cor vira variável em `THEME_VARS` com valor em todos os temas (o teste de contraste cobre texto/fundo). Exceção: marcadores (cor da categoria). Ícones pixel: `K` (contorno) é `currentColor` e segue o texto do botão; as demais letras da paleta são cores fixas.
 - Commits: Conventional Commits. Scopes: `content`, `background`, `capture`, `export`, `ui`, `build`, `specs`.
 
 ## Glossário

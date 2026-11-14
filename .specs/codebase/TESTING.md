@@ -2,8 +2,8 @@
 
 | Comando | O que roda |
 |---|---|
-| `npm test` | Unit (Vitest + happy-dom): 30 arquivos, 176 testes |
-| `npm run test:e2e` | `wxt build --mode e2e` + Playwright no Chromium: 35 testes |
+| `npm test` | Unit (Vitest + happy-dom): 30 arquivos, 178 testes |
+| `npm run test:e2e` | `wxt build --mode e2e` + Playwright no Chromium: 36 testes |
 | `npm run compile` | `tsc --noEmit` (inclui os testes) |
 | `npm run screenshots` | Regera os prints do README (`media/`) com a página `demo.html`; não é teste |
 | `npm run check:manifest` | Builds de produção: MV3, só `activeTab` + `scripting` + `storage` (Q-01, só para o Perfil), sem host permissions nem content scripts (PLAT-01) |

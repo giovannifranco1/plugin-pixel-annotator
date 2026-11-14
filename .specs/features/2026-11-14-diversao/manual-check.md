@@ -1,6 +1,6 @@
 # Diversão — Checklist manual (dev)
 
-Tudo que roda em Chromium está coberto por `npm test` (176) e `PXA_E2E_PORT=5175 npm run test:e2e` (35). Este checklist cobre o que só dá para ver ou ouvir à mão, e o Firefox (não instalado na máquina de desenvolvimento).
+Tudo que roda em Chromium está coberto por `npm test` (178) e `PXA_E2E_PORT=5175 npm run test:e2e` (36). Este checklist cobre o que só dá para ver ou ouvir à mão, e o Firefox (não instalado na máquina de desenvolvimento).
 
 ## Preparação
 

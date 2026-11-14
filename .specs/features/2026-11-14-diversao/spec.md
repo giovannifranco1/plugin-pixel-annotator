@@ -25,6 +25,9 @@ O PxA já funciona, mas é uma ferramenta "séria" com cara de pixel art e nada 
 |---|---|
 | "O mascote não precisa mudar por tema, pode deixar o padrão para os dois temas" | MASC-07 **removido**: uma paleta só (rosa da marca) nos dois temas. |
 | "Ele tá muito gordo e fofo até demais, melhore" | MASC-06: cabeça mais estreita (10 px, era 12), sem bochecha rosada, rosa da marca (`#ff3e7f`) em vez do rosa pastel. |
+| "O ícone de exportar .zip no tema Noite tá zuado" | TEMA-05: contorno dos ícones pixel passa a seguir a cor do texto (`currentColor`), claro no Noite. |
+| "O ícone de collapse tá muito pequenininho" | PAIN-01: seta pixel de 12 px no lugar do glifo ▾/▴. |
+| "No Padrão, o texto do Copiar markdown deveria ser branco" | TEMA-05: botões principais com texto branco sobre `#e0266b` (4,51:1); o dev escolheu escurecer o rosa do botão em vez de flexibilizar o contraste. |
 
 ## Objetivos
 
