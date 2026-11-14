@@ -43,7 +43,7 @@ describe('temas', () => {
   test('TEMA-05 contraste ≥ 4.5 entre texto e fundo no painel e no editor', () => {
     const pairs: Array<[string, string]> = [
       ['ink', 'paper'], ['ink', 'surface'], ['ink', 'hover'], ['ink', 'danger-hover'],
-      ['on-accent', 'primary'], ['muted', 'paper'], ['head-fg', 'head-bg'],
+      ['on-accent', 'primary'], ['muted', 'paper'], ['head-fg', 'head-bg'], ['ok', 'paper'],
     ]
     for (const t of THEMES) {
       for (const [fg, bg] of pairs) {

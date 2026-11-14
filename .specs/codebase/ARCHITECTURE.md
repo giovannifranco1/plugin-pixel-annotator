@@ -14,4 +14,6 @@ Fluxo: ícone → background checa/injeta → annotator ativa overlay e painel �
 
 **Temas:** `ui/styles.ts` usa só custom properties `--pxa-*`; os valores do tema Padrão vêm de `ui/themes.ts` (`themeVarsCss`) e `applyTheme` troca as variáveis no `.pxa-layer`. Marcadores ficam fora (cor da categoria fixa). O mascote tem cor fixa (rosa da marca), igual em todos os temas.
 
-Detalhes e decisões: `.specs/features/2026-11-13-modo-anotacao/design.md` e `.specs/features/2026-11-14-diversao/design.md`.
+**Raio-X** (`raio-x.ts`, só no annotator): barra no Painel com **Detector** e **Lupa**, desenhados no Shadow DOM, sem mudar a página. Entra no controller por três pontos: `raioX.measure()` no tick, `raioX.pick()` no clique (a Lupa consome o clique e copia o hex) e `annotateElements(targets, note)` (uma nota editável, um print por alvo). O Detector varre em fatias de 500 com `requestIdleCallback` (`audit-scan.ts`: lê estilos computados, Typed OM para `auto`/`%` no Chrome) e agrupa em `lib/design-audit.ts` (pura: escala, raridade perto de referência, fonte padrão, notas com sugestão); cores de qualquer formato CSS viram sRGB em `lib/color.ts`. A Lupa usa a mesma captura do print (`captureWithoutUi`), sem permissão nova.
+
+Detalhes e decisões: `.specs/features/2026-11-13-modo-anotacao/design.md`, `.specs/features/2026-11-14-diversao/design.md` e `.specs/features/2026-11-14-raio-x/design.md`.

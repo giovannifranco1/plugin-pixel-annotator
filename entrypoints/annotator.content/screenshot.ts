@@ -14,11 +14,30 @@ export const captureTab: CaptureTab = async () => {
   return res.dataUrl
 }
 
-/** Recorta o elemento (com margem) da foto da aba e desenha o contorno. */
-async function cropShot(dataUrl: string, rect: DOMRect): Promise<Shot> {
-  // createImageBitmap a partir do Blob: não depende do img-src da CSP da página.
+/** Foto da aba sem a UI do PxA: esconde, espera 2 frames, fotografa e mostra de novo (também na falha). */
+export async function captureWithoutUi(ui: UiHost, capture: CaptureTab = captureTab): Promise<string> {
+  ui.setHidden(true)
+  try {
+    await twoFrames()
+    return await capture()
+  } finally {
+    ui.setHidden(false)
+  }
+}
+
+/** Abre o print como bitmap e o libera ao final. Via Blob: não depende do img-src da CSP da página. */
+export async function withShotBitmap<T>(dataUrl: string, fn: (img: ImageBitmap) => T | Promise<T>): Promise<T> {
   const img = await createImageBitmap(await (await fetch(dataUrl)).blob())
   try {
+    return await fn(img)
+  } finally {
+    img.close() // libera o bitmap da aba inteira
+  }
+}
+
+/** Recorta o elemento (com margem) da foto da aba e desenha o contorno. */
+function cropShot(dataUrl: string, rect: DOMRect): Promise<Shot> {
+  return withShotBitmap(dataUrl, async (img) => {
     const plan = planCrop(rect, innerWidth, innerHeight, img.width, img.height)
     const canvas = document.createElement('canvas')
     canvas.width = Math.max(1, plan.crop.width)
@@ -31,9 +50,7 @@ async function cropShot(dataUrl: string, rect: DOMRect): Promise<Shot> {
     ctx.strokeRect(plan.outline.x, plan.outline.y, plan.outline.width, plan.outline.height)
     const shot = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'))
     return { shot, partial: plan.partial }
-  } finally {
-    img.close() // libera o bitmap da aba inteira
-  }
+  })
 }
 
 /**
@@ -49,14 +66,10 @@ export async function shootElement(el: Element, ui: UiHost, capture: CaptureTab 
   }
   const partial = !isFullyVisible(rect, innerWidth, innerHeight)
   let dataUrl: string
-  ui.setHidden(true)
   try {
-    await twoFrames()
-    dataUrl = await capture()
+    dataUrl = await captureWithoutUi(ui, capture)
   } catch {
     return { shot: null, partial }
-  } finally {
-    ui.setHidden(false)
   }
   try {
     return await cropShot(dataUrl, rect)

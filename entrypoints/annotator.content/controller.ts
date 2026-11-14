@@ -7,6 +7,7 @@ import { copyMarkdown, exportZip } from './exporter'
 import { installInterceptor } from './interceptor'
 import { startTick } from './tick'
 import { installUnloadGuard } from './unload-guard'
+import { createRaioX, type RaioXDeps } from './raio-x'
 import { createHost, type UiHost } from './ui/host'
 import { createMarkers } from './ui/markers'
 import { openNoteEditor } from './ui/note-editor'
@@ -21,6 +22,7 @@ export interface ControllerDeps {
   ui?: UiHost
   store?: AnnotationStore
   capture?: (el: Element, note: string) => Promise<AnnotationDraft>
+  raioX?: RaioXDeps
 }
 
 const FOCUS_HIGHLIGHT_MS = 1500
@@ -66,8 +68,23 @@ export function createController(deps: ControllerDeps = {}) {
 
   function onPick(el: Element) {
     if (state !== 'active') return
+    if (raioX.pick()) return
     overlay.highlight(el)
     openEditor(el.getBoundingClientRect(), undefined, (note) => void save(el, note))
+  }
+
+  /** Uma nota pré-preenchida (editável) para vários elementos: um print por elemento ao salvar (Raio-X). */
+  function annotateElements(targets: Element[], note: string) {
+    const first = targets[0]
+    if (state !== 'active' || !first) return
+    first.scrollIntoView({ block: 'center', inline: 'nearest' })
+    overlay.highlight(first)
+    openEditor(first.getBoundingClientRect(), note, async (final) => {
+      for (const t of targets) {
+        if (state === 'inactive') break
+        if (t.isConnected) await save(t, final)
+      }
+    })
   }
 
   async function save(el: Element, note: string) {
@@ -82,6 +99,7 @@ export function createController(deps: ControllerDeps = {}) {
     }
   }
 
+  const raioX = createRaioX(ui, { annotate: annotateElements }, deps.raioX)
   const panel = createPanel(ui, store, {
     onFocus(id) {
       const el = resolveAnnotation(store, id)
@@ -106,7 +124,7 @@ export function createController(deps: ControllerDeps = {}) {
     onExportZip: () => void exportZip(ui, store).then((ok) => ok && fun.exported('zip')),
     onCopyMarkdown: () => void copyMarkdown(ui, store).then((ok) => ok && fun.exported('markdown')),
     onClearAll: () => store.clear(),
-  })
+  }, raioX.toolbar)
 
   const fun = createFun(ui, store, panel.mount)
   installUnloadGuard(store)
@@ -124,7 +142,7 @@ export function createController(deps: ControllerDeps = {}) {
       startTick(() => {
         panel.autoCollapse(isMobile())
         // Todas as leituras de layout primeiro, depois todas as escritas: no máximo um layout por frame.
-        const writes = [overlay.measure(), markers.measure()]
+        const writes = [overlay.measure(), markers.measure(), raioX.measure()]
         for (const write of writes) write()
       }),
       () => clearTimeout(focusTimer),
@@ -136,6 +154,7 @@ export function createController(deps: ControllerDeps = {}) {
     editor?.close()
     editor = null
     for (const undo of teardown.splice(0)) undo()
+    raioX.reset()
     overlay.hide()
     markers.hideAll()
     panel.hide()

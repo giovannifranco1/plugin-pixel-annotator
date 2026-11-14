@@ -23,3 +23,8 @@
 | Mascote | Alfinete em pixel 16×16 (2×) no cabeçalho do Painel, com Humor `idle`/`feliz`/`susto`/`festa`/`dormindo`; mesma cor em todos os Temas |
 | Tema | Paleta da UI do PxA via custom properties `--pxa-*` (`ui/themes.ts`) |
 | Perfil | Tema e som, em `storage.local` (`pxa:profile`); único estado persistido |
+| Raio-X | Ferramentas de inspeção abertas pela barra do Painel: Detector e Lupa |
+| Detector | Varre estilos computados e lista cores, fontes e espaçamentos com contagem |
+| Achado | Valor marcado pelo Detector (fora da escala, quase igual a um valor bem mais usado, fonte padrão do navegador); vira Anotação com nota `[Raio-X] …` que diz o que usar |
+| Escala | Espaçamentos esperados: múltiplos de 4px com os meios passos do Tailwind (1, 2, 6, 10, 14px), ou de 8px com 1, 2 e 4px; folga de 0,5px |
+| Lupa | Zoom 8× de 15×15 pixels físicos sobre um print congelado; clique copia o hex |

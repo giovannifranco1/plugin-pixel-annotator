@@ -68,6 +68,18 @@ A extensão temporária do Firefox some quando o navegador fecha. É só carrega
    - **Exportar .zip** (ícone ⤓ no cabeçalho do painel): `feedback.md` completo com os prints em `shots/`. Descompacte na pasta do projeto e peça *"resolve o feedback.md"*.
 6. Clique no ícone de novo para sair. As anotações ficam guardadas enquanto a aba estiver aberta.
 
+### Raio-X: achar o que o olho não vê
+
+A barra **Raio-X**, logo abaixo do cabeçalho do painel, traz duas ferramentas. Nenhuma altera a página: tudo é desenhado por cima, na UI do PxA.
+
+- **Detector:** varre a página e lista as **cores**, os **tamanhos de fonte**, as **famílias** e os **espaçamentos** em uso, com quantos elementos usam cada um (ex: `23 cores · 11 tamanhos de fonte · 2 famílias · 3 espaçamentos fora da escala de 4px`). Os Achados aparecem primeiro; o resto fica recolhido. Ele acusa:
+  - espaçamento fora da escala de 4px (ou 8px no botão **Escala**). Os meios passos do Tailwind (2, 6, 10 e 14px) são aceitos;
+  - cor ou tamanho de fonte **quase igual** a um valor bem mais usado, e raro: `#7a7a7a` perto de `#777777`, `13px` perto de `14px`;
+  - **fonte padrão do navegador** em poucos elementos numa página que usa outra fonte: o clássico `button`/`input` sem `font: inherit`.
+
+  Entende cores modernas (`oklch()`, `lab()`, `color()` do Tailwind 4), junta cores que diferem só no arredondamento (ninguém vê a diferença) e ignora `0`, `auto`, percentuais, `sr-only` e o interior de SVGs. O cabeçalho começa pelo número de Achados; seção sem problema mostra **tudo certo**, e cada Achado diz a referência e o que usar. Se o relatório tampar o que você quer ver, arraste-o pelo cabeçalho (ou use as setas). Passe o mouse num valor para destacar onde ele está, clique no valor para rolar até o próximo elemento e clique em **Anotar** para virar anotação com a nota pronta para o Claude Code, ex: `[Raio-X] espaçamento 13px (padding) fora da escala de 4px: usar 12px ou 14px (3 elementos)`.
+- **Lupa:** zoom 8× dos pixels sob o cursor, com a cor em hex. Clique para copiar o hex e aperte Esc para sair.
+
 ## Recursos
 
 - **Marcadores numerados** sobre cada elemento anotado, na cor da tela em que você anotou: verde no mobile, amarelo no tablet e azul no desktop. Quando a largura atual é de outra categoria, o marcador fica esmaecido.
@@ -167,6 +179,7 @@ A lógica pura fica em `lib/`, com testes em `tests/unit/`. A extensão fica em 
 ## Roadmap
 
 - **M1 — Modo Anotação** ✅ (este README)
+- **Raio-X** ✅ Detector de design system e Lupa pixel
 - **M2 — Ponte com o Claude Code:** servidor MCP local para o Claude Code ler as anotações sem download, e persistência por site
 
 ## Licença
