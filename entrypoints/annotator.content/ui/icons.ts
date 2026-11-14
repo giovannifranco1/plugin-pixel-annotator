@@ -2,7 +2,7 @@ import type { ScreenCategory } from '@/lib/types'
 
 // Ícones pixel art desenhados como grade: cada caractere é um pixel ('.' = transparente).
 const PALETTE: Record<string, string> = {
-  K: '#1a1226', // contorno
+  K: 'currentColor', // contorno: cor do texto do botão, acompanha o tema (TEMA-05)
   P: '#ff3e7f', // borracha
   Y: '#f2c94c', // corpo do lápis
   W: '#f5d7a1', // madeira apontada

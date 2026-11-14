@@ -50,6 +50,15 @@ test('TEMA-02 tema Noite sobrevive ao recarregar e vale em outra origem; mascote
   await expect(pxa(other).getByLabel('Tema')).toHaveValue('noite')
 })
 
+test('TEMA-05 no tema Noite os ícones do painel usam contorno claro (legível no botão escuro)', async ({ page, toggle }) => {
+  await page.goto(`${BASE}/index.html`)
+  await toggle(page)
+  await annotate(page, '#save', 'botão')
+  await pxa(page).getByLabel('Tema').selectOption('noite')
+  const exportIcon = pxa(page).getByRole('button', { name: 'Exportar .zip' }).locator('rect[fill="currentColor"]').first()
+  await expect(exportIcon).toHaveCSS('fill', 'rgb(230, 225, 240)') // --pxa-ink do Noite
+})
+
 test('TEMA-04 marcadores mantêm a cor da categoria no tema Noite', async ({ page, toggle }) => {
   await page.setViewportSize({ width: 1280, height: 720 })
   await page.goto(`${BASE}/index.html`)

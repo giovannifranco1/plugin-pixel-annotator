@@ -9,7 +9,8 @@ describe('ícones pixel art', () => {
     expect(svg.getAttribute('shape-rendering')).toBe('crispEdges')
     expect(svg.getAttribute('aria-hidden')).toBe('true')
     const rects = Array.from(svg.querySelectorAll('rect')).map((r) => ['x', 'y', 'width', 'fill'].map((a) => r.getAttribute(a)).join(' '))
-    expect(rects).toEqual(['0 0 2 #1a1226', '1 1 1 #ff3e7f', '2 1 1 #1a1226'])
+    // Contorno em currentColor: segue a cor do texto do botão, que muda com o tema (escuro no Padrão, claro no Noite).
+    expect(rects).toEqual(['0 0 2 currentColor', '1 1 1 #ff3e7f', '2 1 1 currentColor'])
   })
 
   test('lápis e lixeira são grades quadradas só com cores da paleta', () => {
