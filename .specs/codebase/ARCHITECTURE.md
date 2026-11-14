@@ -12,6 +12,6 @@ Fluxo: ícone → background checa/injeta → annotator ativa overlay e painel �
 
 **Diversão** (`ui/fun.ts`, criado pelo controller): mascote, sons e temas. Descobre anotação nova assinando o `store` (número acima da última marca = nova) e recebe `exported('zip' | 'markdown')` do controller quando `exportZip`/`copyMarkdown` devolvem `true`. O **Perfil** (tema e som, `lib/profile.ts`) é o único estado persistido: `storage.local`, chave `pxa:profile`, compartilhado por abas e origens, gravado por `profile-storage.ts` em fila (ler → modificar → gravar) com fallback em memória. Os listeners de interação/Konami são passivos e registrados **antes** do interceptor (ele chama `stopImmediatePropagation` na captura em `window`).
 
-**Temas:** `ui/styles.ts` usa só custom properties `--pxa-*`; os valores do tema Padrão vêm de `ui/themes.ts` (`themeVarsCss`) e `applyTheme` troca as variáveis no `.pxa-layer`. Marcadores ficam fora (cor da categoria fixa). O mascote tem paleta própria por tema (`MASCOT_PALETTES` em `ui/mascot.ts`) e `fun.ts` troca as duas juntas.
+**Temas:** `ui/styles.ts` usa só custom properties `--pxa-*`; os valores do tema Padrão vêm de `ui/themes.ts` (`themeVarsCss`) e `applyTheme` troca as variáveis no `.pxa-layer`. Marcadores ficam fora (cor da categoria fixa). O mascote tem cor fixa (rosa da marca), igual em todos os temas.
 
 Detalhes e decisões: `.specs/features/2026-11-13-modo-anotacao/design.md` e `.specs/features/2026-11-14-diversao/design.md`.

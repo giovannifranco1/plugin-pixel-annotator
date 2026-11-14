@@ -20,6 +20,6 @@
 | Breakpoint | Faixa Tailwind da largura do viewport (base/sm/md/lg/xl/2xl) |
 | Categoria de tela | Mobile, tablet ou desktop, derivada da largura do viewport |
 | Export | Pacote `.zip` com `feedback.md` + `shots/` |
-| Mascote | Alfinete fofo em pixel 16×16 (2×) no cabeçalho do Painel, com Humor `idle`/`feliz`/`susto`/`festa`/`dormindo` e paleta por Tema |
+| Mascote | Alfinete em pixel 16×16 (2×) no cabeçalho do Painel, com Humor `idle`/`feliz`/`susto`/`festa`/`dormindo`; mesma cor em todos os Temas |
 | Tema | Paleta da UI do PxA via custom properties `--pxa-*` (`ui/themes.ts`) |
 | Perfil | Tema e som, em `storage.local` (`pxa:profile`); único estado persistido |

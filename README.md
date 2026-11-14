@@ -87,7 +87,7 @@ A extensão temporária do Firefox some quando o navegador fecha. É só carrega
 - **Funciona em SPA:** ao trocar de rota sem reload, os marcadores mostram só as anotações da rota atual e o painel mantém todas.
 - **UI isolada:** tudo roda em Shadow DOM, acima de qualquer `z-index`. O CSS da página não afeta o PxA e o CSS do PxA não afeta a página.
 - **Diversão (tudo opcional, nada bloqueia o fluxo):**
-  - **Mascote:** um alfinete fofinho no cabeçalho do painel que fica feliz quando você anota, leva susto em anotação mobile, faz festa ao exportar e dorme depois de 60s parado. Ele muda de cor com o tema. Com *reduzir movimento* ligado no sistema, ele só troca de quadro.
+  - **Mascote:** um alfinete pixel no cabeçalho do painel que fica feliz quando você anota, leva susto em anotação mobile, faz festa ao exportar e dorme depois de 60s parado. Com *reduzir movimento* ligado no sistema, ele só troca de quadro.
   - **Sons 8-bit:** desligados por padrão; ligue no alto-falante do painel. Gerados na hora com Web Audio, sem arquivos.
   - **Temas:** Padrão (claro, rosa) e Noite (escuro), no seletor do painel. As cores dos marcadores (mobile/tablet/desktop) não mudam.
   - **Segredo:** com o modo ligado, tente o Konami code. 🎮

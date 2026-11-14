@@ -158,7 +158,7 @@ Três features rodam em paralelo a partir do mesmo `develop`: **Diversão**, **R
 
 | ID | Story | Status |
 |---|---|---|
-| MASC-01..06 | Mascote no painel | Pending (Revisão 2: arte) |
+| MASC-01..06 | Mascote no painel | Verified (unit `mascot`/`fun` com largura da cabeça e cor igual nos temas; E2E `fun.spec`; MASC-05 com `emulateMedia`) |
 | MASC-07 | Mascote por tema | Removido (Revisão 2) |
 | CONQ-01..07 | XP, nível e conquistas | Removido (Revisão 1) |
 | SOM-01..04 | Sons 8-bit | Verified (unit `sound`/`fun`; E2E ícone pixel + CSP). Ouvir os sons: checklist manual |
