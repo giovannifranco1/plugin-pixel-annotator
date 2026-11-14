@@ -1,16 +1,28 @@
 # Diversão — Especificação
 
-> **Status:** Implementada em 2026-11-14 (andar Diversão). Design, tasks e checklist manual nesta pasta. Q-02 (arte do mascote) aguarda confirmação do dev: `assets/mascot-preview.html`.
+> **Status:** Implementada em 2026-11-14 e **revisada pelo dev no mesmo dia** (Revisão 1, abaixo): sai XP/nível/conquistas, ficam só os temas Padrão e Noite, mascote novo (alfinete fofo, sem boca) com cores por tema, ícone de som em pixel art.
 > **Branch:** `feature/ui-diversao` (andar "Diversão" no Maestri), a partir de `develop` em `91e6134`.
 
 ## Problema
 
 O PxA já funciona, mas é uma ferramenta "séria" com cara de pixel art e nada mais. O que faz a galera instalar, usar de novo e mostrar pros colegas é o charme: reação, recompensa, som e personalização. Hoje anotar 20 ajustes é trabalho repetitivo sem nenhum retorno além da lista.
 
+## Revisão 1 (dev, 2026-11-14, após testar)
+
+| Pedido do dev | Efeito na spec |
+|---|---|
+| "O mascote ficou meio bizarro, dá medo" | Q-02 respondida: alfinete **fofo**, sem boca, com brilho no olho e bochecha (opção C escolhida entre 3). MASC-06 atualizado. |
+| "Tira a parada de Nv e conquistas" | CONQ-01..07 **removidos**. O Perfil guarda só tema e som. |
+| "Deixe somente o Padrão e o Noite" | TEMA-01 atualizado. |
+| "Ajustar o mascote para cada tema" | Novo MASC-07. |
+| "Troque o ícone de mutar, ficou estranho" | SOM-01 atualizado: ícone pixel art em vez de emoji. |
+| Konami (perguntado ao dev) | Mantido só como dança + jingle, sem conquista (EGG-01). |
+| "O som eu amei" | SOM-02..04 sem mudança (o jingle de conquista deixa de existir; o jingle fica no Konami). |
+
 ## Objetivos
 
 - [ ] O PxA tem personalidade visível: um mascote que reage ao que o dev faz.
-- [ ] Usar o PxA dá pequenas recompensas (XP, nível, conquistas) que persistem entre sessões.
+- [ ] ~~Usar o PxA dá pequenas recompensas (XP, nível, conquistas)~~ — removido na Revisão 1.
 - [ ] Tudo é opcional e nunca atrapalha o fluxo de anotar: sem modal bloqueante, sem som por padrão.
 - [ ] Nenhuma permissão nova além de `storage`, aprovada pelo dev só para o Perfil (Q-01). Nada sai do navegador.
 
@@ -36,7 +48,7 @@ O PxA já funciona, mas é uma ferramenta "séria" com cara de pixel art e nada 
 | Nível | Faixa de XP; mostrado como `Nv 3` no Painel |
 | Conquista | Marco desbloqueável com nome, ícone pixel e descrição; vale uma vez |
 | Tema | Paleta da UI do PxA (painel, editor, overlay, toast) |
-| Perfil | Registro persistido de XP, conquistas e preferências (tema, som) |
+| Perfil | Registro persistido das preferências (tema, som) |
 
 ---
 
@@ -53,9 +65,12 @@ O PxA já funciona, mas é uma ferramenta "séria" com cara de pixel art e nada 
 3. QUANDO um `.zip` é exportado ou o markdown é copiado ENTÃO o Mascote DEVE ficar em `festa` por ~2s. (MASC-03)
 4. QUANDO não há interação com o PxA (hover, clique, tecla no editor) por 60s ENTÃO o Mascote DEVE ir para `dormindo`, e voltar a `idle` na próxima interação. (MASC-04)
 5. QUANDO o sistema tem `prefers-reduced-motion: reduce` ENTÃO os humores DEVEM trocar de quadro sem animação contínua. (MASC-05)
-6. O Mascote DEVE ser SVG com `shape-rendering="crispEdges"` gerado a partir de grades de pixel, no mesmo padrão de `ui/icons.ts` (sem PNG). (MASC-06)
+6. O Mascote DEVE ser SVG com `shape-rendering="crispEdges"` gerado a partir de grades de pixel, no mesmo padrão de `ui/icons.ts` (sem PNG). Arte: alfinete fofo (cabeça redonda, olhos com brilho, bochecha rosada, **sem boca**, agulha curta). (MASC-06)
+7. QUANDO o Tema muda ENTÃO o Mascote DEVE trocar para a paleta daquele Tema (rosa no `Padrão`, lilás no `Noite`), na hora. (MASC-07)
 
-### P1: XP, nível e conquistas ⭐
+### ~~P1: XP, nível e conquistas~~ — REMOVIDO na Revisão 1
+
+> O dev não gostou. Os critérios abaixo ficam só como histórico; nada deles é implementado.
 
 **User Story**: Como dev, quero ganhar XP e desbloquear conquistas enquanto anoto, para dar vontade de usar.
 
@@ -82,8 +97,8 @@ O PxA já funciona, mas é uma ferramenta "séria" com cara de pixel art e nada 
 
 **Critérios de Aceite**:
 
-1. O som DEVE começar **desligado** e ter um botão 🔈/🔇 no Painel; a escolha persiste no Perfil. (SOM-01)
-2. COM som ligado, QUANDO uma anotação é salva ENTÃO o sistema DEVE tocar um *blip* curto; QUANDO exporta, uma fanfarra curta; QUANDO desbloqueia Conquista, um jingle. (SOM-02)
+1. O som DEVE começar **desligado** e ter um botão no Painel com ícone pixel art de alto-falante (com ondas = ligado, com X = desligado; nada de emoji); a escolha persiste no Perfil. (SOM-01)
+2. COM som ligado, QUANDO uma anotação é salva ENTÃO o sistema DEVE tocar um *blip* curto; QUANDO exporta, uma fanfarra curta; no Konami, um jingle. (SOM-02)
 3. Os sons DEVEM ser sintetizados com Web Audio (osciladores quadrados/triangulares), sem arquivos de áudio, com duração ≤ 800ms e volume baixo fixo. (SOM-03)
 4. Falha do Web Audio (bloqueado pelo navegador ou pela CSP da página) DEVE ser silenciosa. (SOM-04)
 
@@ -93,7 +108,7 @@ O PxA já funciona, mas é uma ferramenta "séria" com cara de pixel art e nada 
 
 **Critérios de Aceite**:
 
-1. O sistema DEVE oferecer os Temas: `Padrão` (atual, rosa), `Game Boy` (4 tons de verde), `NES`, `CRT` (escuro com scanlines no painel) e `Noite` (escuro). (TEMA-01)
+1. O sistema DEVE oferecer os Temas `Padrão` (atual, rosa) e `Noite` (escuro). Game Boy, NES e CRT foram removidos na Revisão 1. (TEMA-01)
 2. A troca de Tema DEVE ser feita por um seletor no Painel e aplicar na hora, sem recarregar; a escolha persiste no Perfil. (TEMA-02)
 3. Os Temas DEVEM ser implementados com custom properties em `ui/styles.ts` (a paleta atual vira o Tema `Padrão`), sem duplicar o CSS. (TEMA-03)
 4. As cores de categoria dos Marcadores (verde/amarelo/azul) NÃO DEVEM mudar com o Tema. (TEMA-04)
@@ -103,24 +118,23 @@ O PxA já funciona, mas é uma ferramenta "séria" com cara de pixel art e nada 
 
 **Critérios de Aceite**:
 
-1. QUANDO o modo está ativo e o dev digita ↑↑↓↓←→←→BA (fora do editor de nota) ENTÃO o sistema DEVE desbloquear **Código Secreto**, fazer o Mascote dançar e, com som ligado, tocar o jingle. (EGG-01)
+1. QUANDO o modo está ativo e o dev digita ↑↑↓↓←→←→BA (fora do editor de nota) ENTÃO o sistema DEVE fazer o Mascote dançar e, com som ligado, tocar o jingle. Sem conquista (Revisão 1). (EGG-01)
 2. O listener do Konami NÃO DEVE impedir as teclas de chegarem à página. (EGG-02)
 
 ---
 
 ## Casos Limite
 
-- Muitas Conquistas de uma vez (ex: a 1ª anotação também completa outra): toasts em fila, um por vez.
 - Perfil corrompido ou de versão antiga: descartar o campo inválido e seguir, sem quebrar o modo.
-- Duas abas anotando ao mesmo tempo: o XP soma nas duas; gravação deve ler-modificar-gravar sem perder pontos (ou aceitar perda mínima, decidir no Design).
-- Sem permissão de storage (Q-01 negada): XP e Conquistas valem só para a aba; a UI continua igual.
+- Duas abas trocando tema/som ao mesmo tempo: vale a última gravação.
+- Sem permissão de storage (Q-01 negada): tema e som valem só para a aba; a UI continua igual.
 - Página com CSP restritiva: Web Audio e SVG inline funcionam no isolated world; validar no E2E.
-- Painel recolhido no mobile: Mascote e `Nv` cabem na barra; visão Conquistas abre o painel.
+- Painel recolhido no mobile: o Mascote cabe na barra.
 
 ## Questões em Aberto
 
 - **Q-01 (decidida em 2026-11-14: aprovada a permissão `storage` só para o Perfil):** Persistir o Perfil exige a permissão `storage` (`chrome.storage.local`). Ela **não gera aviso** na instalação, mas o CLAUDE.md pede decisão registrada para permissão nova. Recomendação: aprovar `storage` só para o Perfil. As anotações continuam só na sessão (decisão do M1 mantida).
-- **Q-02:** Arte do Mascote. Proposta: um alfinete rosa com olhos (o mesmo do ícone) para manter a marca. Confirmar no Design com um preview.
+- **Q-02 (decidida em 2026-11-14, Revisão 1):** Arte do Mascote. A 1ª versão (alfinete com boca) "dava medo"; o dev escolheu o alfinete fofo sem boca entre 3 opções.
 
 ## Coordenação entre andares
 
@@ -137,14 +151,14 @@ Três features rodam em paralelo a partir do mesmo `develop`: **Diversão**, **R
 
 | ID | Story | Status |
 |---|---|---|
-| MASC-01..06 | Mascote no painel | Verified (unit `mascot`/`fun`, E2E `fun.spec`; MASC-05 com `emulateMedia`) |
-| CONQ-01..07 | XP, nível e conquistas | Verified (unit `achievements`/`profile`/`profile-storage`/`fun`, E2E recarregar + outra origem) |
-| SOM-01..04 | Sons 8-bit | Verified (unit `sound`/`fun`; E2E com CSP). Ouvir os sons: checklist manual |
-| TEMA-01..05 | Temas de paleta | Verified (unit `themes` com contraste WCAG, E2E troca/persistência/marcador) |
-| EGG-01..02 | Easter egg | Verified (unit `konami`/`fun`, E2E teclas chegam à página) |
+| MASC-01..07 | Mascote no painel | Pending (Revisão 1) |
+| CONQ-01..07 | XP, nível e conquistas | Removido (Revisão 1) |
+| SOM-01..04 | Sons 8-bit | Pending (Revisão 1: ícone) |
+| TEMA-01..05 | Temas de paleta | Pending (Revisão 1: 2 temas) |
+| EGG-01..02 | Easter egg | Pending (Revisão 1: sem conquista) |
 
 ## Critérios de Sucesso
 
-- [ ] Em uma sessão de 5 anotações + export, o dev vê o Mascote reagir pelo menos 3 vezes e desbloqueia ao menos 2 Conquistas.
+- [ ] Em uma sessão de 5 anotações + export, o dev vê o Mascote reagir pelo menos 3 vezes.
 - [x] Nenhuma regressão nos 127 testes unitários e 27 E2E do M1 (agora 192 unit e 34 E2E).
 - [x] `check:manifest` atualizado: só `activeTab`, `scripting` e `storage`.
