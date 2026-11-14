@@ -52,10 +52,7 @@ export function createFun(ui: UiHost, store: AnnotationStore, mount: PanelMount,
   }
 
   function render(p: Profile) {
-    if (ui.layer.dataset.pxaTheme !== p.theme) {
-      applyTheme(ui.layer, p.theme)
-      mascot.setTheme(p.theme) // MASC-07
-    }
+    if (ui.layer.dataset.pxaTheme !== p.theme) applyTheme(ui.layer, p.theme)
     if (p.sound !== profile.sound || !soundBtn.firstChild) {
       soundBtn.replaceChildren(pixelIcon(p.sound ? SPEAKER_ON : SPEAKER_OFF))
       soundBtn.setAttribute('aria-label', p.sound ? 'Desligar som' : 'Ligar som')

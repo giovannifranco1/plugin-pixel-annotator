@@ -4,7 +4,7 @@ type Page = Parameters<typeof pxa>[0]
 const mascot = (page: Page) => pxa(page).locator('.pxa-mascot')
 const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a']
 const NOITE_PAPER = 'rgb(27, 23, 38)'
-const NOITE_BODY = '#b9a3ff' // corpo do mascote no tema Noite (MASC-07)
+const BRAND_PINK = '#ff3e7f' // corpo do mascote, igual nos dois temas (Revisão 2)
 
 // Outra origem, com CSP restritiva, servida pelo próprio Playwright.
 const PLAIN_PAGE = `<!doctype html><html><head><meta charset="utf-8"><title>Outra</title></head>
@@ -29,20 +29,19 @@ test('MASC-03 export .zip faz festa', async ({ page, toggle }) => {
   await expect(mascot(page)).toHaveAttribute('data-mood', 'festa')
 })
 
-test('TEMA-02/MASC-07 tema e mascote do Noite sobrevivem ao recarregar e valem em outra origem', async ({ page, context, toggle }) => {
+test('TEMA-02 tema Noite sobrevive ao recarregar e vale em outra origem; mascote não muda de cor', async ({ page, context, toggle }) => {
   await page.goto(`${BASE}/index.html`)
   await toggle(page)
   const select = pxa(page).getByLabel('Tema')
   await expect(select.locator('option')).toHaveText(['Padrão', 'Noite'])
   await select.selectOption('noite')
   await expect(panel(page)).toHaveCSS('background-color', NOITE_PAPER)
-  await expect(mascot(page).locator(`rect[fill="${NOITE_BODY}"]`).first()).toBeAttached()
+  await expect(mascot(page).locator(`rect[fill="${BRAND_PINK}"]`).first()).toBeAttached()
 
   await page.reload()
   await toggle(page)
   await expect(pxa(page).getByLabel('Tema')).toHaveValue('noite')
   await expect(panel(page)).toHaveCSS('background-color', NOITE_PAPER)
-  await expect(mascot(page).locator(`rect[fill="${NOITE_BODY}"]`).first()).toBeAttached()
 
   await context.route('http://outra.test/**', (route) => route.fulfill({ contentType: 'text/html', body: PLAIN_PAGE }))
   const other = await context.newPage()

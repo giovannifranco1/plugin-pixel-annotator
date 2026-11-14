@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { createHost, type UiHost } from '@/entrypoints/annotator.content/ui/host'
 import { createPanel } from '@/entrypoints/annotator.content/ui/panel'
 import { createFun } from '@/entrypoints/annotator.content/ui/fun'
-import { MASCOT_PALETTES } from '@/entrypoints/annotator.content/ui/mascot'
+import { MASCOT_PALETTE } from '@/entrypoints/annotator.content/ui/mascot'
 import type { SoundName } from '@/entrypoints/annotator.content/ui/sound'
 import { createProfileStorage, type ProfileStorage } from '@/entrypoints/annotator.content/profile-storage'
 import { KONAMI } from '@/lib/konami'
@@ -154,25 +154,25 @@ describe('diversão', () => {
     expect((await profile()).theme).toBe('noite')
   })
 
-  test('MASC-07 o mascote usa a paleta do tema e troca junto', async () => {
+  test('Revisão 2: o mascote tem as mesmas cores no Padrão e no Noite', async () => {
     await setup()
-    expect(mascotFills()).toContain(MASCOT_PALETTES.padrao.P)
+    const before = mascotFills()
+    expect(before).toContain(MASCOT_PALETTE.P)
     const select = $<HTMLSelectElement>('select[aria-label="Tema"]')
     select.value = 'noite'
     select.dispatchEvent(new Event('change'))
-    expect(mascotFills()).toContain(MASCOT_PALETTES.noite.P)
-    expect(mascotFills()).not.toContain(MASCOT_PALETTES.padrao.K) // contorno também troca
+    expect(ui.layer.dataset.pxaTheme).toBe('noite')
+    expect(mascotFills()).toEqual(before)
   })
 
-  test('TEMA-02/MASC-07 tema e som salvos voltam ao abrir', async () => {
+  test('TEMA-02 tema e som salvos voltam ao abrir', async () => {
     await setup({ ...defaultProfile(), theme: 'noite', sound: true })
     expect(ui.layer.dataset.pxaTheme).toBe('noite')
     expect($<HTMLSelectElement>('select[aria-label="Tema"]').value).toBe('noite')
     expect($('button[aria-label="Desligar som"]')).not.toBeNull()
-    expect(mascotFills()).toContain(MASCOT_PALETTES.noite.P)
   })
 
-  test('TEMA-02 mudança de outra aba aplica tema e mascote', async () => {
+  test('TEMA-02 mudança de outra aba aplica o tema', async () => {
     let emit: (p: Profile) => void = () => {}
     const base = createProfileStorage(undefined)
     storage = { ...base, onChange: (cb) => { emit = cb; return () => {} } }
@@ -180,7 +180,6 @@ describe('diversão', () => {
     await flush()
     emit({ ...defaultProfile(), theme: 'noite' })
     expect(ui.layer.dataset.pxaTheme).toBe('noite')
-    expect(mascotFills()).toContain(MASCOT_PALETTES.noite.P)
   })
 
   test('EGG-01 Konami com o modo ativo: mascote dança e toca o jingle (com som), sem toast', async () => {
