@@ -10,4 +10,8 @@ Fluxo: ícone → background checa/injeta → annotator ativa overlay e painel �
 
 **Laço por frame** (`tick.ts`, só com o modo ativo): todas as leituras de layout primeiro (`overlay.measure()`, `markers.measure()`), depois todas as escritas, escrevendo só o que mudou. Elementos que sumiram são buscados de novo pelo seletor no máximo a cada 500ms ou na troca de rota. O nó reencontrado fica memorizado (`store.rememberRef`).
 
-Detalhes e decisões: `.specs/features/2026-11-13-modo-anotacao/design.md`.
+**Diversão** (`ui/fun.ts`, criado pelo controller): mascote, XP, conquistas, sons e temas. Descobre anotação nova assinando o `store` (número acima da última marca = nova) e recebe `exported('zip' | 'markdown')` do controller quando `exportZip`/`copyMarkdown` devolvem `true`. A regra de XP/nível/conquistas é pura (`lib/achievements.ts`, `lib/profile.ts`). O **Perfil** é o único estado persistido: `storage.local`, chave `pxa:profile`, compartilhado por abas e origens, gravado por `profile-storage.ts` em fila (ler → modificar → gravar) com fallback em memória. Os listeners de interação/Konami são passivos e registrados **antes** do interceptor (ele chama `stopImmediatePropagation` na captura em `window`).
+
+**Temas:** `ui/styles.ts` usa só custom properties `--pxa-*`; os valores do tema Padrão vêm de `ui/themes.ts` (`themeVarsCss`) e `applyTheme` troca as variáveis no `.pxa-layer`. Marcadores ficam fora (cor da categoria fixa).
+
+Detalhes e decisões: `.specs/features/2026-11-13-modo-anotacao/design.md` e `.specs/features/2026-11-14-diversao/design.md`.

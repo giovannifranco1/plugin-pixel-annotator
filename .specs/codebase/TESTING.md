@@ -2,13 +2,13 @@
 
 | Comando | O que roda |
 |---|---|
-| `npm test` | Unit (Vitest + happy-dom): 22 arquivos, 120 testes |
-| `npm run test:e2e` | `wxt build --mode e2e` + Playwright no Chromium: 27 testes |
+| `npm test` | Unit (Vitest + happy-dom): 31 arquivos, 192 testes |
+| `npm run test:e2e` | `wxt build --mode e2e` + Playwright no Chromium: 34 testes |
 | `npm run compile` | `tsc --noEmit` (inclui os testes) |
 | `npm run screenshots` | Regera os prints do README (`media/`) com a página `demo.html`; não é teste |
-| `npm run check:manifest` | Builds de produção: MV3, só `activeTab` + `scripting`, sem host permissions nem content scripts (PLAT-01) |
+| `npm run check:manifest` | Builds de produção: MV3, só `activeTab` + `scripting` + `storage` (Q-01, só para o Perfil), sem host permissions nem content scripts (PLAT-01) |
 
-**Gate full** (antes de commit): `npm run compile && npm test && npm run build && npm run build:firefox && npm run check:manifest && npm run test:e2e`.
+**Gate full** (antes de commit): `npm run compile && npm test && npm run build && npm run build:firefox && npm run check:manifest && npm run test:e2e`. Em worktrees paralelos, defina `PXA_E2E_PORT` (o andar Diversão usa 5175).
 
 ## Padrões
 
@@ -17,6 +17,10 @@
 - **Listeners em `window`:** todo controller criado num teste é desativado no teardown. Senão o interceptor de um teste bloqueia os cliques do seguinte.
 - **E2E:** o build `--mode e2e` (`.output/chrome-mv3-e2e`) recebe `host_permissions: <all_urls>` e expõe `__pxaToggle` no service worker, porque o Playwright não clica no ícone da extensão. O build de produção nunca recebe isso. O harness (`tests/e2e/harness.ts`) traz os helpers `toggle`, `annotate`, `exportZip` (expande o painel se estiver recolhido), `pngSize`, `activeTabId` e os locators `pxa/panel/items/markers/editor/toast`, que atravessam o shadow root aberto.
 - **Fixtures E2E** (`tests/e2e/fixtures/`, servidas pelo Vite na porta 5174, ou na `PXA_E2E_PORT` quando definida): HTML estático com CSS hostil e z-index alto, React 19 sem JSX, Vue 3 com `__file`, SPA com `pushState` e `demo.html`, um painel de clientes em React usado só nos prints do README.
+
+- **Perfil (storage):** unit com `fakeBrowser.storage.local` (`fakeBrowser.reset()` no `beforeEach`) ou `createProfileStorage(undefined)` (memória). No E2E cada teste abre um perfil de navegador novo, então o Perfil começa zerado.
+- **Outra origem no E2E:** `context.route('http://x.test/**', …)` serve páginas de teste (inclusive com header CSP). Limitação: **anotar** nessas páginas falha na captura desde o M1 (ver CONCERNS); use-as para o que não depende da captura.
+- **Timers da Diversão:** `vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] })` e espere a fila do storage com `await storage.load()` em vez de contar microtasks.
 
 ## Parallel-safe
 

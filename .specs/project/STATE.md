@@ -13,6 +13,11 @@
 - 2026-11-13 — Execução sem esperar teste do dev: o agente roda as suítes; o dev testa só no final (Sentinel).
 - 2026-11-13 — Regras de execução (Sentinel): seguir o nano-spec fase a fase, 1 commit por fase, nunca push/merge/PR.
 
+- 2026-11-14 — Diversão: permissão `storage` aprovada pelo dev só para o Perfil (Q-01); anotações continuam só na sessão. `check:manifest` exige `activeTab` + `scripting` + `storage`.
+- 2026-11-14 — Diversão (agente do andar, sem decisão do dev): perda mínima de XP aceita quando duas abas gravam no mesmo instante (D7); conquistas não dão XP (D5); fanfarra só no `.zip`, copiar markdown faz festa sem som (D14); Maratona conta anotações criadas na aba, mesmo se excluídas depois (D6).
+- 2026-11-14 — Diversão: botão primário do tema Padrão passou de texto branco para tinta escura sobre o rosa (3,36:1 → 5,39:1) para cumprir TEMA-05.
+- 2026-11-14 — Diversão: Q-02 (arte do mascote) implementada com o alfinete do ícone; confirmação do dev pendente (`assets/mascot-preview.html`).
+
 ## Blockers
 
 (nenhum)
@@ -22,6 +27,10 @@
 - 2026-11-13 — **Painel cobria a página no mobile.** Sintoma: E2E em 390px estourava o tempo no clique. Causa raiz (medida com `elementFromPoint`): painel de 320px a 12px da direita começa em x=58 e cobre o conteúdo. Correção: painel recolhível e recolhido por padrão abaixo de 768px. Prevenção: E2E de captura roda em 390px e verifica o painel recolhido.
 - 2026-11-13 — **Listeners em `window` vazam entre testes.** Controllers ativos de um teste interceptavam cliques do seguinte (`stopImmediatePropagation` na captura). Teardown desativa todo controller criado.
 - 2026-11-13 — **WXT 0.21:** Firefox sai em MV2 sem `manifestVersion: 3`; `matches` de content script `runtime` vira `host_permissions`; `--mode e2e` gera `.output/chrome-mv3-e2e`; `fakeBrowser` em `wxt/testing/fake-browser`. Chrome sem polyfill: listener de `onMessage` responde com `sendResponse` + `return true`.
+
+- 2026-11-14 — **Contador do painel sumia com o mascote no cabeçalho.** Sintoma: com Nv + 🏆 no cabeçalho, o título virava "PxA · Anota…" e o `(3)` sumia; os testes passavam porque checam `textContent`. Causa: título com `ellipsis` disputando 300px com 5 itens fixos. Correção: título quebra linha (2 linhas cabem na altura do mascote) e gaps menores. Prevenção: conferir o cabeçalho num print de 320px sempre que entrar item novo nele.
+- 2026-11-14 — **Interceptor engole `pointerdown` da página** (`stopImmediatePropagation` na captura em `window`). Listener novo em `window` que precise ver gestos na página tem de ser registrado antes do `installInterceptor` (ordem do array de teardown no controller).
+- 2026-11-14 — **Anotar em página servida por `context.route` falha** ("Falha ao anotar") já no commit base; descoberto ao testar CSP. Não investigado (fora do escopo); o E2E da Diversão usa essas páginas só para o que não depende da captura.
 
 ## Ideias adiadas
 

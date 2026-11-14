@@ -1,6 +1,6 @@
 # Diversão — Especificação
 
-> **Status:** Aprovada pelo dev em 2026-11-14. Próximas fases neste andar: Design → Tasks → Execute.
+> **Status:** Implementada em 2026-11-14 (andar Diversão). Design, tasks e checklist manual nesta pasta. Q-02 (arte do mascote) aguarda confirmação do dev: `assets/mascot-preview.html`.
 > **Branch:** `feature/ui-diversao` (andar "Diversão" no Maestri), a partir de `develop` em `91e6134`.
 
 ## Problema
@@ -137,14 +137,14 @@ Três features rodam em paralelo a partir do mesmo `develop`: **Diversão**, **R
 
 | ID | Story | Status |
 |---|---|---|
-| MASC-01..06 | Mascote no painel | Pending |
-| CONQ-01..07 | XP, nível e conquistas | Pending |
-| SOM-01..04 | Sons 8-bit | Pending |
-| TEMA-01..05 | Temas de paleta | Pending |
-| EGG-01..02 | Easter egg | Pending |
+| MASC-01..06 | Mascote no painel | Verified (unit `mascot`/`fun`, E2E `fun.spec`; MASC-05 com `emulateMedia`) |
+| CONQ-01..07 | XP, nível e conquistas | Verified (unit `achievements`/`profile`/`profile-storage`/`fun`, E2E recarregar + outra origem) |
+| SOM-01..04 | Sons 8-bit | Verified (unit `sound`/`fun`; E2E com CSP). Ouvir os sons: checklist manual |
+| TEMA-01..05 | Temas de paleta | Verified (unit `themes` com contraste WCAG, E2E troca/persistência/marcador) |
+| EGG-01..02 | Easter egg | Verified (unit `konami`/`fun`, E2E teclas chegam à página) |
 
 ## Critérios de Sucesso
 
 - [ ] Em uma sessão de 5 anotações + export, o dev vê o Mascote reagir pelo menos 3 vezes e desbloqueia ao menos 2 Conquistas.
-- [ ] Nenhuma regressão nos 127 testes unitários e 27 E2E do M1.
-- [ ] `check:manifest` atualizado: só `activeTab`, `scripting` e (se aprovado) `storage`.
+- [x] Nenhuma regressão nos 127 testes unitários e 27 E2E do M1 (agora 192 unit e 34 E2E).
+- [x] `check:manifest` atualizado: só `activeTab`, `scripting` e `storage`.

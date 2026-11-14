@@ -2,7 +2,7 @@
 
 **Spec**: `.specs/features/2026-11-14-diversao/spec.md`
 **Design**: `.specs/features/2026-11-14-diversao/design.md`
-**Status**: Em execução
+**Status**: Done — 2026-11-14. Gate full: compile ok · 192 unit · builds Chrome/Firefox MV3 · check:manifest ok (activeTab, scripting, storage) · 34 E2E (`PXA_E2E_PORT=5175`). Checklist manual em `manual-check.md`.
 
 > **Breakdown:** horizontal. Lógica pura em `lib/` (TDD), depois UI fina, depois integração e E2E.
 > **Commits:** 1 por fase do nano-spec (regra do andar). As tasks não commitam.

@@ -6,6 +6,7 @@
 - UI injetada: elementos criados com `el()` (`ui/dom.ts`) dentro do host do Shadow DOM; CSS só em `ui/styles.ts`.
 - Módulos de UI com desenho por frame expõem `measure()`, que lê o layout e devolve a escrita. O tick junta todas as leituras antes das escritas.
 - Lógica pura vai em `lib/` (sem `browser.*`), testável no Vitest.
+- Cores da UI só por `var(--pxa-*)` em `ui/styles.ts`; valor novo de cor vira variável em `THEME_VARS` com valor em todos os temas (o teste de contraste cobre texto/fundo). Exceção: marcadores (cor da categoria).
 - Commits: Conventional Commits. Scopes: `content`, `background`, `capture`, `export`, `ui`, `build`, `specs`.
 
 ## Glossário
@@ -19,3 +20,8 @@
 | Breakpoint | Faixa Tailwind da largura do viewport (base/sm/md/lg/xl/2xl) |
 | Categoria de tela | Mobile, tablet ou desktop, derivada da largura do viewport |
 | Export | Pacote `.zip` com `feedback.md` + `shots/` |
+| Mascote | Personagem pixel 16×16 (2×) no cabeçalho do Painel, com Humor `idle`/`feliz`/`susto`/`festa`/`dormindo` |
+| XP / Nível | Pontos por anotar (10) e exportar (5 por anotação nova); Nv n+1 exige `25·n·(n+1)` XP |
+| Conquista | Marco desbloqueável uma vez (catálogo em `lib/achievements.ts`) |
+| Tema | Paleta da UI do PxA via custom properties `--pxa-*` (`ui/themes.ts`) |
+| Perfil | XP, conquistas, tema e som, em `storage.local` (`pxa:profile`); único estado persistido |
