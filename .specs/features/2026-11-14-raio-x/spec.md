@@ -1,6 +1,6 @@
 # Raio-X — Especificação
 
-> **Status:** Revisão 2 em 2026-11-14. Depois de ver a primeira versão, o dev cortou o X-ray e a Grade ("gostei só do detector e da lupa") e pediu uma passada geral no Detector ("tá meio burro"). DETE-02/03/05 revisados; DETE-08..10 novos. **Revisão 3** (mesmo dia): diferenças imperceptíveis de cor viram a mesma cor; relatório explica o que está ok e o porquê de cada Achado (DETE-03/09). Verificação manual no Firefox pendente (`manual-check.md`).
+> **Status:** Revisão 2 em 2026-11-14. Depois de ver a primeira versão, o dev cortou o X-ray e a Grade ("gostei só do detector e da lupa") e pediu uma passada geral no Detector ("tá meio burro"). DETE-02/03/05 revisados; DETE-08..10 novos. **Revisão 4**: relatório arrastável (DETE-11). **Revisão 3** (mesmo dia): diferenças imperceptíveis de cor viram a mesma cor; relatório explica o que está ok e o porquê de cada Achado (DETE-03/09). Verificação manual no Firefox pendente (`manual-check.md`).
 > **Branch:** `feature/content-raio-x` (andar "Raio-X" no Maestri), a partir de `develop` em `91e6134`.
 
 ## Problema
@@ -63,6 +63,7 @@ O PxA hoje depende do olho do dev: ele precisa *perceber* o problema para anotá
 8. Cores em formatos modernos (`lab()`, `lch()`, `oklab()`, `oklch()`, `color(srgb|srgb-linear|display-p3 …)`), que o navegador devolve para CSS feito com Tailwind 4 e afins, DEVEM ser convertidas para hex sRGB (fora do gamut: corta no limite) e entrar no agrupamento como qualquer outra. *(rev. 2)* (DETE-08)
 9. Cada seção DEVE mostrar primeiro os Achados; os demais valores ficam recolhidos em "N valores sem problema". Seção sem Achado mostra "✓ tudo certo". O cabeçalho começa pelo número de Achados ("3 achados · 23 cores · …"), e cada Achado diz a referência com os usos dela e o que usar (ex: "parecida com #777777 (30×) → usar #777777"). *(rev. 3: o dev não entendeu se "8 outros valores" em Espaçamentos era problema)* (DETE-09)
 10. QUANDO o dev clica num valor do relatório ENTÃO o sistema DEVE rolar até o próximo elemento que usa esse valor (cíclico), mantendo o destaque. *(rev. 2)* (DETE-10)
+11. A janela do relatório DEVE poder ser arrastada pelo cabeçalho (mouse/toque e setas do teclado, 16px por toque) para não cobrir o conteúdo que o dev está olhando; ela nunca sai da tela, e a posição é mantida ao fechar e reabrir enquanto a aba estiver aberta. *(rev. 4: o dev notou que o card cai em cima de cards da página)* (DETE-11)
 
 ### P2: Lupa pixel
 
@@ -102,7 +103,7 @@ Três features rodam em paralelo a partir do mesmo `develop`: **Diversão**, **R
 
 | ID | Story | Status |
 |---|---|---|
-| DETE-01..10 | Detector de design system | Verified (rev. 2; DETE-03/09 rev. 3) — unit (`color`, `design-audit`, `audit-scan`, `audit-report`, `controller-raio-x`) + E2E `raio-x.spec.ts` (critério de sucesso, desempenho, hover, ir até, Anotar). Conferido também em GitHub, tailwindcss.com, Wikipédia e Hacker News |
+| DETE-01..11 | Detector de design system | Verified (rev. 2; DETE-03/09 rev. 3) — unit (`color`, `design-audit`, `audit-scan`, `audit-report`, `controller-raio-x`) + E2E `raio-x.spec.ts` (critério de sucesso, desempenho, hover, ir até, Anotar). Conferido também em GitHub, tailwindcss.com, Wikipédia e Hacker News |
 | XRAY-01..06 | Modo X-ray | Removido pelo dev (rev. 2) |
 | GRAD-01..03 | Grade de 8px | Removido pelo dev (rev. 2) |
 | LUPA-01..04 | Lupa pixel | Verified — unit (`loupe`, `loupe-ui`) + E2E (LUPA-01/02). LUPA-04 com DPR 2 real e Firefox: pendente manual (`manual-check.md`) |
