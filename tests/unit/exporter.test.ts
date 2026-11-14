@@ -25,8 +25,24 @@ const toast = () => ui.root.querySelector('.pxa-toast')?.textContent
 describe('exporter', () => {
   test('EXPO-01 zip contém feedback.md e shots/NN.png só para anotações com print', async () => {
     const files = unzipSync(await buildZip(store, new Date(2026, 10, 13, 14, 32), 'localhost:3000'))
-    expect(Object.keys(files).sort()).toEqual(['feedback.md', 'shots/01.png', 'shots/03.png'])
+    expect(Object.keys(files).sort()).toEqual(['feedback.md', 'pxa.json', 'shots/01.png', 'shots/03.png'])
     expect(Array.from(files['shots/01.png']!)).toEqual([137, 80, 78, 71])
+  })
+
+  test('IMPO-01 zip tem pxa.json com schemaVersion, origem, data e as anotações', async () => {
+    const files = unzipSync(await buildZip(store, new Date('2026-11-14T15:00:00Z'), 'localhost:3000', 'http://localhost:3000'))
+    const m = JSON.parse(strFromU8(files['pxa.json']!))
+    expect(m).toMatchObject({ schemaVersion: 1, origin: 'http://localhost:3000', exportedAt: '2026-11-14T15:00:00.000Z' })
+    expect(m.annotations.map((a: { number: number; shot: string | null }) => [a.number, a.shot])).toEqual([[1, 'shots/01.png'], [2, null], [3, 'shots/03.png']])
+  })
+
+  test('DESE-03 com Desenho: composto em shots/NN.png e original em shots/NN-original.png', async () => {
+    const id = store.list()[0]!.id
+    store.update(id, { drawing: { strokes: [], block: 2, composite: new Blob([new Uint8Array([1, 2, 3])]) } })
+    const files = unzipSync(await buildZip(store, new Date(), 'localhost:3000'))
+    expect(Array.from(files['shots/01.png']!)).toEqual([1, 2, 3])
+    expect(Array.from(files['shots/01-original.png']!)).toEqual([137, 80, 78, 71])
+    expect(files['shots/03-original.png']).toBeUndefined()
   })
 
   test('EXPO-02 feedback.md do zip tem links shots/NN.png', async () => {
@@ -40,7 +56,7 @@ describe('exporter', () => {
     let clicked: HTMLAnchorElement | null = null
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) { clicked = this })
     expect(store.isDirty()).toBe(true)
-    await exportZip(ui, store, new Date(2026, 10, 13, 9, 5))
+    expect(await exportZip(ui, store, new Date(2026, 10, 13, 9, 5))).toBe(true) // MASC-03: o controller comemora só no sucesso
     expect(clicked!.download).toBe('pxa-feedback-2026-11-13-0905.zip')
     expect(store.list()).toHaveLength(3)
     expect(store.isDirty()).toBe(false)
@@ -50,7 +66,7 @@ describe('exporter', () => {
   test('EXPO-03 copyMarkdown escreve a versão compacta, mostra confirmação e não limpa dirty', async () => {
     const writeText = vi.fn(async (_text: string) => {})
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
-    await copyMarkdown(ui, store)
+    expect(await copyMarkdown(ui, store)).toBe(true)
     const md = writeText.mock.calls[0]![0]
     expect(md).toContain('# PxA · localhost')
     expect(md).toContain('- **#1** botões saindo pra fora do card')
@@ -61,7 +77,7 @@ describe('exporter', () => {
 
   test('caso limite: clipboard ausente/negado → toast sugerindo o .zip', async () => {
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('NotAllowedError') } } })
-    await copyMarkdown(ui, store)
+    expect(await copyMarkdown(ui, store)).toBe(false)
     expect(toast()).toBe('Não consegui copiar. Use Exportar .zip.')
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined })
     await copyMarkdown(ui, store)
@@ -70,7 +86,7 @@ describe('exporter', () => {
 
   test('erro ao gerar o zip → toast de falha e dirty mantido', async () => {
     vi.spyOn(URL, 'createObjectURL').mockImplementation(() => { throw new Error('boom') })
-    await exportZip(ui, store)
+    expect(await exportZip(ui, store)).toBe(false)
     expect(toast()).toBe('Falha ao exportar')
     expect(store.isDirty()).toBe(true)
   })

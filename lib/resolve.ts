@@ -30,3 +30,10 @@ export function resolveAnnotation(store: AnnotationStore, id: string, pathname: 
   if (el && el !== ref?.deref()) store.rememberRef(id, el)
   return el
 }
+
+/** Onde está a Anotação nesta página: o elemento, outra rota ou não encontrado (IMPO-05, APRE-04). */
+export function locate(store: AnnotationStore, id: string, pathname: string = location.pathname, root: ParentNode = document): Element | 'other-route' | 'missing' {
+  const a = store.get(id)
+  if (a && a.pathname !== pathname) return 'other-route' // mesma regra dos Marcadores (PAIN-06)
+  return resolveAnnotation(store, id, pathname, root) ?? 'missing'
+}

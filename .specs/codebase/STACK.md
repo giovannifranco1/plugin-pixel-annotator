@@ -6,8 +6,9 @@
 |---|---|---|---|
 | Framework de extensão | WXT | 0.21.5 | Um código → builds MV3 Chrome e Firefox, hot reload, `browser.*` unificado |
 | Linguagem | TypeScript (strict + `noUncheckedIndexedAccess`, via `.wxt/tsconfig.json`) | 7.0.2 | Contratos claros entre content script, background e main world |
-| UI injetada | DOM + CSS puro dentro de Shadow DOM | — | Isolamento do CSS da página, bundle pequeno (~34 kB o annotator) |
-| Zip | fflate | 0.8.3 | Leve, roda no browser; PNGs entram sem deflate (`level: 0`) |
+| UI injetada | DOM + CSS puro dentro de Shadow DOM | — | Isolamento do CSS da página, bundle pequeno (~94 kB o annotator com Diversão, Raio-X e Equipe e Claude) |
+| Zip | fflate | 0.8.3 | Leve, roda no browser; PNGs entram sem deflate (`level: 0`). Também lê o `.zip` no Importar (`unzipSync` com `filter`) |
+| Sons | Web Audio API (osciladores `square`/`triangle`) | — | Sons 8-bit sem arquivos de áudio (Diversão) |
 | Fonte | `ui-monospace`/`monospace` com estética pixel (bordas e sombras em degrau) | — | Default do design; sem fonte embutida no MVP |
 | Testes unit | Vitest + happy-dom + `WxtVitest()` | 5.1.0 / 21.0.4 | Padrão do ecossistema WXT; `fakeBrowser` para as APIs da extensão |
 | Testes E2E | Playwright (Chromium headless com extensão carregada) | 1.65.0 | Fluxo real de anotação/export |

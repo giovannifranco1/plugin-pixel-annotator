@@ -1,23 +1,41 @@
 import type { Annotation } from './types'
+import type { StoreSnapshot } from './persist'
 
 export type AnnotationDraft = Omit<Annotation, 'id' | 'number' | 'createdAt' | 'updatedAt'>
+export type AnnotationPatch = Partial<Pick<Annotation, 'note' | 'errors' | 'drawing'>>
 type Listener = () => void
 
 /**
- * Estado das anotações da aba, só em memória (decisão do MVP).
- * Numeração monotônica (PAIN-04). `dirty` = criação/edição após o último export .zip (AVIS-01).
+ * Estado das anotações da aba. `initial` vem do que foi salvo no site (PERS-01): o refresh não perde nada.
+ * Numeração monotônica (PAIN-04). `dirty` = criação/edição após o último export .zip.
  */
-export function createStore(now: () => Date = () => new Date(), uuid: () => string = () => crypto.randomUUID()) {
-  let items: Annotation[] = []
-  let nextNumber = 1
-  let dirty = false
+export function createStore(
+  now: () => Date = () => new Date(),
+  uuid: () => string = () => crypto.randomUUID(),
+  initial?: StoreSnapshot,
+) {
+  let items: Annotation[] = initial ? [...initial.items].sort((a, b) => a.number - b.number) : []
+  let nextNumber = Math.max(initial?.meta.nextNumber ?? 1, (items.at(-1)?.number ?? 0) + 1)
+  let dirty = initial?.meta.dirty ?? false
   const refs = new Map<string, WeakRef<Element>>()
   const listeners = new Set<Listener>()
   const emit = () => listeners.forEach((l) => l())
 
+  /**
+   * Troca campos editáveis (nota, erros, Desenho); `undefined` remove o campo opcional.
+   * `errors` vazio vira ausente: o campo só existe com ≥1 erro (ERRO-03).
+   */
+  function update(id: string, patch: AnnotationPatch): void {
+    if (patch.errors?.length === 0) patch = { ...patch, errors: undefined }
+    items = items.map((a) => (a.id === id ? { ...a, ...patch, updatedAt: now().toISOString() } : a))
+    dirty = true
+    emit()
+  }
+
   return {
-    add(draft: AnnotationDraft, element?: Element): Annotation {
+    add({ errors, ...rest }: AnnotationDraft, element?: Element): Annotation {
       const ts = now().toISOString()
+      const draft = errors?.length ? { ...rest, errors } : rest
       const a: Annotation = { ...draft, id: uuid(), number: nextNumber++, createdAt: ts, updatedAt: ts }
       items = [...items, a]
       if (element) refs.set(a.id, new WeakRef(element))
@@ -25,10 +43,25 @@ export function createStore(now: () => Date = () => new Date(), uuid: () => stri
       emit()
       return a
     },
-    updateNote(id: string, note: string): void {
-      items = items.map((a) => (a.id === id ? { ...a, note, updatedAt: now().toISOString() } : a))
+    update,
+    updateNote: (id: string, note: string): void => update(id, { note }),
+    /**
+     * Anotações de um .zip de outro PxA (IMPO-03/06/07): `id` já presente é ignorado, o número é
+     * novo na sequência da aba e `importedFrom` guarda o original. Devolve quantas entraram.
+     */
+    importAnnotations(list: readonly Annotation[], origin: string): number {
+      const known = new Set(items.map((a) => a.id))
+      const fresh: Annotation[] = []
+      for (const a of list) {
+        if (known.has(a.id)) continue
+        known.add(a.id)
+        fresh.push({ ...a, number: nextNumber++, importedFrom: a.importedFrom ?? { origin, number: a.number } })
+      }
+      if (fresh.length === 0) return 0
+      items = [...items, ...fresh]
       dirty = true
       emit()
+      return fresh.length
     },
     /** Não marca dirty: apagar não cria trabalho a perder. */
     remove(id: string): void {
@@ -55,6 +88,8 @@ export function createStore(now: () => Date = () => new Date(), uuid: () => stri
       emit()
     },
     isDirty: (): boolean => dirty,
+    /** O que precisa ser salvo além das anotações (PERS-01). */
+    meta: () => ({ nextNumber, dirty }),
     subscribe(l: Listener): () => void {
       listeners.add(l)
       return () => listeners.delete(l)

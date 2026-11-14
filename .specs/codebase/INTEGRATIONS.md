@@ -2,12 +2,17 @@
 
 - **APIs do navegador:**
   - `action` (clique, badge e título por aba) e `scripting.executeScript` (com `files` e `func`, `world: 'MAIN'` para o probe), autorizados por `activeTab`.
-  - `tabs.captureVisibleTab`: no Firefox funciona só com `activeTab` a partir da versão 126 (bug 1784920).
+  - `tabs.captureVisibleTab`: no Firefox funciona só com `activeTab` a partir da versão 126 (bug 1784920). Usado pelo print das anotações e pela Lupa do Raio-X, pela mesma fila.
+  - Typed OM (`computedStyleMap`, só Chrome) para saber se uma margem é `auto`; `requestIdleCallback` para fatiar a varredura do Detector.
   - `runtime.onMessage` / `tabs.sendMessage`.
   - Download via `<a download>` com blob, **sem** a permissão `downloads`.
-  - Clipboard via `navigator.clipboard.writeText` a partir do clique do dev.
+  - Clipboard via `navigator.clipboard.writeText` a partir do clique do dev (markdown e hex da Lupa).
+  - `storage.local` (permissão `storage`, Q-01): só o Perfil da Diversão, chave `pxa:profile`; `storage.local.onChanged` sincroniza abas. Anotações não são persistidas.
+  - Web Audio (`AudioContext`, osciladores): sons 8-bit da Diversão, criados no primeiro som após gesto do dev; falha é silenciosa.
 - **Frameworks da página (leitura, não dependência):**
   - React: `__reactFiber$*`/`__reactInternalInstance$*`, com `_debugSource` só até o React 18 em dev.
   - Vue 3: `__vueParentComponent`, com `type.__file` em dev.
   - Vue 2: `__vue__`, com `$options.__file`.
+- **APIs da página envolvidas pelo probe (main world):** `console.error`, `fetch`, `XMLHttpRequest.prototype.open/send` e os eventos `error`/`unhandledrejection` de `window`. O wrapper sempre chama o que encontrou (Sentry, Datadog) e devolve o mesmo resultado.
 - **Claude Code:** consumidor do export (`feedback.md` + `shots/`). Sem integração direta no MVP; ponte MCP planejada para M2.
+- **Outro PxA:** consome o `pxa.json` do export pelo "Importar .zip" (esquema versionado, `schemaVersion: 1`).

@@ -45,4 +45,43 @@ export interface Annotation {
   component: ComponentInfo | null
   shot: Blob | null // PNG; null se o print falhou
   shotPartial: boolean
+  errors?: PageError[] // só com ≥1 erro (ERRO-03)
+  drawing?: Drawing // DESE-03; `shot` continua sendo o original
+  importedFrom?: ImportedFrom // IMPO-03
+}
+
+export type PageErrorKind = 'console' | 'exception' | 'rejection' | 'network'
+
+/** Entrada do Registro de erros (ERRO-02). Repetições idênticas somam em `count`. */
+export interface PageError {
+  kind: PageErrorKind
+  message: string // até 500 caracteres
+  at: string // ISO da última ocorrência
+  count: number
+  source?: string // arquivo:linha, sem query/fragmento
+  method?: string // rede
+  url?: string // rede, sem query/fragmento
+  status?: number // rede; 0 = falha de rede (sem resposta)
+}
+
+export type DrawTool = 'brush' | 'arrow' | 'circle' | 'cross'
+
+/** Traço do Desenho em coordenadas de pixel do print. */
+export interface Stroke {
+  tool: DrawTool
+  color: string
+  points: Array<[number, number]>
+}
+
+/** Desenho: camada de traços sobre o print; `composite` é o PNG do print com a camada (cache). */
+export interface Drawing {
+  strokes: Stroke[]
+  block: number
+  composite: Blob
+}
+
+/** Origem de uma Anotação vinda de um .zip de outro PxA (IMPO-03). */
+export interface ImportedFrom {
+  origin: string
+  number: number
 }

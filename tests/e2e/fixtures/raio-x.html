@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fixture Raio-X</title>
+  <style>
+    /*
+     * O Detector TEM que achar: 3 espaçamentos fora da escala de 4px (13px, 7px, 18px), 1 cor quase igual
+     * e rara (#7a7a7a perto de #777777), 1 tamanho de fonte quase igual e raro (15px perto de 16px) e
+     * 1 botão que não herdou a fonte (fonte de controle do navegador, Arial no Chromium, numa página Inter).
+     * E NÃO pode acusar: tokens do Tailwind (2, 6, 10, 14px), cor em oklch() e o sr-only.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { background: #ffffff; }
+    /* padding-left 400px: o conteúdo fica entre o relatório (esquerda) e o painel (direita). */
+    body { padding: 24px 24px 24px 400px; font: 16px/1.5 "Inter", sans-serif; color: #111111; background: #ffffff; }
+    .cinza { color: #777777; }
+    .quase { color: #7a7a7a; }                /* cor quase igual, 1 uso */
+    .invisivel { color: #777778; }            /* diferença imperceptível de #777777: mesma cor, não é Achado */
+    .p13 { padding: 13px; }                   /* fora da escala */
+    .m7 { margin-top: 7px; }                  /* fora da escala */
+    .fonte15 { font-size: 15px; }             /* tamanho quase igual, 1 uso */
+    .tokens { display: flex; gap: 10px; margin-top: 14px; }       /* tokens Tailwind: ok */
+    .badge { padding: 2px 6px; background: #eeeeee; }             /* tokens Tailwind: ok */
+    .moderna { width: 48px; height: 16px; background: oklch(0.627955 0.257683 29.2339); } /* = #ff0000 */
+    /* sr-only real tem padding 0; a margem -3px (fora da escala) não muda o tamanho de 1×1 e não pode aparecer. */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -3px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+    button { border: 0; padding: 4px 8px; color: #111111; background: #eeeeee; } /* sem font: inherit */
+    #alvo-branco { width: 200px; height: 120px; margin-top: 16px; background: #ffffff; }
+    #lupa { width: 120px; height: 120px; margin-top: 16px; background: #12ab34; }
+    .alto { height: 2000px; }
+    .g18 { display: flex; gap: 18px; }        /* fora da escala, lá embaixo (DETE-10) */
+    .massa div { width: 8px; height: 8px; background: #eeeeee; }
+  </style>
+</head>
+<body>
+  <p class="cinza">Texto cinza 1</p>
+  <p class="cinza">Texto cinza 2</p>
+  <p class="cinza">Texto cinza 3</p>
+  <p class="invisivel">Cinza arredondado</p>
+  <p class="quase p13">Quase igual</p>
+  <p class="m7">Margem 7px</p>
+  <p class="fonte15">Fonte 15px</p>
+  <div class="tokens"><span class="badge">novo</span><span class="badge">beta</span><span>texto</span></div>
+  <div class="moderna"></div>
+  <span class="sr-only">só leitor de tela</span>
+  <button type="button">Botão</button>
+  <svg width="16" height="16" viewBox="0 0 16 16"><g style="padding: 9px"><rect width="16" height="16"></rect></g></svg>
+  <div id="alvo-branco"></div>
+  <div id="lupa"></div>
+  <div class="alto"></div>
+  <div class="g18" id="longe"><span>a</span><span>b</span></div>
+  <script>
+    // ?n=3000 → página "média" para o objetivo de desempenho do Detector (< 1s).
+    const n = Number(new URLSearchParams(location.search).get('n') ?? 0)
+    if (n) {
+      const massa = document.createElement('div')
+      massa.className = 'massa'
+      for (let i = 0; i < n; i++) massa.append(document.createElement('div'))
+      document.body.append(massa)
+    }
+  </script>
+</body>
+</html>

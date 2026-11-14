@@ -16,7 +16,7 @@
 
 - Framework de extensão: WXT (Manifest V3, build Chrome + Firefox) — versão fixada no scaffold
 - Linguagem: TypeScript
-- Banco de dados: nenhum (estado em memória da aba no MVP)
+- Banco de dados: IndexedDB do site anotado (anotações e prints, PERS-01); `storage.local` só para o Perfil da Diversão
 
 **Dependências-chave:**
 
@@ -36,7 +36,6 @@
 
 **Explicitamente fora de escopo (v1):**
 
-- Persistência entre reloads (anotações vivem só na sessão da aba)
 - Ponte MCP com o Claude Code (v2)
 - Iframes e Shadow DOM da página anotada
 - Sincronização/colaboração entre pessoas

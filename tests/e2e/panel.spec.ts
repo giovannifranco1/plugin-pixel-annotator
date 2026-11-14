@@ -1,4 +1,4 @@
-import { annotate, BASE, editor, expect, items, markers, pxa, test, toast } from './harness'
+import { annotate, BASE, editor, expect, items, markers, pxa, test, toast, menuItem, itemAction } from './harness'
 
 test('PAIN-01..04 cria 3, edita a 2ª, exclui a 1ª → painel com #2 e #3 e nota atualizada', async ({ page, toggle }) => {
   await page.goto(`${BASE}/index.html`)
@@ -8,11 +8,11 @@ test('PAIN-01..04 cria 3, edita a 2ª, exclui a 1ª → painel com #2 e #3 e not
   await annotate(page, '#card', 'terceira')
   await expect(items(page).first()).toContainText('#1')
   await expect(items(page).first()).toContainText('/index.html')
-  await pxa(page).getByRole('button', { name: 'Editar anotação 2' }).click()
+  await itemAction(page, 2, 'Editar')
   await expect(editor(page)).toHaveValue('segunda')
   await editor(page).fill('segunda editada')
   await editor(page).press('Enter')
-  await pxa(page).getByRole('button', { name: 'Excluir anotação 1' }).click()
+  await itemAction(page, 1, 'Excluir')
   await expect(items(page)).toHaveCount(2)
   await expect(items(page).nth(0)).toContainText('#2')
   await expect(items(page).nth(0)).toContainText('segunda editada')
@@ -37,7 +37,9 @@ test('PAIN-05 vazio desabilita export e mostra instrução', async ({ page, togg
   await page.goto(`${BASE}/index.html`)
   await toggle(page)
   await expect(pxa(page).locator('.pxa-empty')).toContainText('Clique em um elemento')
-  for (const name of ['Exportar .zip', 'Copiar markdown', 'Limpar tudo']) {
+  await expect(await menuItem(page, 'Exportar .zip')).toBeDisabled()
+  await page.keyboard.press('Escape')
+  for (const name of ['Copiar markdown', 'Limpar tudo']) {
     await expect(pxa(page).getByRole('button', { name })).toBeDisabled()
   }
 })

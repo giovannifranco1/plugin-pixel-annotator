@@ -52,4 +52,58 @@ describe('note editor', () => {
     openNoteEditor(ui, { anchor, initial: 'nota antiga', onSave: vi.fn(), onCancel: vi.fn() })
     expect(textarea().value).toBe('nota antiga')
   })
+
+  const errs = [
+    { kind: 'console' as const, message: 'TypeError: x', at: '2026-11-14T12:00:00.000Z', count: 2 },
+    { kind: 'network' as const, message: 'GET http://a/x → 404', at: '2026-11-14T12:00:01.000Z', count: 1, method: 'GET', url: 'http://a/x', status: 404 },
+  ]
+  const errorItems = () => Array.from(ui.root.querySelectorAll<HTMLElement>('.pxa-errors li'))
+
+  test('ERRO-04 editor mostra os erros e permite remover antes de salvar', () => {
+    const onSave = vi.fn()
+    openNoteEditor(ui, { anchor, errors: errs, onSave, onCancel: vi.fn() })
+    expect(ui.root.querySelector('.pxa-errors-title')!.textContent).toBe('⚠ 2 erros')
+    expect(errorItems().map((li) => li.textContent)).toEqual(['console.error: TypeError: x ×2✕', 'rede: GET http://a/x → 404✕'])
+    errorItems()[0]!.querySelector('button')!.click()
+    expect(ui.root.querySelector('.pxa-errors-title')!.textContent).toBe('⚠ 1 erro')
+    textarea().value = 'nota'
+    key('Enter')
+    expect(onSave).toHaveBeenCalledWith('nota', [errs[1]])
+  })
+
+  test('ERRO-04 remover todos some com a lista e salva lista vazia', () => {
+    const onSave = vi.fn()
+    openNoteEditor(ui, { anchor, errors: [errs[0]!], onSave, onCancel: vi.fn() })
+    errorItems()[0]!.querySelector('button')!.click()
+    expect(ui.root.querySelector('.pxa-errors')).toBeNull()
+    textarea().value = 'nota'
+    key('Enter')
+    expect(onSave).toHaveBeenCalledWith('nota', [])
+  })
+
+  test('ERRO-04 erros chegando por Promise aparecem quando o probe responde', async () => {
+    const onSave = vi.fn()
+    let resolve!: (v: typeof errs) => void
+    openNoteEditor(ui, { anchor, errors: new Promise((r) => { resolve = r }), onSave, onCancel: vi.fn() })
+    expect(ui.root.querySelector('.pxa-errors')).toBeNull()
+    resolve(errs)
+    await vi.waitFor(() => expect(errorItems()).toHaveLength(2))
+  })
+
+  test('ERRO-04 salvar antes de o probe responder espera a lista (sem perder os erros)', async () => {
+    const onSave = vi.fn()
+    let resolve!: (v: typeof errs) => void
+    openNoteEditor(ui, { anchor, errors: new Promise((r) => { resolve = r }), onSave, onCancel: vi.fn() })
+    textarea().value = 'rápido'
+    key('Enter')
+    expect(onSave).not.toHaveBeenCalled()
+    resolve(errs)
+    await vi.waitFor(() => expect(onSave).toHaveBeenCalledWith('rápido', errs))
+  })
+
+  test('ERRO-04 sem erros não mostra a lista', () => {
+    openNoteEditor(ui, { anchor, errors: [], onSave: vi.fn(), onCancel: vi.fn() })
+    expect(ui.root.querySelector('.pxa-errors')).toBeNull()
+  })
 })
+
