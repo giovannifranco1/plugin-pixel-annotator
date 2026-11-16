@@ -280,6 +280,26 @@ describe('panel', () => {
     expect(ui.root.activeElement).toBe(menuBtn())
   })
 
+  test('menu de ações fecha ao clicar fora dele (no resto do painel), não só no próprio ⋮', () => {
+    store.add(draft())
+    const down = (node: Element) => node.dispatchEvent(new Event('pointerdown', { bubbles: true, composed: true }))
+    // Cabeçalho: abre pelo ⋮ e fecha clicando num item qualquer da lista (fora do menu).
+    menuBtn().click()
+    expect(menuBtn().getAttribute('aria-expanded')).toBe('true')
+    down($('.pxa-item-main')!)
+    expect($('.pxa-menu')!.hidden).toBe(true)
+    expect(menuBtn().getAttribute('aria-expanded')).toBe('false')
+    // Clicar dentro do próprio menu não fecha.
+    menuBtn().click()
+    down($('.pxa-menu .pxa-menu-item')!)
+    expect($('.pxa-menu')!.hidden).toBe(false)
+    // Item: abre o ⋮ da anotação e fecha clicando no cabeçalho (fora do menu).
+    itemMenu(1, 'Editar')
+    expect($<HTMLButtonElement>('button[aria-label="Ações da anotação 1"]')!.getAttribute('aria-expanded')).toBe('true')
+    down($('.pxa-item-note')!)
+    expect($('.pxa-menu')!.hidden).toBe(true)
+  })
+
   test('menu de ações: ferramentas no topo, sem título de grupo, marcadas quando ligadas', () => {
     const ui2 = createHost()
     let on = false
