@@ -15,6 +15,7 @@ export interface PanelActions {
   onPresent(): void // APRE-01
   onImport(file: File): void // IMPO-02
   onDraw(id: string): void // DESE-01
+  onChangelog(): void // NOVI-01
 }
 
 /** Ferramenta liga/desliga que outra feature põe no menu de ações (Raio-X: Detector e Lupa). */
@@ -69,6 +70,7 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
   let manual = false // o dev recolheu/expandiu à mão: a largura da tela deixa de decidir
   /** Dropdown aberto: o ⋮ que o abriu e quem desenha os itens (redesenhado quando o store muda). */
   let open: { button: HTMLButtonElement; items: () => Node[] } | null = null
+  let news = false // NOVI-09: versão nova ainda não vista no Changelog
   const thumbUrls = new Map<Blob, string>() // miniatura por print composto; liberada quando o Desenho sai
 
   // Importar .zip (IMPO-02): o input fica escondido; o item do menu abre o seletor.
@@ -117,7 +119,14 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
     return b
   }
 
-  /** Menu do cabeçalho: ferramentas Raio-X, Apresentar, Importar, Exportar. */
+  /** Changelog (NOVI-01) com o ponto de novidade à direita, no lugar do check das ferramentas. */
+  function changelogItem() {
+    const b = menuItem('Changelog', 'O que mudou em cada versão do PxA', () => actions.onChangelog())
+    if (news) b.append(el('span', { className: 'pxa-news-dot', title: 'Versão nova' }))
+    return b
+  }
+
+  /** Menu do cabeçalho: ferramentas Raio-X, Apresentar, Importar, Exportar e, por último, o Changelog. */
   function panelMenu(): Node[] {
     const empty = store.list().length === 0
     return [
@@ -125,6 +134,8 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
       menuItem('Apresentar', 'Passar pelas anotações uma a uma (← →, Esc sai)', () => actions.onPresent(), empty),
       menuItem('Importar .zip', 'Abrir o .zip exportado por outro PxA', () => fileInput.click()),
       menuItem('Exportar .zip', 'Baixar feedback.md, pxa.json e os prints', () => actions.onExportZip(), empty),
+      sep(),
+      changelogItem(),
     ]
   }
 
@@ -303,6 +314,13 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
     syncTools() {
       if (open?.button === menuBtn) renderMenu()
       menuBtn.classList.toggle('pxa-tool-on', tools.some((t) => t.isOn()))
+    },
+    /** Ponto de novidade no ⋮ e no item Changelog (NOVI-09/10). */
+    setNews(value: boolean) {
+      news = value
+      menuBtn.classList.toggle('pxa-news', value)
+      menuBtn.title = value ? 'Ações (há novidades)' : 'Ações'
+      if (open?.button === menuBtn) renderMenu()
     },
     /** Recolhe em tela mobile e expande fora dela, até o dev decidir à mão. */
     autoCollapse(mobile: boolean) {

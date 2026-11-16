@@ -24,3 +24,19 @@ describe('perfil', () => {
     for (const raw of [undefined, null, 42, 'x', [1, 2]]) expect(normalizeProfile(raw)).toEqual(defaultProfile())
   })
 })
+
+describe('perfil: última versão vista do Changelog', () => {
+  test('NOVI-08 perfil padrão não tem versão vista', () => {
+    expect(defaultProfile().lastSeenVersion).toBeUndefined()
+  })
+
+  test('NOVI-10 versão vista válida passa intacta', () => {
+    expect(normalizeProfile({ theme: 'noite', sound: true, lastSeenVersion: '1.2.0' })).toEqual({ version: 1, theme: 'noite', sound: true, lastSeenVersion: '1.2.0' })
+  })
+
+  test('NOVI-13 versão vista inválida é tratada como ausente', () => {
+    for (const lastSeenVersion of [12, '', 'abc', '1.x.0', null]) {
+      expect(normalizeProfile({ theme: 'padrao', sound: false, lastSeenVersion }).lastSeenVersion).toBeUndefined()
+    }
+  })
+})

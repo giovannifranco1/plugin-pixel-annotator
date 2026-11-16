@@ -45,6 +45,8 @@ export const items = (page: Page) => pxa(page).locator('li.pxa-item')
 export const markers = (page: Page) => pxa(page).locator('.pxa-marker')
 export const editor = (page: Page) => pxa(page).locator('.pxa-editor textarea')
 export const toast = (page: Page) => pxa(page).locator('.pxa-toast')
+/** ⋮ do cabeçalho (menu de ações). */
+export const actionsButton = (page: Page) => pxa(page).getByRole('button', { name: 'Ações', exact: true })
 
 /** Id da aba ativa, consultado no service worker. */
 export function activeTabId(sw: Worker): Promise<number> {
@@ -87,7 +89,7 @@ export async function itemAction(page: Page, n: number, label: string) {
 /** Item do menu de ações do cabeçalho (abre o menu se estiver fechado). */
 export async function menuItem(page: Page, name: string) {
   const menu = pxa(page).locator('.pxa-menu')
-  if (!(await menu.isVisible())) await pxa(page).getByRole('button', { name: 'Ações', exact: true }).click()
+  if (!(await menu.isVisible())) await actionsButton(page).click()
   return menu.locator('.pxa-menu-item').filter({ hasText: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`) })
 }
 

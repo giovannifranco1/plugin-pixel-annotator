@@ -10,6 +10,8 @@
 - Campos novos de `Annotation` são opcionais e só existem com conteúdo (`errors` com ≥1 erro; o store normaliza). Nomes de arquivos em `shots/` saem só de `shotFiles()` (`lib/export-names.ts`).
 - Lógica pura vai em `lib/` (sem `browser.*`), testável no Vitest.
 - Cores da UI só por `var(--pxa-*)` em `ui/styles.ts`; valor novo de cor vira variável em `THEME_VARS` com valor em todos os temas (o teste de contraste cobre texto/fundo). Exceção: marcadores (cor da categoria). Ícones pixel: `K` (contorno) é `currentColor` e segue o texto do botão; as demais letras da paleta são cores fixas.
+- **Release:** toda versão nova do `package.json` ganha entrada no `CHANGELOG.md` (`## X.Y.Z — AAAA-MM-DD` + itens `- `, PT-BR, escrita para quem usa). O teste NOVI-16 falha sem ela.
+- Janelas arrastáveis usam a classe `pxa-window` (moldura e cabeçalho-alça em `ui/styles.ts`) + `makeDraggable`.
 - Commits: Conventional Commits. Scopes: `content`, `background`, `capture`, `export`, `ui`, `build`, `specs`.
 
 ## Glossário
@@ -25,9 +27,12 @@
 | Export | Pacote `.zip` com `feedback.md` + `pxa.json` + `shots/` |
 | Mascote | Alfinete em pixel 16×16 (2×) no cabeçalho do Painel, com Humor `idle`/`feliz`/`susto`/`festa`/`dormindo`; mesma cor em todos os Temas |
 | Tema | Paleta da UI do PxA via custom properties `--pxa-*` (`ui/themes.ts`) |
-| Perfil | Tema e som, em `storage.local` (`pxa:profile`); único estado persistido |
+| Perfil | Tema, som e última versão vista do Changelog (`lastSeenVersion`), em `storage.local` (`pxa:profile`) |
 | Raio-X | Ferramentas de inspeção (Detector e Lupa), no topo do menu de ações |
-| Menu de ações | Dropdown do ícone ⋮ no cabeçalho do Painel: Detector e Lupa, linha, Apresentar, Importar .zip, Exportar .zip (sem título de grupo). Cada anotação tem o seu ⋮: Editar, Desenhar no print, Excluir |
+| Menu de ações | Dropdown do ícone ⋮ no cabeçalho do Painel: Detector e Lupa, linha, Apresentar, Importar .zip, Exportar .zip, linha, Changelog (sem título de grupo). Cada anotação tem o seu ⋮: Editar, Desenhar no print, Excluir |
+| Changelog | Item do menu de ações e janela "Changelog do PxA" com as versões do `CHANGELOG.md`. Na UI nunca "Novidades" |
+| Ponto de novidade | Bolinha rosa (`--pxa-primary`) à esquerda do ⋮ e no item Changelog quando a versão instalada é maior que a última vista; o quadrado à direita é "ferramenta ligada" |
+| Janela | `.pxa-window`: caixa arrastável pelo cabeçalho (Detector, Changelog), com `makeDraggable` |
 | Detector | Varre estilos computados e lista cores, fontes e espaçamentos com contagem |
 | Achado | Valor marcado pelo Detector (fora da escala, quase igual a um valor bem mais usado, fonte padrão do navegador); vira Anotação com nota `[Raio-X] …` que diz o que usar |
 | Escala | Espaçamentos esperados: múltiplos de 4px com os meios passos do Tailwind (1, 2, 6, 10, 14px), ou de 8px com 1, 2 e 4px; folga de 0,5px |

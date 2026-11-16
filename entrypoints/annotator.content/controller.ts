@@ -21,6 +21,8 @@ import { openNoteEditor } from './ui/note-editor'
 import { createOverlay } from './ui/overlay'
 import { createPanel } from './ui/panel'
 import { createFun } from './ui/fun'
+import { createChangelog, type ChangelogDeps } from './ui/changelog'
+import { createProfileStorage, type ProfileStorage } from './profile-storage'
 import { showToast } from './ui/toast'
 
 export type ControllerState = 'inactive' | 'active' | 'editing' | 'capturing' | 'presenting'
@@ -30,6 +32,10 @@ export interface ControllerDeps {
   store?: AnnotationStore
   capture?: (el: Element, note: string) => Promise<AnnotationDraft>
   raioX?: RaioXDeps
+  /** Perfil (storage.local) compartilhado por Diversão e Changelog. */
+  profile?: ProfileStorage
+  /** Changelog (NOVI): versão e texto. */
+  changelog?: ChangelogDeps
   /** Aviso nativo de saída com algo não exportado. Desligado quando as anotações são salvas no site (PERS-01). */
   unloadGuard?: boolean
   /** Erros de console/rede do momento (ERRO-03); padrão: pedido ao probe. */
@@ -188,9 +194,13 @@ export function createController(deps: ControllerDeps = {}) {
     onExportZip: () => void exportZip(ui, store).then((ok) => ok && fun.exported('zip')),
     onCopyMarkdown: () => void copyMarkdown(ui, store).then((ok) => ok && fun.exported('markdown')),
     onClearAll: () => store.clear(),
+    onChangelog: () => changelog.toggle(),
   }, raioX.tools)
 
-  const fun = createFun(ui, store, panel.mount)
+  // Um Perfil só para Diversão e Changelog: as gravações entram na mesma fila e não se sobrepõem.
+  const profile = deps.profile ?? createProfileStorage()
+  const fun = createFun(ui, store, panel.mount, { storage: profile })
+  const changelog = createChangelog(ui, { ...deps.changelog, storage: profile, onNewsChange: (news) => panel.setNews(news) })
   if (deps.unloadGuard ?? true) installUnloadGuard(store)
 
   /** Modo Apresentação (APRE-01..06): hover/clique de anotar ignoram estados fora de `active`. */
@@ -265,6 +275,7 @@ export function createController(deps: ControllerDeps = {}) {
     editor = null
     for (const undo of teardown.splice(0)) undo()
     raioX.reset()
+    changelog.hide()
     overlay.hide()
     markers.hideAll()
     panel.hide()

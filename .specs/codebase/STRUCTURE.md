@@ -24,6 +24,7 @@ pixel-annotator/
 │                                 # + Diversão: fun (orquestrador), mascot, sound, themes
 │                                 # + Raio-X: boxes (pool do destaque), audit-report, draggable (arrastar janela), loupe
 │                                 # + Equipe e Claude: presentation (Modo Apresentação), draw-editor (Desenho no print)
+│                                 # + Changelog: changelog (janela + ponto de novidade)
 ├── lib/                          # lógica pura testável
 │   ├── types.ts  store.ts  messages.ts  format.ts  persist.ts (espelho do store, PERS-01)
 │   ├── selector.ts  viewport.ts  css-filter.ts  outer-html.ts  crop.ts  resolve.ts
@@ -31,6 +32,7 @@ pixel-annotator/
 │   ├── profile.ts  konami.ts  contrast.ts   # Diversão
 │   ├── design-audit.ts  color.ts  loupe.ts   # Raio-X (regras do Detector, cores CSS → sRGB, Lupa)
 │   ├── error-log.ts  error-hooks.ts  drawing.ts  manifest.ts  import.ts   # Equipe e Claude
+│   ├── changelog.ts                           # Changelog (parser do CHANGELOG.md, versões)
 ├── public/icon/                  # ícones pixel 16/32/48/128 (gerados por scripts/gen-icons.mjs)
 ├── media/                        # imagens do README: icon.png (256) e prints (npm run screenshots)
 ├── scripts/                      # check-manifest.mjs (PLAT-01), gen-icons.mjs, screenshots/ (prints do README)

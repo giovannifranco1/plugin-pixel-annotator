@@ -6,6 +6,7 @@ import { draft } from './fixtures/annotations'
 
 let ui: UiHost
 let store: AnnotationStore
+let panel: ReturnType<typeof createPanel>
 let actions: { [K in keyof PanelActions]: ReturnType<typeof vi.fn<PanelActions[K]>> }
 
 beforeEach(() => {
@@ -15,8 +16,10 @@ beforeEach(() => {
     onFocus: vi.fn<PanelActions['onFocus']>(), onEdit: vi.fn<PanelActions['onEdit']>(), onDelete: vi.fn<PanelActions['onDelete']>(),
     onExportZip: vi.fn<PanelActions['onExportZip']>(), onCopyMarkdown: vi.fn<PanelActions['onCopyMarkdown']>(), onClearAll: vi.fn<PanelActions['onClearAll']>(),
     onPresent: vi.fn<PanelActions['onPresent']>(), onImport: vi.fn<PanelActions['onImport']>(), onDraw: vi.fn<PanelActions['onDraw']>(),
+    onChangelog: vi.fn<PanelActions['onChangelog']>(),
   }
-  createPanel(ui, store, actions).show()
+  panel = createPanel(ui, store, actions)
+  panel.show()
 })
 afterEach(() => ui.host.remove())
 
@@ -97,7 +100,7 @@ describe('panel', () => {
     expect(ui.root.querySelector('button[aria-label="Ações da anotação 1"]')!.getAttribute('aria-expanded')).toBe('false')
     expect(ui.root.querySelector('button[aria-label="Ações da anotação 2"]')!.getAttribute('aria-expanded')).toBe('true')
     menuBtn().click()
-    expect($$('.pxa-menu .pxa-menu-item').map((b) => b.textContent)).toEqual(['Apresentar', 'Importar .zip', 'Exportar .zip'])
+    expect($$('.pxa-menu .pxa-menu-item').map((b) => b.textContent)).toEqual(['Apresentar', 'Importar .zip', 'Exportar .zip', 'Changelog'])
   })
 
   test('EXPO-01 exportar .zip fica no menu de ações do cabeçalho; rodapé só com limpar e copiar', () => {
@@ -265,7 +268,7 @@ describe('panel', () => {
     store.add(draft())
     menuBtn().click()
     expect(menuBtn().getAttribute('aria-expanded')).toBe('true')
-    expect($$('.pxa-menu .pxa-menu-item').map((b) => b.textContent)).toEqual(['Apresentar', 'Importar .zip', 'Exportar .zip'])
+    expect($$('.pxa-menu .pxa-menu-item').map((b) => b.textContent)).toEqual(['Apresentar', 'Importar .zip', 'Exportar .zip', 'Changelog'])
     const items = $$('.pxa-menu .pxa-menu-item')
     expect(ui.root.activeElement).toBe(items[0])
     const key = (k: string) => ui.root.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, composed: true }))
@@ -273,7 +276,7 @@ describe('panel', () => {
     expect(ui.root.activeElement).toBe(items[1])
     key('ArrowUp')
     key('ArrowUp') // dá a volta
-    expect(ui.root.activeElement).toBe(items[2])
+    expect(ui.root.activeElement).toBe(items[3])
     key('Escape')
     expect($('.pxa-menu')!.hidden).toBe(true)
     expect(menuBtn().getAttribute('aria-expanded')).toBe('false')
@@ -310,7 +313,7 @@ describe('panel', () => {
     const btn = ui2.root.querySelector<HTMLButtonElement>('header button[aria-label="Ações"]')!
     btn.click()
     expect(q('.pxa-menu-label')).toHaveLength(0)
-    expect(q('.pxa-menu-sep')).toHaveLength(1)
+    expect(q('.pxa-menu-sep')).toHaveLength(2) // ferramentas | ações | Changelog
     const lupa = q('.pxa-menu-item')[0]!
     expect(lupa.getAttribute('role')).toBe('menuitemcheckbox')
     expect(lupa.getAttribute('aria-checked')).toBe('false')
@@ -326,5 +329,28 @@ describe('panel', () => {
     expect(p.closeMenu()).toBe(true)
     expect(p.closeMenu()).toBe(false)
     ui2.host.remove()
+  })
+
+  test('NOVI-01 "Changelog" é o último item do menu de ações, depois de uma linha, e chama onChangelog', () => {
+    const item = menuItem('Changelog')
+    const children = $$('.pxa-menu > *')
+    expect(children.at(-1)).toBe(item)
+    expect(children.at(-2)!.classList.contains('pxa-menu-sep')).toBe(true)
+    expect(item.disabled).toBe(false) // vale mesmo sem anotações
+    item.click()
+    expect(actions.onChangelog).toHaveBeenCalledTimes(1)
+    expect($('.pxa-menu')!.hidden).toBe(true)
+  })
+
+  test('NOVI-09/10 ponto de novidade no ⋮ e no item Changelog, enquanto houver novidade', () => {
+    panel.setNews(true)
+    expect(menuBtn().classList.contains('pxa-news')).toBe(true)
+    expect(menuBtn().title).toBe('Ações (há novidades)')
+    expect(menuItem('Changelog').querySelector('.pxa-news-dot')).not.toBeNull()
+    expect(menuItem('Changelog').textContent).toBe('Changelog')
+    panel.setNews(false) // com o menu aberto: redesenha
+    expect(menuBtn().classList.contains('pxa-news')).toBe(false)
+    expect(menuBtn().title).toBe('Ações')
+    expect(menuItem('Changelog').querySelector('.pxa-news-dot')).toBeNull()
   })
 })

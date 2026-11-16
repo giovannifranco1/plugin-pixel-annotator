@@ -42,4 +42,15 @@ describe('profile-storage', () => {
       expect((await s.load()).theme).toBe('noite')
     }
   })
+
+  test('NOVI-10 update que devolve o mesmo perfil não grava (nem acorda as outras abas)', async () => {
+    const s = createProfileStorage(fakeBrowser.storage.local as never)
+    await s.update((p) => ({ ...p, lastSeenVersion: '1.2.0' }))
+    const changes: unknown[] = []
+    s.onChange((p) => changes.push(p))
+    expect(await s.update((p) => p)).toMatchObject({ lastSeenVersion: '1.2.0' })
+    expect(changes).toEqual([])
+    await s.update((p) => ({ ...p, sound: true }))
+    expect(changes).toHaveLength(1)
+  })
 })
