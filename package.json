@@ -1,6 +1,6 @@
 {
   "name": "pixel-annotator",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "PixelAnnotator (PxA) — anote elementos da página e exporte feedback para o Claude Code",
   "scripts": {
     "dev": "wxt",
