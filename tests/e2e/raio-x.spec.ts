@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { BASE, editor, expect, items, menuItem, pxa, test, toast } from './harness'
+import { actionsButton, BASE, editor, expect, items, menuItem, pxa, test, toast } from './harness'
 
 /** Liga/desliga uma ferramenta do Raio-X pelo menu de ações. */
 const tool = async (page: Page, name: string) => (await menuItem(page, name)).click()
@@ -11,7 +11,7 @@ test.beforeEach(async ({ page, toggle }) => {
   await page.setViewportSize({ width: 1280, height: 720 })
   await page.goto(`${BASE}/raio-x.html`)
   await toggle(page)
-  await expect(pxa(page).getByRole('button', { name: 'Ações', exact: true })).toBeVisible()
+  await expect(actionsButton(page)).toBeVisible()
 })
 
 test('critério de sucesso: aponta espaçamentos, cor, tamanho e fonte errados sem acusar tokens nem cores modernas', async ({ page }) => {
@@ -112,7 +112,7 @@ test('LUPA-01/LUPA-02 lupa mostra o hex sob o cursor e o clique copia sem criar 
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('#12ab34')
   await expect(editor(page)).toHaveCount(0)
   await page.keyboard.press('Escape')
-  await expect(pxa(page).getByRole('button', { name: 'Ações', exact: true })).not.toHaveClass(/pxa-tool-on/)
+  await expect(actionsButton(page)).not.toHaveClass(/pxa-tool-on/)
   await expect(await menuItem(page, 'Lupa')).toHaveAttribute('aria-checked', 'false')
   await expect(pxa(page).locator('.pxa-loupe')).toBeHidden()
 })

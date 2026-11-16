@@ -1,4 +1,4 @@
-import { annotate, BASE, expect, exportZip, markers, panel, pxa, test } from './harness'
+import { actionsButton, annotate, BASE, expect, exportZip, markers, panel, pxa, test } from './harness'
 
 type Page = Parameters<typeof pxa>[0]
 const mascot = (page: Page) => pxa(page).locator('.pxa-mascot')
@@ -54,7 +54,7 @@ test('TEMA-05 no tema Noite os botões do cabeçalho são só o ícone, todo bra
   await page.goto(`${BASE}/index.html`)
   await toggle(page)
   await annotate(page, '#save', 'botão')
-  const exportBtn = pxa(page).getByRole('button', { name: 'Ações', exact: true })
+  const exportBtn = actionsButton(page)
   await expect(exportBtn).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)') // Padrão: caixa branca, como antes
   await pxa(page).getByLabel('Tema').selectOption('noite')
   for (const name of ['Ações', 'Recolher painel']) {
