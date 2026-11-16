@@ -1,7 +1,7 @@
 import { createStore, type AnnotationDraft, type AnnotationStore } from '@/lib/store'
-import { resolveAnnotation } from '@/lib/resolve'
+import { locate, resolveAnnotation } from '@/lib/resolve'
 import { categoryOf } from '@/lib/viewport'
-import { ERROR_WINDOW_MS } from '@/lib/messages'
+import { ERROR_WINDOW_MS, type PxaMessage } from '@/lib/messages'
 import { hostOf, plural } from '@/lib/format'
 import { readImportFile } from '@/lib/import'
 import type { PageError } from '@/lib/types'
@@ -37,6 +37,11 @@ export interface ControllerDeps {
 }
 
 const FOCUS_HIGHLIGHT_MS = 1500
+/** Chave (sessionStorage) com o id da anotação a refocar depois de navegar até a rota dela. */
+const PENDING_FOCUS_KEY = 'pxa:pending-focus'
+/** Após navegar, o elemento pode só existir depois da hidratação: tenta reencontrá-lo por até tanto tempo. */
+const PENDING_FOCUS_TIMEOUT_MS = 8000
+const PENDING_FOCUS_RETRY_MS = 150
 /** Painel aberto cobriria a página no mobile: recolhe sozinho nessa categoria de tela. */
 const isMobile = () => categoryOf(innerWidth) === 'mobile'
 
@@ -59,6 +64,7 @@ export function createController(deps: ControllerDeps = {}) {
   let teardown: Array<() => void> = []
   let editor: { close(): void } | null = null // editor de nota, de Desenho ou a Apresentação
   let focusTimer: ReturnType<typeof setTimeout> | undefined
+  let pendingFocusTimer: ReturnType<typeof setTimeout> | undefined
 
   /** Abre o editor de nota; `onSaved` decide o que fazer com a nota (e os erros que sobraram) confirmada. */
   function openEditor(
@@ -120,17 +126,51 @@ export function createController(deps: ControllerDeps = {}) {
     }
   }
 
+  /** Rola até o elemento e o destaca por um instante (foco de uma anotação, PAIN-02). */
+  function focusElement(el: Element) {
+    el.scrollIntoView({ block: 'center', inline: 'nearest' })
+    overlay.highlight(el)
+    clearTimeout(focusTimer)
+    focusTimer = setTimeout(() => {
+      if (overlay.current() === el && state === 'active') overlay.hide()
+    }, FOCUS_HIGHLIGHT_MS)
+  }
+
+  /** Guarda o foco pendente e pede ao background para abrir a URL e reativar o PxA ao carregar. */
+  function navigateToAnnotation(id: string, url: string) {
+    try { sessionStorage.setItem(PENDING_FOCUS_KEY, id) } catch { /* sem sessionStorage: segue sem refoco */ }
+    showToast(ui, 'Abrindo a página da anotação…')
+    void Promise.resolve(browser.runtime.sendMessage({ type: 'pxa:navigate', url } satisfies PxaMessage)).catch(() => {})
+  }
+
+  /** Depois de navegar por uma anotação de outra rota: refoca quando o elemento aparecer (pode hidratar tarde). */
+  function focusPendingAfterNavigation() {
+    let id: string | null = null
+    try { id = sessionStorage.getItem(PENDING_FOCUS_KEY) } catch { /* sem sessionStorage */ }
+    if (!id) return
+    try { sessionStorage.removeItem(PENDING_FOCUS_KEY) } catch { /* idem */ }
+    if (!store.get(id)) return
+    const target = id
+    const started = Date.now()
+    const attempt = () => {
+      if (state !== 'active') return
+      const el = resolveAnnotation(store, target)
+      if (el) return focusElement(el)
+      if (Date.now() - started >= PENDING_FOCUS_TIMEOUT_MS) return void showToast(ui, 'elemento não encontrado nesta tela')
+      pendingFocusTimer = setTimeout(attempt, PENDING_FOCUS_RETRY_MS)
+    }
+    attempt()
+  }
+
   const raioX = createRaioX(ui, { annotate: annotateElements, onToolsChange: () => panel.syncTools() }, deps.raioX)
   const panel = createPanel(ui, store, {
     onFocus(id) {
-      const el = resolveAnnotation(store, id)
-      if (!el) return showToast(ui, 'elemento não encontrado nesta tela')
-      el.scrollIntoView({ block: 'center', inline: 'nearest' })
-      overlay.highlight(el)
-      clearTimeout(focusTimer)
-      focusTimer = setTimeout(() => {
-        if (overlay.current() === el && state === 'active') overlay.hide()
-      }, FOCUS_HIGHLIGHT_MS)
+      const where = locate(store, id)
+      if (where instanceof Element) return focusElement(where)
+      // Anotação de outra rota: vai até a URL onde foi anotada e refoca quando a página carregar.
+      const a = store.get(id)
+      if (where === 'other-route' && a?.url && a.url !== location.href) return navigateToAnnotation(id, a.url)
+      showToast(ui, 'elemento não encontrado nesta tela')
     },
     onEdit(id) {
       const a = store.get(id)
@@ -201,6 +241,7 @@ export function createController(deps: ControllerDeps = {}) {
     state = 'active'
     panel.show()
     panel.autoCollapse(isMobile())
+    focusPendingAfterNavigation() // reativado após navegar por uma anotação: refoca o elemento
     teardown = [
       fun.activate(), // antes do interceptor: ele interrompe os eventos na captura em window
       installInterceptor(ui, {
@@ -214,6 +255,7 @@ export function createController(deps: ControllerDeps = {}) {
         for (const write of writes) write()
       }),
       () => clearTimeout(focusTimer),
+      () => clearTimeout(pendingFocusTimer),
     ]
   }
 
