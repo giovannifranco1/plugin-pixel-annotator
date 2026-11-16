@@ -1,4 +1,9 @@
-export type PxaMessage = { type: 'pxa:toggle' } | { type: 'pxa:capture' }
+export type PxaMessage =
+  | { type: 'pxa:toggle' }
+  | { type: 'pxa:capture' }
+  // Anotação de outra rota: o content pede para o background navegar a aba até `url` e reativar o
+  // PxA quando a nova página carregar (o content não sobrevive à navegação).
+  | { type: 'pxa:navigate'; url: string }
 export type ToggleResponse = { active: boolean }
 export type CaptureResponse = { dataUrl: string } | { error: string }
 

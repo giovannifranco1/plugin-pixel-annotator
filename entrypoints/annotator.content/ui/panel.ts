@@ -45,6 +45,15 @@ export function createPanel(ui: UiHost, store: AnnotationStore, actions: PanelAc
   const menu = el('div', { className: 'pxa-menu', hidden: true })
   menu.setAttribute('role', 'menu')
   menu.addEventListener('keydown', onMenuKey)
+  // Clique em qualquer parte da UI do PxA que não seja o menu aberto nem o ⋮ que o abriu fecha o menu.
+  // No Shadow root (não em window): clique na página já é tratado pelo onPick (fecha e engole o clique),
+  // então escutar aqui cobre só o vão — clicar no resto do painel — sem reabrir/anotar por engano.
+  ui.root.addEventListener('pointerdown', (ev) => {
+    if (!open) return
+    const path = ev.composedPath()
+    if (path.includes(menu) || path.includes(open.button)) return
+    closeMenu()
+  }, true)
   const list = el('ol')
   const footer = el('footer')
   // Ponto de inserção no cabeçalho para outras features (mascote): o painel não conhece o conteúdo.
