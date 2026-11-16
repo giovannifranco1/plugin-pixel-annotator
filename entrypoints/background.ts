@@ -30,6 +30,27 @@ export async function toggle(tabId: number): Promise<void> {
   await setBadge(tabId, '', DEFAULT_TITLE)
 }
 
+// Abas que pediram para reativar o PxA assim que a próxima navegação terminar (foco em anotação de
+// outra rota). O content não sobrevive à navegação, então quem reinjeta e reativa é o background.
+const pendingReinject = new Set<number>()
+
+/** Navega a aba até a URL da anotação e marca para reativar o PxA quando ela terminar de carregar. */
+export async function navigateForFocus(tabId: number, url: string): Promise<void> {
+  pendingReinject.add(tabId)
+  try {
+    await browser.tabs.update(tabId, { url })
+  } catch {
+    pendingReinject.delete(tabId)
+  }
+}
+
+/** Fim do carregamento de uma aba que pediu reativação: reinjeta e liga o Modo Anotação de novo. */
+export async function onTabUpdated(tabId: number, status: string | undefined): Promise<void> {
+  if (status !== 'complete' || !pendingReinject.has(tabId)) return
+  pendingReinject.delete(tabId)
+  await toggle(tabId)
+}
+
 export default defineBackground(() => {
   const queue = createCaptureQueue(() => browser.tabs.captureVisibleTab({ format: 'png' }))
 
@@ -37,8 +58,14 @@ export default defineBackground(() => {
     if (tab.id !== undefined) void toggle(tab.id)
   })
 
+  browser.tabs.onUpdated.addListener((tabId, changeInfo) => void onTabUpdated(tabId, changeInfo.status))
+
   // Chrome (sem polyfill) não aceita Promise como retorno do listener: sendResponse + `return true`.
-  browser.runtime.onMessage.addListener((msg: PxaMessage, _sender, sendResponse) => {
+  browser.runtime.onMessage.addListener((msg: PxaMessage, sender, sendResponse) => {
+    if (msg?.type === 'pxa:navigate') {
+      if (sender.tab?.id !== undefined) void navigateForFocus(sender.tab.id, msg.url)
+      return undefined
+    }
     if (msg?.type !== 'pxa:capture') return undefined
     queue.enqueue().then(
       (dataUrl) => sendResponse({ dataUrl }),

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { fakeBrowser } from 'wxt/testing/fake-browser'
-import background, { toggle } from '@/entrypoints/background'
+import background, { navigateForFocus, onTabUpdated, toggle } from '@/entrypoints/background'
 import type { MockInstance } from 'vitest'
 import { ANNOTATOR_FILE, BLOCKED_TITLE, PROBE_FILE } from '@/lib/messages'
 
@@ -66,6 +66,32 @@ describe('background', () => {
     await toggle(TAB)
     expect(send).toHaveBeenCalledTimes(1)
     expect(await browser.action.getBadgeText({ tabId: TAB })).toBe('')
+  })
+
+  test('PAIN-02 foco em outra rota: navega a aba, marca reinjeção e reativa no fim do carregamento', async () => {
+    const update = spy(browser.tabs, 'update').mockResolvedValue({})
+    await navigateForFocus(TAB, 'https://site/app/x')
+    expect(update).toHaveBeenCalledWith(TAB, { url: 'https://site/app/x' })
+    const exec = fakeExec()
+    const send = spy(browser.tabs, 'sendMessage').mockResolvedValue({ active: true })
+    await onTabUpdated(TAB, 'loading') // ainda carregando: não reinjeta
+    await onTabUpdated(999, 'complete') // outra aba, sem pendência
+    expect(exec).not.toHaveBeenCalled()
+    await onTabUpdated(TAB, 'complete')
+    expect(exec).toHaveBeenCalledWith({ target: { tabId: TAB }, files: [ANNOTATOR_FILE] })
+    expect(send).toHaveBeenCalledWith(TAB, { type: 'pxa:toggle' })
+    exec.mockClear()
+    await onTabUpdated(TAB, 'complete') // pendência já consumida: não reinjeta de novo
+    expect(exec).not.toHaveBeenCalled()
+  })
+
+  test('PAIN-02 falha ao navegar não deixa a aba marcada para reinjeção', async () => {
+    spy(browser.tabs, 'update').mockRejectedValue(new Error('aba sumiu'))
+    await navigateForFocus(TAB, 'https://site/app/x')
+    const exec = fakeExec()
+    spy(browser.tabs, 'sendMessage').mockResolvedValue({ active: true })
+    await onTabUpdated(TAB, 'complete')
+    expect(exec).not.toHaveBeenCalled()
   })
 
   test('CAPT-07 pxa:capture responde via sendResponse e o listener retorna true', async () => {

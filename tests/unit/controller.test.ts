@@ -108,7 +108,7 @@ describe('controller', () => {
     expect(c.store.list()).toHaveLength(0)
   })
 
-  test('PAIN-02 onFocus de anotação não encontrada mostra "elemento não encontrado nesta tela"', async () => {
+  test('PAIN-02 onFocus de anotação não encontrada (mesma rota) mostra "elemento não encontrado nesta tela"', async () => {
     const c = createController({ ui, capture })
     c.toggle()
     click(document.getElementById('alvo')!)
@@ -117,6 +117,42 @@ describe('controller', () => {
     document.getElementById('alvo')!.remove()
     ui.root.querySelector<HTMLButtonElement>('.pxa-item-main')!.click()
     expect(ui.root.querySelector('.pxa-toast')!.textContent).toBe('elemento não encontrado nesta tela')
+  })
+
+  test('PAIN-02 anotação de outra rota: clicar guarda o foco pendente e pede ao background para abrir a URL', () => {
+    const c = createController({ ui, capture })
+    c.toggle()
+    const a = c.store.add(draft()) // draft(): pathname '/dashboard' e url .../dashboard?tab=2 — outra rota
+    const send = vi.spyOn(browser.runtime, 'sendMessage').mockResolvedValue(undefined as never)
+    ui.root.querySelector<HTMLButtonElement>('.pxa-item-main')!.click()
+    expect(sessionStorage.getItem('pxa:pending-focus')).toBe(a.id)
+    expect(send).toHaveBeenCalledWith({ type: 'pxa:navigate', url: a.url })
+    expect(ui.root.querySelector('.pxa-toast')!.textContent).toBe('Abrindo a página da anotação…')
+    send.mockRestore()
+    sessionStorage.clear()
+  })
+
+  test('PAIN-02 reativar com foco pendente destaca a anotação e limpa a marca', () => {
+    const c = createController({ ui, capture })
+    const a = c.store.add(draft({ selector: '#alvo', pathname: location.pathname }))
+    sessionStorage.setItem('pxa:pending-focus', a.id)
+    c.toggle() // activate → refoca o pendente; #alvo já existe na página
+    expect(c.store.refOf(a.id)?.deref()).toBe(document.getElementById('alvo'))
+    expect(sessionStorage.getItem('pxa:pending-focus')).toBeNull()
+  })
+
+  test('PAIN-02 foco pendente espera o elemento hidratar e então o destaca', () => {
+    vi.useFakeTimers()
+    const c = createController({ ui, capture })
+    const a = c.store.add(draft({ selector: '#tardio', pathname: location.pathname }))
+    sessionStorage.setItem('pxa:pending-focus', a.id)
+    c.toggle()
+    expect(c.store.refOf(a.id)).toBeUndefined() // ainda não está no DOM
+    const late = Object.assign(document.createElement('div'), { id: 'tardio' })
+    document.body.append(late)
+    vi.advanceTimersByTime(200) // passa do intervalo de nova tentativa (150ms)
+    expect(c.store.refOf(a.id)?.deref()).toBe(late)
+    vi.useRealTimers()
   })
 
   test('PAIN-03 editar pelo painel atualiza a nota sem recapturar', async () => {
