@@ -35,6 +35,8 @@ O PxA ainda não está nas lojas. A forma mais simples é baixar o build pronto 
 - `pixel-annotator-<versão>-chrome.zip` para o Chrome (e Edge, Brave, Arc)
 - `pixel-annotator-<versão>-firefox.zip` para o Firefox
 
+Cada zip vem acompanhado do seu SBOM (`.sbom.json`, CycloneDX), e o arquivo `pixel-annotator-<versão>-checksums.txt` traz o SHA-256 de tudo. Para conferir o download: `shasum -a 256 -c pixel-annotator-<versão>-checksums.txt --ignore-missing`.
+
 ### Chrome
 
 1. Descompacte o `-chrome.zip` numa pasta que não vá apagar.
@@ -69,7 +71,7 @@ Carregue `.output/chrome-mv3` ou `.output/firefox-mv3/manifest.json` como nos pa
 
 ### Publicar uma release
 
-O workflow `.github/workflows/release.yml` roda a cada tag de versão (criada pelo `git flow release finish`), gera os zips e anexa na release do GitHub. Para uma tag que já existe, rode o workflow **Release** pela aba Actions informando a tag.
+O workflow `.github/workflows/release.yml` roda a cada tag de versão (criada pelo `git flow release finish`), gera os zips, os SBOMs e os checksums e anexa tudo na release do GitHub. Para uma tag que já existe, rode o workflow **Release** pela aba Actions informando a tag.
 
 ## Como usar
 

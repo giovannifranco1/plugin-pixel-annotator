@@ -36,6 +36,19 @@ jobs:
       - run: npx wxt zip
       - run: npx wxt zip -b firefox
 
+      # SBOM (CycloneDX) das dependências que entram no bundle, uma cópia por
+      # artefato, e o arquivo de checksums SHA-256 de tudo que vai na release.
+      - name: SBOM e checksums
+        working-directory: .output
+        run: |
+          npx -y @cyclonedx/cyclonedx-npm@7.0.1 --package-lock-only --omit dev \
+            --output-format JSON --output-file ../sbom.cdx.json ../package.json
+          for zip in *-chrome.zip *-firefox.zip *-sources.zip; do
+            cp ../sbom.cdx.json "$zip.sbom.json"
+          done
+          sha256sum *.zip *.sbom.json > "pixel-annotator-${TAG}-checksums.txt"
+          cat "pixel-annotator-${TAG}-checksums.txt"
+
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
@@ -45,3 +58,5 @@ jobs:
             .output/*-chrome.zip
             .output/*-firefox.zip
             .output/*-sources.zip
+            .output/*.sbom.json
+            .output/*-checksums.txt
