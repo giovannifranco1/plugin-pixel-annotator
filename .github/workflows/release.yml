@@ -1,0 +1,64 @@
+# Gera um zip por navegador e anexa na release do GitHub.
+# Roda no push de uma tag de versão (criada pelo `git flow release finish`)
+# ou à mão pela aba Actions, para uma tag que já existe.
+name: Release
+
+on:
+  push:
+    tags: ['*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag da versão (ex.: 1.2.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+
+      # wxt direto (e não npm run zip) para funcionar também em tags antigas
+      - run: npx wxt zip
+      - run: npx wxt zip -b firefox
+
+      # Nome sem versão para o link releases/latest/download/... do README
+      # sempre apontar para a última versão.
+      - name: Renomeia os zips
+        run: |
+          mkdir dist
+          cp .output/*-chrome.zip dist/pixel-annotator-chrome.zip
+          cp .output/*-firefox.zip dist/pixel-annotator-firefox.zip
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.TAG }}
+          name: ${{ env.TAG }}
+          generate_release_notes: true
+          body: |
+            ## Download
+
+            | Navegador | Arquivo |
+            |---|---|
+            | Chrome, Edge, Brave, Arc | `pixel-annotator-chrome.zip` |
+            | Firefox 128+ | `pixel-annotator-firefox.zip` |
+
+            Passo a passo da instalação no [README](https://github.com/${{ github.repository }}#instalação).
+          files: |
+            dist/pixel-annotator-chrome.zip
+            dist/pixel-annotator-firefox.zip

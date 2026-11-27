@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/Chrome-%E2%89%A5_95-4285F4?logo=googlechrome&logoColor=fff" alt="Chrome 95 ou mais novo">
   <img src="https://img.shields.io/badge/Firefox-%E2%89%A5_128-FF7139?logo=firefoxbrowser&logoColor=fff" alt="Firefox 128 ou mais novo">
   <img src="https://img.shields.io/badge/Manifest-V3-1a1226" alt="Manifest V3">
-  <img src="https://img.shields.io/badge/version-0.1.0-blue" alt="Versão 0.1.0">
+  <a href="https://github.com/giovannifranco1/plugin-pixel-annotator/releases/latest"><img src="https://img.shields.io/github/v/release/giovannifranco1/plugin-pixel-annotator?label=version" alt="Última versão"></a>
   <img src="https://img.shields.io/badge/permissões-activeTab_%2B_scripting_%2B_storage-ff3e7f" alt="Permissões: activeTab, scripting e storage">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="Licença: MIT">
 </p>
@@ -30,29 +30,57 @@
 
 ## Instalação
 
-O PxA ainda não está nas lojas. Para instalar, gere o build e carregue a extensão em modo desenvolvedor. É preciso ter Node 22 ou mais novo.
+O PxA ainda não está nas lojas, mas instala em dois minutos, sem precisar de nada além do navegador.
+
+| Navegador | Download |
+|---|---|
+| Chrome, Edge, Brave, Arc | [**pixel-annotator-chrome.zip**](https://github.com/giovannifranco1/plugin-pixel-annotator/releases/latest/download/pixel-annotator-chrome.zip) |
+| Firefox 128 ou mais novo | [**pixel-annotator-firefox.zip**](https://github.com/giovannifranco1/plugin-pixel-annotator/releases/latest/download/pixel-annotator-firefox.zip) |
+
+Os links baixam sempre a versão mais recente. As anteriores ficam na página de [Releases](https://github.com/giovannifranco1/plugin-pixel-annotator/releases).
+
+### Chrome, Edge, Brave e Arc
+
+1. Baixe o `pixel-annotator-chrome.zip` e **descompacte** (duplo clique no arquivo).
+2. Mova a pasta `pixel-annotator-chrome` para um lugar fixo, como Documentos. O navegador lê a extensão dessa pasta: se ela for apagada, o PxA some.
+3. Abra a página de extensões digitando na barra de endereço:
+   - Chrome e Arc: `chrome://extensions`
+   - Edge: `edge://extensions`
+   - Brave: `brave://extensions`
+4. Ligue o **Modo do desenvolvedor** (no canto superior direito; no Edge, fica na barra lateral).
+5. Clique em **Carregar sem compactação** e escolha a pasta `pixel-annotator-chrome`.
+6. Clique no ícone de quebra-cabeça 🧩 da barra e fixe o PxA 📌.
+
+### Firefox
+
+1. Baixe o `pixel-annotator-firefox.zip`. Não precisa descompactar.
+2. Digite `about:debugging#/runtime/this-firefox` na barra de endereço.
+3. Clique em **Carregar extensão temporária…** e escolha o `pixel-annotator-firefox.zip`.
+4. Clique no ícone de quebra-cabeça 🧩 da barra e fixe o PxA 📌.
+
+> [!IMPORTANT]
+> No Firefox, a extensão carregada assim some quando o navegador fecha. Para usar de novo, repita os passos 2 e 3.
+
+### Atualizar para uma versão nova
+
+- **Chrome e derivados:** baixe e descompacte o zip novo, substitua o conteúdo da pasta `pixel-annotator-chrome` e clique em ↻ no card do PxA em `chrome://extensions`.
+- **Firefox:** carregue o zip novo como no passo 3.
+
+### Para desenvolvedores
+
+Para gerar o build a partir do código, é preciso ter Node 22 ou mais novo:
 
 ```bash
 npm install
 npm run build          # Chrome → .output/chrome-mv3
 npm run build:firefox  # Firefox → .output/firefox-mv3
+npm run zip            # zip do Chrome → .output/
+npm run zip:firefox    # zip do Firefox → .output/
 ```
 
-### Chrome
+Carregue `.output/chrome-mv3` ou `.output/firefox-mv3/manifest.json` como nos passos acima. Depois de mudar o código, rode o build de novo e recarregue a extensão.
 
-1. Abra `chrome://extensions` e ligue o **Modo do desenvolvedor**, no canto superior direito.
-2. Clique em **Carregar sem compactação** e escolha a pasta `.output/chrome-mv3`.
-3. Fixe o ícone do PxA na barra pelo ícone de quebra-cabeça.
-
-### Firefox (128 ou mais novo)
-
-1. Abra `about:debugging#/runtime/this-firefox`.
-2. Clique em **Carregar extensão temporária…** e escolha o **arquivo** `.output/firefox-mv3/manifest.json`.
-3. Fixe o ícone do PxA na barra.
-
-A extensão temporária do Firefox some quando o navegador fecha. É só carregar de novo.
-
-**Atualizar depois de mudar o código:** rode o build de novo e clique em ↻ (Chrome) ou em **Recarregar** (Firefox) no card da extensão.
+As releases saem sozinhas: o workflow `.github/workflows/release.yml` roda a cada tag de versão (criada pelo `git flow release finish`), gera os dois zips e anexa na release do GitHub. Para uma tag que já existe, rode o workflow **Release** pela aba Actions informando a tag.
 
 ## Como usar
 
