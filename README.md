@@ -30,29 +30,46 @@
 
 ## Instalação
 
-O PxA ainda não está nas lojas. Para instalar, gere o build e carregue a extensão em modo desenvolvedor. É preciso ter Node 22 ou mais novo.
+O PxA ainda não está nas lojas. A forma mais simples é baixar o build pronto na página de [Releases](https://github.com/giovannifranco1/plugin-pixel-annotator/releases/latest), sem precisar de Node nem clonar o projeto:
+
+- `pixel-annotator-<versão>-chrome.zip` para o Chrome (e Edge, Brave, Arc)
+- `pixel-annotator-<versão>-firefox.zip` para o Firefox
+
+### Chrome
+
+1. Descompacte o `-chrome.zip` numa pasta que não vá apagar.
+2. Abra `chrome://extensions` e ligue o **Modo do desenvolvedor**, no canto superior direito.
+3. Clique em **Carregar sem compactação** e escolha a pasta descompactada.
+4. Fixe o ícone do PxA na barra pelo ícone de quebra-cabeça.
+
+### Firefox (128 ou mais novo)
+
+1. Descompacte o `-firefox.zip`.
+2. Abra `about:debugging#/runtime/this-firefox`.
+3. Clique em **Carregar extensão temporária…** e escolha o **arquivo** `manifest.json` da pasta descompactada.
+4. Fixe o ícone do PxA na barra.
+
+A extensão temporária do Firefox some quando o navegador fecha. É só carregar de novo.
+
+**Atualizar para uma versão nova:** baixe o zip da release nova, substitua o conteúdo da pasta e clique em ↻ (Chrome) ou em **Recarregar** (Firefox) no card da extensão.
+
+### Gerar o build a partir do código
+
+É preciso ter Node 22 ou mais novo.
 
 ```bash
 npm install
 npm run build          # Chrome → .output/chrome-mv3
 npm run build:firefox  # Firefox → .output/firefox-mv3
+npm run zip            # zips para distribuir → .output/*-chrome.zip
+npm run zip:firefox    # → .output/*-firefox.zip e *-sources.zip
 ```
 
-### Chrome
+Carregue `.output/chrome-mv3` ou `.output/firefox-mv3/manifest.json` como nos passos acima. Depois de mudar o código, rode o build de novo e recarregue a extensão.
 
-1. Abra `chrome://extensions` e ligue o **Modo do desenvolvedor**, no canto superior direito.
-2. Clique em **Carregar sem compactação** e escolha a pasta `.output/chrome-mv3`.
-3. Fixe o ícone do PxA na barra pelo ícone de quebra-cabeça.
+### Publicar uma release
 
-### Firefox (128 ou mais novo)
-
-1. Abra `about:debugging#/runtime/this-firefox`.
-2. Clique em **Carregar extensão temporária…** e escolha o **arquivo** `.output/firefox-mv3/manifest.json`.
-3. Fixe o ícone do PxA na barra.
-
-A extensão temporária do Firefox some quando o navegador fecha. É só carregar de novo.
-
-**Atualizar depois de mudar o código:** rode o build de novo e clique em ↻ (Chrome) ou em **Recarregar** (Firefox) no card da extensão.
+O workflow `.github/workflows/release.yml` roda a cada tag de versão (criada pelo `git flow release finish`), gera os zips e anexa na release do GitHub. Para uma tag que já existe, rode o workflow **Release** pela aba Actions informando a tag.
 
 ## Como usar
 

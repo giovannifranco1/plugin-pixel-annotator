@@ -1,0 +1,47 @@
+# Gera os zips da extensão (Chrome e Firefox) e anexa na release do GitHub.
+# Roda no push de uma tag de versão (criada pelo `git flow release finish`)
+# ou à mão pela aba Actions, para uma tag que já existe.
+name: Release
+
+on:
+  push:
+    tags: ['*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag da versão (ex.: 1.2.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      # wxt direto (e não npm run zip) para funcionar também em tags antigas
+      - run: npx wxt zip
+      - run: npx wxt zip -b firefox
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: ${{ env.TAG }}
+          generate_release_notes: true
+          files: |
+            .output/*-chrome.zip
+            .output/*-firefox.zip
+            .output/*-sources.zip
