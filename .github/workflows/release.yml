@@ -1,4 +1,4 @@
-# Gera os zips da extensão (Chrome e Firefox) e anexa na release do GitHub.
+# Gera um zip por navegador e anexa na release do GitHub.
 # Roda no push de uma tag de versão (criada pelo `git flow release finish`)
 # ou à mão pela aba Actions, para uma tag que já existe.
 name: Release
@@ -32,31 +32,33 @@ jobs:
 
       - run: npm ci
       - run: npm test
+
       # wxt direto (e não npm run zip) para funcionar também em tags antigas
       - run: npx wxt zip
       - run: npx wxt zip -b firefox
 
-      # SBOM (CycloneDX) das dependências que entram no bundle, uma cópia por
-      # artefato, e o arquivo de checksums SHA-256 de tudo que vai na release.
-      - name: SBOM e checksums
-        working-directory: .output
+      # Nome sem versão para o link releases/latest/download/... do README
+      # sempre apontar para a última versão.
+      - name: Renomeia os zips
         run: |
-          npx -y @cyclonedx/cyclonedx-npm@7.0.1 --package-lock-only --omit dev \
-            --output-format JSON --output-file ../sbom.cdx.json ../package.json
-          for zip in *-chrome.zip *-firefox.zip *-sources.zip; do
-            cp ../sbom.cdx.json "$zip.sbom.json"
-          done
-          sha256sum *.zip *.sbom.json > "pixel-annotator-${TAG}-checksums.txt"
-          cat "pixel-annotator-${TAG}-checksums.txt"
+          mkdir dist
+          cp .output/*-chrome.zip dist/pixel-annotator-chrome.zip
+          cp .output/*-firefox.zip dist/pixel-annotator-firefox.zip
 
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
           name: ${{ env.TAG }}
           generate_release_notes: true
+          body: |
+            ## Download
+
+            | Navegador | Arquivo |
+            |---|---|
+            | Chrome, Edge, Brave, Arc | `pixel-annotator-chrome.zip` |
+            | Firefox 128+ | `pixel-annotator-firefox.zip` |
+
+            Passo a passo da instalação no [README](https://github.com/${{ github.repository }}#instalação).
           files: |
-            .output/*-chrome.zip
-            .output/*-firefox.zip
-            .output/*-sources.zip
-            .output/*.sbom.json
-            .output/*-checksums.txt
+            dist/pixel-annotator-chrome.zip
+            dist/pixel-annotator-firefox.zip
