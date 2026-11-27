@@ -45,7 +45,7 @@ export function createAuditReport(ui: UiHost, actions: AuditReportActions, deps:
   const foot = el('div', { className: 'pxa-audit-foot' })
   const box = el(
     'section',
-    { className: 'pxa-audit' },
+    { className: 'pxa-window pxa-audit' },
     header,
     el('div', { className: 'pxa-audit-tools' }, scaleBtn, rescan),
     notices,

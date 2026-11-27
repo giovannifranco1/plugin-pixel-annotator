@@ -137,23 +137,30 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
 .pxa-menu .pxa-menu-item.pxa-danger { color: var(--pxa-primary); font-weight: 700; }
 .pxa-menu .pxa-menu-item.pxa-danger:hover:not(:disabled), .pxa-menu .pxa-menu-item.pxa-danger:focus-visible { background: var(--pxa-danger-hover); }
 .pxa-item button.pxa-item-menu[aria-expanded="true"] { background: var(--pxa-hover); }
+/* Ponto de novidade (NOVI-09): redondo e à esquerda, para não se confundir com o quadrado de ferramenta ligada. */
+.pxa-menu-btn.pxa-news::before {
+  content: ''; position: absolute; top: -3px; left: -3px; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--pxa-primary); border: 1px solid var(--pxa-head-bg);
+}
+.pxa-news-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--pxa-primary); }
 
 .pxa-box { position: fixed; display: none; pointer-events: none; }
 .pxa-audit-hl .pxa-box { border: 2px dashed var(--pxa-accent); background: var(--pxa-tint); }
 
-.pxa-audit {
+/* Janela arrastável (Detector, Changelog): moldura e cabeçalho-alça. */
+.pxa-window {
   position: fixed; top: 12px; left: 12px; width: 340px; max-width: calc(100vw - 24px); max-height: calc(100vh - 80px);
   pointer-events: auto; display: flex; flex-direction: column;
   background: var(--pxa-paper); border: 2px solid var(--pxa-ink); box-shadow: 4px 4px 0 var(--pxa-ink);
 }
-.pxa-audit header {
+.pxa-window > header {
   display: flex; align-items: flex-start; gap: 8px; padding: 6px 6px 6px 10px;
   background: var(--pxa-head-bg); color: var(--pxa-head-fg); font-weight: 700;
+  cursor: move; user-select: none; touch-action: none;
 }
+.pxa-window > header:focus-visible { outline: 2px dashed var(--pxa-accent); outline-offset: -4px; }
+.pxa-window > header button { padding: 0 6px; box-shadow: none; }
 .pxa-audit-head { flex: 1; }
-.pxa-audit header { cursor: move; user-select: none; touch-action: none; }
-.pxa-audit header:focus-visible { outline: 2px dashed var(--pxa-accent); outline-offset: -4px; }
-.pxa-audit header button { padding: 0 6px; box-shadow: none; }
 .pxa-audit-tools { display: flex; gap: 6px; padding: 6px 8px; }
 .pxa-audit-notices p { margin: 0; padding: 4px 8px; background: var(--pxa-hover); font-weight: 700; }
 .pxa-audit-body { flex: 1; overflow-y: auto; padding: 0 8px; }
@@ -234,4 +241,17 @@ svg[shape-rendering="crispEdges"] { display: block; image-rendering: pixelated; 
   image-rendering: pixelated; cursor: crosshair; touch-action: none;
 }
 .pxa-draw .pxa-primary { background: var(--pxa-primary); color: var(--pxa-on-accent); }
+
+/* Changelog (feature 2026-11-16-changelog): janela .pxa-window. */
+.pxa-changelog > header { align-items: center; }
+.pxa-changelog-title { flex: 1; }
+.pxa-changelog-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 0 10px 8px; }
+.pxa-changelog-entry { padding: 6px 0; border-bottom: 2px dotted var(--pxa-rule); }
+.pxa-changelog-entry:last-child { border-bottom: 0; }
+.pxa-changelog h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin: 4px 0; font-size: 13px; }
+.pxa-changelog-date { color: var(--pxa-muted); font-weight: 400; font-size: 12px; }
+.pxa-changelog-current { padding: 0 4px; background: var(--pxa-primary); color: var(--pxa-on-accent); font-size: 11px; }
+.pxa-changelog ul { margin: 0; padding-left: 18px; }
+.pxa-changelog li { margin: 2px 0; line-height: 1.35; }
+.pxa-changelog code { padding: 0 2px; background: var(--pxa-hover); }
 `

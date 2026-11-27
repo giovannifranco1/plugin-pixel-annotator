@@ -56,8 +56,9 @@ export function createProfileStorage(area: ProfileArea | undefined = defaultArea
     load: () => (queue = queue.then(read)) as Promise<Profile>,
     update(fn) {
       const next = queue.then(async () => {
-        const p = fn(await read())
-        await write(p)
+        const current = await read()
+        const p = fn(current)
+        if (p !== current) await write(p) // nada mudou: sem gravação nem `onChanged` nas outras abas
         return p
       })
       queue = next.catch(() => {})

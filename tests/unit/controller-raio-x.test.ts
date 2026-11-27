@@ -60,7 +60,7 @@ describe('controller + Raio-X', () => {
     c.toggle()
     $('header button[aria-label="Ações"]')!.click()
     const items = Array.from(ui.root.querySelectorAll('.pxa-menu .pxa-menu-item')).map((b) => b.textContent)
-    expect(items).toEqual(['Detector', 'Lupa', 'Apresentar', 'Importar .zip', 'Exportar .zip'])
+    expect(items).toEqual(['Detector', 'Lupa', 'Apresentar', 'Importar .zip', 'Exportar .zip', 'Changelog'])
     expect($('.pxa-menu-label')).toBeNull()
   })
 
