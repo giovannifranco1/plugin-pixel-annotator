@@ -5,7 +5,9 @@ name: Release
 
 on:
   push:
-    tags: ['*.*.*']
+    # Só versões estáveis (1.2.0). Tags com sufixo (1.3.0-beta.1, 0.0.0-teste)
+    # não disparam: não podem virar a release que o README baixa.
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
   workflow_dispatch:
     inputs:
       tag:
@@ -21,6 +23,22 @@ jobs:
     env:
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
+      # Valida a tag e decide se esta release vira a "latest". Só vira se for a
+      # maior versão do repo: rodar o workflow para uma tag antiga não pode
+      # fazer o link releases/latest/download/... do README voltar no tempo.
+      - name: Valida a tag e define a latest
+        id: version
+        run: |
+          if ! [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag '$TAG' não é uma versão estável (formato 1.2.0)."
+            exit 1
+          fi
+          highest=$(git ls-remote --tags --refs "https://github.com/${{ github.repository }}.git" \
+            | sed 's|.*refs/tags/||' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          latest=$([ "$TAG" = "$highest" ] && echo true || echo false)
+          echo "Tag $TAG, maior versão $highest, latest=$latest"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG }}
@@ -50,6 +68,7 @@ jobs:
           tag_name: ${{ env.TAG }}
           name: ${{ env.TAG }}
           generate_release_notes: true
+          make_latest: ${{ steps.version.outputs.latest }}
           body: |
             ## Download
 

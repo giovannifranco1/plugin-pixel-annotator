@@ -39,6 +39,8 @@ O PxA ainda não está nas lojas, mas instala em dois minutos, sem precisar de n
 
 Os links baixam sempre a versão mais recente. As anteriores ficam na página de [Releases](https://github.com/giovannifranco1/plugin-pixel-annotator/releases).
 
+Se o link der erro 404, a release com os zips ainda não foi publicada. Enquanto isso, gere o build pelos passos de [Para desenvolvedores](#para-desenvolvedores).
+
 ### Chrome, Edge, Brave e Arc
 
 1. Baixe o `pixel-annotator-chrome.zip` e **descompacte** (duplo clique no arquivo).
